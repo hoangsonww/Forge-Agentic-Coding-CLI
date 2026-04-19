@@ -1,0 +1,80 @@
+{
+  "name": "@forge/cli",
+  "version": "0.1.0",
+  "description": "Forge - a local-first, multi-agent, programmable software-engineering runtime",
+  "license": "MIT",
+  "bin": {
+    "forge": "./bin/forge.js"
+  },
+  "main": "./dist/cli/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.js",
+    "build:watch": "tsc -w -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "ts-node src/cli/index.ts",
+    "lint": "eslint 'src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'test/**/*.ts'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
+    "start": "node ./bin/forge.js",
+    "link": "npm run build && npm link",
+    "unlink": "npm unlink -g @forge/cli",
+    "relink": "npm run unlink --silent; npm run link",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "scripts/",
+    "install/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.3.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "ora": "^5.4.1",
+    "prompts": "^2.4.2",
+    "semver": "^7.6.3",
+    "undici": "^6.19.2",
+    "ws": "^8.18.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.14.0",
+    "@types/prompts": "^2.4.9",
+    "@types/semver": "^7.5.8",
+    "@types/ws": "^8.5.12",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.8.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "coding",
+    "agent",
+    "local-first",
+    "llm",
+    "developer-tools"
+  ]
+}

@@ -1,0 +1,96 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-artifacts:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: forge-linux-x64
+            target: linux-x64
+          - os: ubuntu-latest
+            artifact: forge-linux-arm64
+            target: linux-arm64
+          - os: macos-latest
+            artifact: forge-macos-x64
+            target: darwin-x64
+          - os: macos-latest
+            artifact: forge-macos-arm64
+            target: darwin-arm64
+          - os: windows-latest
+            artifact: forge-windows-x64.exe
+            target: win32-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci --ignore-scripts
+      - run: npx tsc -p tsconfig.json
+      - run: npm pack
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: forge-cli-*.tgz
+
+  manifest:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - name: Build manifest.json + sign
+        run: |
+          set -eu
+          cat > manifest.json <<EOF
+          {
+            "version": "${GITHUB_REF_NAME#v}",
+            "channel": "stable",
+            "releasedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "artifacts": [
+          $(find artifacts -type f | awk 'BEGIN{ORS=""} NR>1{print ","} { name=$0; gsub(".*/","",name); "shasum -a 256 " $0 " | awk {print $1}" | getline sha; "wc -c < " $0 | getline size; printf("    {\"name\":\"%s\",\"sha256\":\"%s\",\"size\":%s}", name, sha, size+0); close("shasum -a 256 " $0) }')
+            ]
+          }
+          EOF
+          cat manifest.json
+      - name: Sign manifest with cosign (keyless)
+        if: ${{ secrets.FORGE_RELEASE_ED25519_PRIV != '' }}
+        run: |
+          echo "${{ secrets.FORGE_RELEASE_ED25519_PRIV }}" > /tmp/ed25519.key
+          openssl pkeyutl -sign -inkey /tmp/ed25519.key -rawin -in manifest.json -out manifest.sig.bin
+          base64 -w0 manifest.sig.bin > manifest.sig
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*
+            manifest.json
+            manifest.sig
+
+  publish-npm:
+    needs: manifest
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx tsc -p tsconfig.json
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

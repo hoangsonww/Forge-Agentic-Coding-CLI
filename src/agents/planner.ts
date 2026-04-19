@@ -1,0 +1,157 @@
+import { Plan, PlanStep, Task, Mode } from '../types';
+import { Agent, AgentResult } from './base';
+import { callModel } from '../models/router';
+import { assembleTaskPrompt } from '../prompts/assembler';
+import { newPlanId, newStepId } from '../logging/trace';
+import { log } from '../logging/logger';
+import { allTools } from '../tools/registry';
+import { ForgeRuntimeError } from '../types/errors';
+import { loadGlobalInstructions, loadProjectInstructions } from '../config/loader';
+import { retrieve } from '../memory/retrieval';
+
+const planSchemaPrompt = `Produce a PLAN as strict JSON with the shape:
+
+{
+  "goal": string,
+  "steps": [
+    {
+      "id": string,                    // short, unique, e.g. "step_001"
+      "type": "analyze" | "plan" | "edit_file" | "apply_patch" | "create_file" | "delete_file" |
+              "run_command" | "run_tests" | "review" | "debug" | "retrieve_context" |
+              "ask_user" | "custom",
+      "description": string,           // one line, actionable
+      "target"?: string,               // e.g. file path, branch name
+      "args"?: object,                 // tool-specific args (paths, commands, etc.)
+      "dependsOn"?: string[],          // step ids (default: previous step)
+      "risk"?: "low" | "medium" | "high" | "critical",
+      "tool"?: string                  // tool name, when type is a tool-execution step
+    }
+  ]
+}
+
+Rules:
+- Output JSON only. No prose.
+- Keep the plan minimal — no busywork steps.
+- Prefer reading before writing. Always include verification (tests or review) before completion.
+- If user approval may be needed for a destructive step, mark risk accordingly.
+- Reference concrete file paths where known. If unknown, include a retrieve_context step first.`;
+
+const buildFallbackPlan = (task: Task): Plan => {
+  const steps: PlanStep[] = [
+    {
+      id: newStepId(1),
+      type: 'analyze',
+      description: `Survey repository and locate files relevant to: ${task.title}`,
+    },
+    {
+      id: newStepId(2),
+      type: 'edit_file',
+      description: `Apply the requested change for: ${task.title}`,
+      dependsOn: [newStepId(1)],
+    },
+    {
+      id: newStepId(3),
+      type: 'run_tests',
+      description: 'Run test suite to validate change.',
+      dependsOn: [newStepId(2)],
+      risk: 'medium',
+    },
+    {
+      id: newStepId(4),
+      type: 'review',
+      description: 'Review outcome and summarize.',
+      dependsOn: [newStepId(3)],
+    },
+  ];
+  return {
+    id: newPlanId(),
+    goal: task.title,
+    steps,
+    createdAt: new Date().toISOString(),
+    mode: task.mode,
+    version: '1',
+  };
+};
+
+const parseSafely = (content: string): Record<string, unknown> | null => {
+  const fence = /```(?:json)?\s*([\s\S]+?)\s*```/i.exec(content);
+  try {
+    return JSON.parse(fence ? fence[1] : content) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const coerceSteps = (raw: unknown): PlanStep[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((s: any, idx) => {
+    const id = typeof s?.id === 'string' && s.id.length ? s.id : newStepId(idx + 1);
+    const type = typeof s?.type === 'string' ? (s.type as PlanStep['type']) : 'custom';
+    return {
+      id,
+      type,
+      description: String(s?.description ?? `Step ${idx + 1}`),
+      target: typeof s?.target === 'string' ? s.target : undefined,
+      args: s?.args && typeof s.args === 'object' ? s.args : undefined,
+      dependsOn: Array.isArray(s?.dependsOn) ? s.dependsOn.map(String) : undefined,
+      risk: ['low', 'medium', 'high', 'critical'].includes(s?.risk) ? s.risk : undefined,
+      tool: typeof s?.tool === 'string' ? s.tool : undefined,
+    };
+  });
+};
+
+export const buildPlannerPrompt = (task: Task, projectRoot: string, mode: Mode) => {
+  const retrieved = retrieve({
+    projectRoot,
+    query: `${task.title}\n${task.description ?? ''}`,
+    maxColdHits: mode === 'heavy' ? 12 : 6,
+  });
+  return assembleTaskPrompt({
+    mode,
+    title: task.title,
+    description: task.description,
+    globalInstructions: loadGlobalInstructions(),
+    projectInstructions: loadProjectInstructions(projectRoot),
+    contextBlocks: retrieved.blocks,
+    tools: allTools(),
+    additionalUserText: `${planSchemaPrompt}\n\nTASK:\n${task.title}\n${task.description ?? ''}`,
+  });
+};
+
+export const plannerAgent: Agent = {
+  name: 'planner',
+  description: 'Converts intent into a structured task plan (DAG).',
+  async run(ctx): Promise<AgentResult> {
+    const prompt = buildPlannerPrompt(ctx.task, ctx.projectRoot, ctx.mode);
+    try {
+      const { response } = await callModel('planner', ctx.mode, prompt.messages, {
+        jsonMode: true,
+        temperature: 0.1,
+        maxTokens: 2000,
+        timeoutMs: 60_000,
+      });
+      const parsed = parseSafely(response.content);
+      if (!parsed || !Array.isArray((parsed as any).steps)) {
+        log.warn('planner: malformed JSON, using fallback plan');
+        const plan = buildFallbackPlan(ctx.task);
+        return { success: true, output: plan, prompt };
+      }
+      const plan: Plan = {
+        id: newPlanId(),
+        goal: String((parsed as any).goal ?? ctx.task.title),
+        steps: coerceSteps((parsed as any).steps),
+        createdAt: new Date().toISOString(),
+        mode: ctx.mode,
+        version: '1',
+      };
+      return { success: true, output: plan, prompt };
+    } catch (err) {
+      log.warn('planner failed; using fallback plan', { err: String(err) });
+      if (err instanceof ForgeRuntimeError && err.class === 'model_error') {
+        const plan = buildFallbackPlan(ctx.task);
+        return { success: true, output: plan, prompt };
+      }
+      throw err;
+    }
+  },
+};

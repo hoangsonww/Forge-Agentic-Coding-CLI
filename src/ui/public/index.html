@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- Bold geometric F on a teal→cyan gradient. Vector path instead of
+         text so the letter renders crisply at every size (16, 32, 64, 180)
+         without font-loading quirks, and fills ~60% of the tile so it's
+         legible in a browser-tab favicon. -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='100' y2='100' gradientUnits='userSpaceOnUse'><stop offset='0' stop-color='%232dd4bf'/><stop offset='1' stop-color='%230891b2'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><path d='M25 20 L75 20 L75 34 L40 34 L40 46 L65 46 L65 58 L40 58 L40 80 L25 80 Z' fill='white'/></svg>"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='100' y2='100' gradientUnits='userSpaceOnUse'><stop offset='0' stop-color='%232dd4bf'/><stop offset='1' stop-color='%230891b2'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><path d='M25 20 L75 20 L75 34 L40 34 L40 46 L65 46 L65 58 L40 58 L40 80 L25 80 Z' fill='white'/></svg>"
+    />
+    <meta name="theme-color" content="#14b8a6" />
+  </head>
+  <body>
+    <!-- Mobile: hamburger toggle for the sidebar. Visibility is controlled
+         by CSS (hidden >920px via `display:none`, shown below via a media
+         query). We deliberately don't use the HTML `hidden` attribute here
+         because the global `[hidden]{display:none!important}` rule would
+         defeat the media-query override. -->
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation"
+            aria-controls="sidebar" aria-expanded="false">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+    <div class="nav-backdrop" id="nav-backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">F</div>
+        <div>
+          <div class="brand-name">FORGE</div>
+          <div class="brand-sub">agentic runtime</div>
+        </div>
+      </div>
+
+      <nav class="side-nav" id="nav"></nav>
+
+      <div class="sidebar-footer">
+        <div class="status-row">
+          <span class="dot" id="status-dot"></span>
+          <span id="status-text">connecting</span>
+        </div>
+        <div class="hint"><kbd>⌘ K</kbd> command palette</div>
+      </div>
+    </aside>
+
+    <main id="app" class="content">
+      <div class="content-inner">
+        <div class="skeleton-list">
+          <div class="skeleton w-50"></div>
+          <div class="skeleton w-90"></div>
+          <div class="skeleton w-70"></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast-host" id="toasts"></div>
+    <div id="overlay-host"></div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

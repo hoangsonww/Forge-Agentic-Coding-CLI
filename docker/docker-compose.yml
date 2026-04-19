@@ -1,0 +1,52 @@
+# Forge compose: core + ui + ollama, sharing model + forge-home volumes.
+# Use `docker compose up -d` from the repo root (path is ./docker/).
+# `forge container up` wraps this command for a consistent UX.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    # Uncomment for GPU passthrough:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+    restart: unless-stopped
+
+  forge-core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: forge/core:latest
+    depends_on: [ollama]
+    environment:
+      FORGE_HOME: /data/.forge
+      OLLAMA_ENDPOINT: http://ollama:11434
+    volumes:
+      - forge-home:/data
+      - ../examples:/workspace:rw
+    stdin_open: true
+    tty: true
+    command: ["forge", "doctor"]
+
+  forge-ui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ui
+    image: forge/ui:latest
+    depends_on: [forge-core]
+    ports:
+      - "7823:7823"
+    environment:
+      FORGE_HOME: /data/.forge
+    volumes:
+      - forge-home:/data
+    restart: unless-stopped
+
+volumes:
+  forge-home:
+  ollama-models:

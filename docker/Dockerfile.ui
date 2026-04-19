@@ -1,0 +1,19 @@
+# UI-only image: runs the dashboard server against a shared ~/.forge volume.
+
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --ignore-scripts || npm install --ignore-scripts
+COPY tsconfig.json ./
+COPY src ./src
+RUN npx tsc -p tsconfig.json
+
+FROM node:20-bookworm-slim
+WORKDIR /opt/forge-ui
+ENV NODE_ENV=production FORGE_HOME=/data/.forge FORGE_UI_PORT=7823
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
+EXPOSE 7823
+VOLUME ["/data"]
+CMD ["node", "dist/ui/server.js"]

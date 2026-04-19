@@ -1,0 +1,250 @@
+- generic [ref=e1]:
+  - button "Toggle navigation" [ref=e2] [cursor=pointer]
+  - complementary [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: F
+      - generic [ref=e9]:
+        - generic [ref=e10]: FORGE
+        - generic [ref=e11]: agentic runtime
+    - navigation [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]: overview
+        - button "Dashboard" [ref=e15] [cursor=pointer]:
+          - img [ref=e17]
+          - generic [ref=e19]: Dashboard
+        - button "Tasks" [ref=e20] [cursor=pointer]:
+          - img [ref=e22]
+          - generic [ref=e24]: Tasks
+      - generic [ref=e25]:
+        - generic [ref=e26]: run
+        - button "Chat" [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: Chat
+        - button "New task" [ref=e32] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e36]: New task
+        - button "Active" [ref=e37] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e41]: Active
+      - generic [ref=e42]:
+        - generic [ref=e43]: runtime
+        - button "Models" [ref=e44] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e48]: Models
+        - button "MCP" [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+          - generic [ref=e53]: MCP
+        - button "Skills" [ref=e54] [cursor=pointer]:
+          - img [ref=e56]
+          - generic [ref=e58]: Skills
+        - button "Web" [ref=e59] [cursor=pointer]:
+          - img [ref=e61]
+          - generic [ref=e64]: Web
+      - generic [ref=e65]:
+        - generic [ref=e66]: memory
+        - button "Cold memory" [ref=e67] [cursor=pointer]:
+          - img [ref=e69]
+          - generic [ref=e72]: Cold memory
+        - button "Learning" [ref=e73] [cursor=pointer]:
+          - img [ref=e75]
+          - generic [ref=e77]: Learning
+      - generic [ref=e78]:
+        - generic [ref=e79]: ops
+        - button "Cost" [ref=e80] [cursor=pointer]:
+          - img [ref=e82]
+          - generic [ref=e85]: Cost
+        - button "Config" [ref=e86] [cursor=pointer]:
+          - img [ref=e88]
+          - generic [ref=e91]: Config
+        - button "Doctor" [ref=e92] [cursor=pointer]:
+          - img [ref=e94]
+          - generic [ref=e96]: Doctor
+    - generic [ref=e97]:
+      - generic [ref=e100]: online
+      - generic [ref=e101]: ⌘ K command palette
+  - main [ref=e102]:
+    - generic [ref=e103]:
+      - generic [ref=e104]:
+        - heading "Good evening. What should Forge build?" [level=1] [ref=e105]
+        - generic [ref=e106]: Type a prompt. Or press ⌘ K for the command palette.
+        - generic [ref=e107]:
+          - textbox "e.g. add a /health endpoint to the Express server" [active] [ref=e108]
+          - button "Run" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+        - generic [ref=e112]:
+          - button "Add tests" [ref=e113] [cursor=pointer]:
+            - img [ref=e115]
+            - text: Add tests
+          - button "Audit security" [ref=e117] [cursor=pointer]:
+            - img [ref=e119]
+            - text: Audit security
+          - button "Refactor" [ref=e121] [cursor=pointer]:
+            - img [ref=e123]
+            - text: Refactor
+          - button "Generate docs" [ref=e125] [cursor=pointer]:
+            - img [ref=e127]
+            - text: Generate docs
+          - button "Fix a bug" [ref=e129] [cursor=pointer]:
+            - img [ref=e131]
+            - text: Fix a bug
+          - button "Ship it" [ref=e133] [cursor=pointer]:
+            - img [ref=e135]
+            - text: Ship it
+        - generic [ref=e137]: ⏎ run · ⇧ ⏎ open advanced form
+      - generic [ref=e138]:
+        - generic [ref=e139]:
+          - generic [ref=e140]: Active
+          - generic [ref=e141]: "0"
+          - generic [ref=e142]: idle
+        - generic [ref=e143]:
+          - generic [ref=e144]: Tasks
+          - generic [ref=e145]: "6"
+          - generic [ref=e146]: shown · 1 projects
+        - generic [ref=e147]:
+          - generic [ref=e148]: Spend
+          - generic [ref=e149]: $0.000
+          - generic [ref=e150]: 0 tokens
+        - generic [ref=e151]:
+          - generic [ref=e152]: Provider
+          - generic [ref=e153]: ollama
+          - generic [ref=e154]: mode · balanced
+      - generic [ref=e155]:
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - heading "Recent tasks" [level=2] [ref=e158]
+            - generic [ref=e159]: 6 shown
+          - table [ref=e162]:
+            - rowgroup [ref=e163]:
+              - row "id status mode intent title updated" [ref=e164]:
+                - columnheader "id" [ref=e165]
+                - columnheader "status" [ref=e166]
+                - columnheader "mode" [ref=e167]
+                - columnheader "intent" [ref=e168]
+                - columnheader "title" [ref=e169]
+                - columnheader "updated" [ref=e170]
+            - rowgroup [ref=e171]:
+              - row "task_6a02f3a6436b completed balanced test final prod test 24m ago" [ref=e172]:
+                - cell "task_6a02f3a6436b" [ref=e173]:
+                  - code [ref=e174]: task_6a02f3a6436b
+                - cell "completed" [ref=e175]:
+                  - generic [ref=e176]: completed
+                - cell "balanced" [ref=e177]
+                - cell "test" [ref=e178]
+                - cell "final prod test" [ref=e179]
+                - cell "24m ago" [ref=e180]
+              - row "task_8897ec2ddd1d completed balanced other added from UI to a REPL-sourced session 39m ago" [ref=e181]:
+                - cell "task_8897ec2ddd1d" [ref=e182]:
+                  - code [ref=e183]: task_8897ec2ddd1d
+                - cell "completed" [ref=e184]:
+                  - generic [ref=e185]: completed
+                - cell "balanced" [ref=e186]
+                - cell "other" [ref=e187]
+                - cell "added from UI to a REPL-sourced session" [ref=e188]
+                - cell "39m ago" [ref=e189]
+              - row "task_5643915c29fc cancelled balanced test hello world this is a test 1h ago" [ref=e190]:
+                - cell "task_5643915c29fc" [ref=e191]:
+                  - code [ref=e192]: task_5643915c29fc
+                - cell "cancelled" [ref=e193]:
+                  - generic [ref=e194]: cancelled
+                - cell "balanced" [ref=e195]
+                - cell "test" [ref=e196]
+                - cell "hello world this is a test" [ref=e197]
+                - cell "1h ago" [ref=e198]
+              - row "task_02895f356124 completed balanced other print the word hello 1h ago" [ref=e199]:
+                - cell "task_02895f356124" [ref=e200]:
+                  - code [ref=e201]: task_02895f356124
+                - cell "completed" [ref=e202]:
+                  - generic [ref=e203]: completed
+                - cell "balanced" [ref=e204]
+                - cell "other" [ref=e205]
+                - cell "print the word hello" [ref=e206]
+                - cell "1h ago" [ref=e207]
+              - row "task_855c1583c558 completed fast other Answer the following question about this codebase with references to specific fi 2h ago" [ref=e208]:
+                - cell "task_855c1583c558" [ref=e209]:
+                  - code [ref=e210]: task_855c1583c558
+                - cell "completed" [ref=e211]:
+                  - generic [ref=e212]: completed
+                - cell "fast" [ref=e213]
+                - cell "other" [ref=e214]
+                - cell "Answer the following question about this codebase with references to specific fi" [ref=e215]
+                - cell "2h ago" [ref=e216]
+              - row "task_300928cac63a completed fast test test task 3h ago" [ref=e217]:
+                - cell "task_300928cac63a" [ref=e218]:
+                  - code [ref=e219]: task_300928cac63a
+                - cell "completed" [ref=e220]:
+                  - generic [ref=e221]: completed
+                - cell "fast" [ref=e222]
+                - cell "test" [ref=e223]
+                - cell "test task" [ref=e224]
+                - cell "3h ago" [ref=e225]
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - generic [ref=e228]:
+              - heading "Runtime" [level=2] [ref=e229]
+              - generic [ref=e230]: daemon stopped
+            - generic [ref=e232]:
+              - generic [ref=e233]:
+                - generic [ref=e234]: ollama
+                - generic [ref=e236]: anthropic
+                - generic [ref=e238]: openai
+                - generic [ref=e240]: llamacpp
+              - generic [ref=e242]:
+                - text: provider ·
+                - strong [ref=e243]: ollama
+              - generic [ref=e244]:
+                - text: mode ·
+                - strong [ref=e245]: balanced
+              - generic [ref=e246]:
+                - text: channel ·
+                - strong [ref=e247]: stable
+                - text: · v0.1.0
+          - generic [ref=e248]:
+            - generic [ref=e249]:
+              - heading "Recent prompts" [level=2] [ref=e250]
+              - generic [ref=e251]: click to rerun
+            - generic [ref=e252]:
+              - generic [ref=e253] [cursor=pointer]:
+                - generic [ref=e254]: completed
+                - generic [ref=e255]:
+                  - generic [ref=e256]: final prod test
+                  - generic [ref=e257]:
+                    - code [ref=e258]: task_6a02f3a6436b
+                    - generic [ref=e259]: 24m ago
+                - generic:
+                  - img
+              - generic [ref=e261] [cursor=pointer]:
+                - generic [ref=e262]: completed
+                - generic [ref=e263]:
+                  - generic [ref=e264]: added from UI to a REPL-sourced session
+                  - generic [ref=e265]:
+                    - code [ref=e266]: task_8897ec2ddd1d
+                    - generic [ref=e267]: 39m ago
+                - generic:
+                  - img
+              - generic [ref=e269] [cursor=pointer]:
+                - generic [ref=e270]: cancelled
+                - generic [ref=e271]:
+                  - generic [ref=e272]: hello world this is a test
+                  - generic [ref=e273]:
+                    - code [ref=e274]: task_5643915c29fc
+                    - generic [ref=e275]: 1h ago
+                - generic:
+                  - img
+              - generic [ref=e277] [cursor=pointer]:
+                - generic [ref=e278]: completed
+                - generic [ref=e279]:
+                  - generic [ref=e280]: print the word hello
+                  - generic [ref=e281]:
+                    - code [ref=e282]: task_02895f356124
+                    - generic [ref=e283]: 1h ago
+                - generic:
+                  - img
+              - generic [ref=e285] [cursor=pointer]:
+                - generic [ref=e286]: completed
+                - generic [ref=e287]:
+                  - generic [ref=e288]: Answer the following question about this codebase with references to specific fi
+                  - generic [ref=e289]:
+                    - code [ref=e290]: task_855c1583c558
+                    - generic [ref=e291]: 2h ago
+                - generic:
+                  - img
