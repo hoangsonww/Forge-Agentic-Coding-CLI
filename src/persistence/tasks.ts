@@ -13,13 +13,13 @@ const LEGAL_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   scheduled: ['running', 'cancelled', 'blocked'],
   running: ['verifying', 'failed', 'blocked', 'cancelled'],
   verifying: ['completed', 'failed', 'running'], // can loop back on retry
-  // Terminal states can be re-scheduled by an operator (`forge resume`) to
-  // continue or retry the thread. Keeps the state machine re-entrant from
-  // the user's perspective without requiring a separate "archived" status.
-  completed: ['scheduled'],
-  failed: ['scheduled'],
-  blocked: ['scheduled', 'cancelled'],
-  cancelled: ['scheduled'],
+  // Terminal states can be reset to `draft` by an operator (`forge resume`)
+  // so the agentic loop can re-enter from the top (draft → planned → …).
+  // Keeps the state machine re-entrant without a separate "archived" status.
+  completed: ['draft'],
+  failed: ['draft'],
+  blocked: ['draft', 'cancelled'],
+  cancelled: ['draft'],
 };
 
 export const isLegalTransition = (from: TaskStatus, to: TaskStatus): boolean => {

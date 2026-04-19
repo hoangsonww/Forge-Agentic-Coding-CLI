@@ -8,18 +8,20 @@ describe('task state machine', () => {
   it('running → verifying allowed', () => {
     expect(isLegalTransition('running', 'verifying')).toBe(true);
   });
-  it('completed can only be rescheduled (operator resume)', () => {
-    // `completed → scheduled` is the single legal move (for `forge resume`).
-    expect(isLegalTransition('completed', 'scheduled')).toBe(true);
-    // Everything else from a terminal state remains illegal.
+  it('completed can be reset to draft (operator resume)', () => {
+    // `completed → draft` is the single legal move; it lets the agentic
+    // loop re-enter at the top (draft → planned → …).
+    expect(isLegalTransition('completed', 'draft')).toBe(true);
+    // Skipping straight into mid-lifecycle states remains illegal.
+    expect(isLegalTransition('completed', 'scheduled')).toBe(false);
     expect(isLegalTransition('completed', 'running')).toBe(false);
     expect(isLegalTransition('completed', 'cancelled')).toBe(false);
   });
-  it('failed can be rescheduled (operator retry)', () => {
-    expect(isLegalTransition('failed', 'scheduled')).toBe(true);
+  it('failed can be reset to draft (operator retry)', () => {
+    expect(isLegalTransition('failed', 'draft')).toBe(true);
   });
-  it('cancelled can be rescheduled (operator resume)', () => {
-    expect(isLegalTransition('cancelled', 'scheduled')).toBe(true);
+  it('cancelled can be reset to draft (operator resume)', () => {
+    expect(isLegalTransition('cancelled', 'draft')).toBe(true);
     expect(isLegalTransition('cancelled', 'running')).toBe(false);
   });
   it('illegal transitions are rejected', () => {

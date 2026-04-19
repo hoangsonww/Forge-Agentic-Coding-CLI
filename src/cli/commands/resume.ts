@@ -55,7 +55,8 @@ export const resumeCommand = new Command('resume')
 
     // Reset state so the machine permits re-entry. Completed + cancelled
     // tasks are legitimate resume targets too — the user may want to retry
-    // or continue the thread.
+    // or continue the thread. The agentic loop starts from `draft`, so we
+    // park the task back there before calling it.
     try {
       if (target.status === 'running' || target.status === 'verifying') {
         target = transitionTask(root, target.id, 'failed');
@@ -66,7 +67,7 @@ export const resumeCommand = new Command('resume')
         target.status === 'completed' ||
         target.status === 'cancelled'
       ) {
-        target = transitionTask(root, target.id, 'scheduled');
+        target = transitionTask(root, target.id, 'draft');
       }
     } catch (e) {
       warn(`couldn't transition state: ${String(e)}`);
