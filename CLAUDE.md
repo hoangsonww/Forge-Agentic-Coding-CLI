@@ -50,7 +50,7 @@ npm run format && npm run lint && npm run build && npm test
 
 ```
 src/
-  cli/           CLI, REPL, input editor (5,200 LoC)
+  cli/           CLI, REPL, input editor
   core/          orchestrator, agentic loop, mode policy, validation gate
   agents/        planner / architect / executor / reviewer / debugger / memory
   models/        6 providers (ollama / anthropic / openai / llamacpp / vllm / lmstudio)

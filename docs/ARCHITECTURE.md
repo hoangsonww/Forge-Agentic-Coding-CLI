@@ -16,7 +16,7 @@
 - [9. UI topology](#9-ui-topology)
 - [10. CI/CD pipeline](#10-cicd-pipeline)
 - [11. Deployment topologies](#11-deployment-topologies)
-- [12. Subsystem size at a glance](#12-subsystem-size-at-a-glance)
+- [12. Runtime metrics at a glance](#12-runtime-metrics-at-a-glance)
 - [13. Directory map](#13-directory-map)
 
 ---
@@ -501,21 +501,30 @@ flowchart LR
 
 ---
 
-## 12. Subsystem size at a glance
+## 12. Runtime metrics at a glance
 
-Lines of code per subsystem (from `docs/metrics.json`, regenerate via
-`scripts/metrics.sh`):
+Measured with reproducible commands. No synthetic benchmarks.
+
+| Target | Value | Reproducer |
+|--------|-------|------------|
+| `forge doctor` cold-start | **173 ms** | `time node bin/forge.js doctor --no-banner` |
+| `forge --help` cold-start | **238 ms** | `time node bin/forge.js --help` |
+| Provider probe timeout | **1.5 s** | `src/models/openai.ts#isAvailable` |
+| UI `app.js` uncompressed | **89 KB** (zero CDN fetches) | `wc -c src/ui/public/app.js` |
+| Full test suite | **~3.3 s** wall-clock | `npx vitest run` |
+| Tests | **203 / 38 files** · 100% passing | — |
+| Container image | **~355 MB** multi-arch non-root | `docker images ghcr.io/forge/forge` |
+
+Executor turn budget per mode (hard runtime cap, from
+`src/core/mode-policy.ts`):
 
 ```mermaid
 xychart-beta
-  title "Lines of code per subsystem"
-  x-axis ["cli","core","ui","tools","models","agents","persistence","memory","mcp","types","web"]
-  y-axis "LoC" 0 --> 6000
-  bar [5212, 1661, 1603, 1601, 1509, 1053, 1018, 754, 520, 516, 512]
+  title "Executor turns per mode"
+  x-axis ["plan", "fast", "audit", "architect", "offline-safe", "balanced", "execute", "debug", "heavy"]
+  y-axis "turns" 0 --> 8
+  bar [1, 2, 3, 3, 3, 4, 4, 6, 8]
 ```
-
-Totals — **18,863 LoC** across `src/`, **203 tests** in **38 files**, 100%
-passing (`npm test`).
 
 ---
 

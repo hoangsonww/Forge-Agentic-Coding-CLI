@@ -58,7 +58,7 @@ The short version (full tree in [ARCHITECTURE.md §13](ARCHITECTURE.md#13-direct
 
 ```
 src/
-  cli/           commander CLI + REPL + input editor (5,200 LoC)
+  cli/           commander CLI + REPL + input editor
   core/          orchestrator, agentic loop, mode policy, validation
   agents/        6 agents
   models/        6 providers + router + adapter + catalog
