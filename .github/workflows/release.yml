@@ -164,9 +164,11 @@ jobs:
           EOF
           cat manifest.json
       - name: Sign manifest (ed25519)
-        if: ${{ secrets.FORGE_RELEASE_ED25519_PRIV != '' }}
+        env:
+          ED25519_KEY: ${{ secrets.FORGE_RELEASE_ED25519_PRIV }}
+        if: env.ED25519_KEY != ''
         run: |
-          echo "${{ secrets.FORGE_RELEASE_ED25519_PRIV }}" > /tmp/ed25519.key
+          printf '%s' "$ED25519_KEY" > /tmp/ed25519.key
           openssl pkeyutl -sign -inkey /tmp/ed25519.key -rawin -in manifest.json -out manifest.sig.bin
           base64 -w0 manifest.sig.bin > manifest.sig
       - uses: softprops/action-gh-release@v2
