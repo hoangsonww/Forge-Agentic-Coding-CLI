@@ -3,6 +3,8 @@
  * Create an offline bundle: tarball of dist/, package.json, LICENSE, README,
  * scripts, install/. Used by `forge bundle create` and by enterprise
  * air-gapped deployments.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 'use strict';
 const fs = require('fs');

@@ -12,6 +12,8 @@
  *
  * We never fail `npm install` — any failure degrades to "use the compiled JS
  * shipped with the package". The CLI shim handles the fallback.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 const os = require('os');
 const fs = require('fs');
