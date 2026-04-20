@@ -31,12 +31,12 @@ export const updateCommand = new Command('update')
         if (applied.path) info(`binary: ${applied.path}`);
       } else {
         warn(
-          `No binary release found for channel ${res.channel}. Try: npm install -g @forge/cli@${res.latestVersion}`,
+          `No binary release found for channel ${res.channel}. Try: npm install -g @hoangsonw/forge@${res.latestVersion}`,
         );
       }
     } catch (e) {
       err(`Update failed: ${String(e)}`);
-      info('Falling back to npm: npm install -g @forge/cli@' + res.latestVersion);
+      info('Falling back to npm: npm install -g @hoangsonw/forge@' + res.latestVersion);
     }
   });
 

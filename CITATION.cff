@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use Forge in academic work, please cite it as below."
+title: "Forge: A Local-First, Multi-Agent Software-Engineering Runtime"
+abstract: >-
+  Forge is a local-first, multi-agent software-engineering runtime that runs
+  Claude Code / Codex-style agentic coding workflows entirely on a developer's
+  own machine. It supports local model backends (Ollama, llama.cpp, vLLM,
+  LM Studio) alongside optional cloud providers (Anthropic, OpenAI), and
+  ships eighteen sandboxed tools, a permission-gated execution model, and a
+  REPL plus web UI dashboard in a single Node.js CLI.
+type: software
+authors:
+  - given-names: Son
+    family-names: Nguyen
+    alias: hoangsonww
+    email: hoangson091104@gmail.com
+    affiliation: "LexisNexis"
+repository-code: "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI"
+url: "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI"
+license: MIT
+version: 0.1.1
+date-released: 2026-04-20
+keywords:
+  - agentic-ai
+  - coding-agent
+  - cli
+  - local-first
+  - llm
+  - multi-agent
+  - developer-tools
+  - ollama
+  - claude-code
+  - codex
