@@ -1,7 +1,9 @@
 import { Command } from 'commander';
+import { ZodError } from 'zod';
 import { bootstrap } from '../bootstrap';
 import { loadGlobalConfig, updateGlobalConfig } from '../../config/loader';
-import { ok, info } from '../ui';
+import { paths } from '../../config/paths';
+import { ok, info, err } from '../ui';
 
 const setNested = (obj: Record<string, any>, keyPath: string, value: any): void => {
   const parts = keyPath.split('.');
@@ -44,12 +46,31 @@ configCommand
   .description('Write a config key. Dots denote nesting (e.g. update.channel).')
   .action((key: string, value: string) => {
     bootstrap();
-    updateGlobalConfig((cfg) => {
-      const clone = JSON.parse(JSON.stringify(cfg));
-      setNested(clone, key, coerce(value));
-      return clone;
-    });
-    ok(`Set ${key}=${value}`);
+    try {
+      updateGlobalConfig((cfg) => {
+        const clone = JSON.parse(JSON.stringify(cfg));
+        setNested(clone, key, coerce(value));
+        return clone;
+      });
+      ok(`Set ${key}=${value}`);
+    } catch (e) {
+      // Zod validation failures produce verbose JSON; flatten into a
+      // one-line human-friendly error with the allowed enum values.
+      if (e instanceof ZodError) {
+        for (const issue of e.issues) {
+          const path = issue.path.join('.');
+          if (issue.code === 'invalid_enum_value' && 'options' in issue) {
+            err(`invalid ${path}=${value} — allowed: ${issue.options.join(' · ')}`);
+          } else {
+            err(`invalid ${path}: ${issue.message}`);
+          }
+        }
+        process.exitCode = 2;
+        return;
+      }
+      err(e instanceof Error ? e.message : String(e));
+      process.exitCode = 2;
+    }
   });
 
 configCommand
@@ -57,7 +78,6 @@ configCommand
   .description('Print config and data paths.')
   .action(() => {
     bootstrap();
-    const { paths } = require('../../config/paths');
     info('Paths:');
     for (const [k, v] of Object.entries(paths)) {
       process.stdout.write(`  ${k.padEnd(16)} ${v}\n`);

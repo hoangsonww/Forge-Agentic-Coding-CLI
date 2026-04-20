@@ -1,0 +1,43 @@
+{
+  "id": "task_failed_fixture",
+  "projectId": "proj_fixture",
+  "title": "Migrate users table to uuid primary key",
+  "status": "failed",
+  "mode": "heavy",
+  "profile": {
+    "intent": "refactor",
+    "secondary": ["setup"],
+    "complexity": "complex",
+    "scope": "multi-module",
+    "risk": "high",
+    "requiresPlan": true,
+    "requiresTests": true,
+    "requiresReview": true,
+    "agents": ["architect", "planner", "executor", "reviewer", "debugger"],
+    "skills": [],
+    "explanation": "Terminal-failure fixture — used to assert diagnose path + retry exhaustion."
+  },
+  "dependencies": [],
+  "traceId": "trace_fixture_failed",
+  "runId": "run_fixture_failed",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:05:00.000Z",
+  "startedAt": "2026-01-01T00:00:10.000Z",
+  "completedAt": "2026-01-01T00:05:00.000Z",
+  "attempts": 3,
+  "maxAttempts": 3,
+  "result": {
+    "success": false,
+    "summary": "Step step_004 exhausted retries: constraint violation on users.id.",
+    "filesChanged": ["db/migrations/0042_users_uuid.sql"],
+    "durationMs": 289000,
+    "errors": [
+      {
+        "class": "tool_error",
+        "message": "SQLite error: UNIQUE constraint failed: users.id",
+        "retryable": false,
+        "recoveryHint": "Re-run with `--mode debug` after clearing the shadow DB."
+      }
+    ]
+  }
+}

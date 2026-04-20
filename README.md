@@ -11,6 +11,61 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
+**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [AGENTS.md](AGENTS.md) · [CLAUDE.md](CLAUDE.md) · [Landing](index.html)**
+
+</div>
+
+---
+
+## Table of contents
+
+1. [At a glance](#at-a-glance)
+2. [Why Forge](#why-forge)
+3. [Quick start](#quick-start)
+4. [The agentic loop (with diagrams)](#the-agentic-loop)
+5. [Task state machine](#task-state-machine)
+6. [Executor — iterative tool-use loop](#executor--iterative-tool-use-loop)
+7. [Memory layers](#memory-layers)
+8. [Provider routing & auto-adaptation](#provider-routing--auto-adaptation)
+9. [Safety model](#safety-model-not-optional)
+10. [Modes](#modes)
+11. [CLI reference](#cli-reference)
+12. [Filesystem layout](#filesystem-layout)
+13. [Skills · Instructions · MCP](#skills--instructions--mcp)
+14. [Run in a container](#run-in-a-container-docker-or-podman)
+15. [CI/CD pipeline](#cicd-pipeline)
+16. [Architecture map](#architecture-map)
+17. [Development](#development)
+18. [License](#license)
+
+---
+
+## At a glance
+
+Forge is a local-first, multi-agent, programmable software-engineering runtime. Unlike Claude Code or OpenAI Codex, Forge is local-first infrastructure, not a hosted assistant. It brings its own scheduler, sandbox, permission system, state machine, agentic loop, memory layers, and plugin ecosystem. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
+
+<div align="center">
+
+| | value | reproducer |
+|---|---|---|
+| ⚡ **`forge doctor` cold-start** | **173 ms** | `time node bin/forge.js doctor --no-banner` |
+| ⚡ **`forge --help` cold-start** | **238 ms** | `time node bin/forge.js --help` |
+| 📦 **UI shell · zero CDN** | **89 KB** uncompressed | `wc -c src/ui/public/app.js` |
+| 🌐 **Provider probe timeout** | **1.5 s** | `src/models/openai.ts#isAvailable` |
+| 🔌 **Model providers** (auto-detected) | **6** | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic |
+| 🧠 **Model families** classified | **41** | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / … |
+| 🤖 **Built-in agents** | **6** | planner · architect · executor · reviewer · debugger · memory |
+| 🛠 **Tools** available to agents | **18** | read · write · edit · grep · glob · run_command · git · web · … |
+| 💬 **CLI subcommands · slash commands** | **24 · 55** | `forge --help` · `/help` in REPL |
+| 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
+| ✅ **Tests** | **249 / 43 files** · 100% passing · ~3.3 s wall-clock | `npx vitest run` |
+| 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
+| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/forge/forge:latest` |
+
+</div>
+
+**Tech Stack:**
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js%2020+-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
@@ -101,57 +156,6 @@ is inspectable, replayable, and yours.
 ![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)
 ![EditorConfig](https://img.shields.io/badge/EditorConfig-E0EFEF?style=for-the-badge&logo=editorconfig&logoColor=000)
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [AGENTS.md](AGENTS.md) · [CLAUDE.md](CLAUDE.md) · [Landing](index.html)**
-
-</div>
-
----
-
-## Table of contents
-
-1. [At a glance](#at-a-glance)
-2. [Why Forge](#why-forge)
-3. [Quick start](#quick-start)
-4. [The agentic loop (with diagrams)](#the-agentic-loop)
-5. [Task state machine](#task-state-machine)
-6. [Executor — iterative tool-use loop](#executor--iterative-tool-use-loop)
-7. [Memory layers](#memory-layers)
-8. [Provider routing & auto-adaptation](#provider-routing--auto-adaptation)
-9. [Safety model](#safety-model-not-optional)
-10. [Modes](#modes)
-11. [CLI reference](#cli-reference)
-12. [Filesystem layout](#filesystem-layout)
-13. [Skills · Instructions · MCP](#skills--instructions--mcp)
-14. [Run in a container](#run-in-a-container-docker-or-podman)
-15. [CI/CD pipeline](#cicd-pipeline)
-16. [Architecture map](#architecture-map)
-17. [Development](#development)
-18. [License](#license)
-
----
-
-## At a glance
-
-<div align="center">
-
-| | value | reproducer |
-|---|---|---|
-| ⚡ **`forge doctor` cold-start** | **173 ms** | `time node bin/forge.js doctor --no-banner` |
-| ⚡ **`forge --help` cold-start** | **238 ms** | `time node bin/forge.js --help` |
-| 📦 **UI shell · zero CDN** | **89 KB** uncompressed | `wc -c src/ui/public/app.js` |
-| 🌐 **Provider probe timeout** | **1.5 s** | `src/models/openai.ts#isAvailable` |
-| 🔌 **Model providers** (auto-detected) | **6** | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic |
-| 🧠 **Model families** classified | **41** | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / … |
-| 🤖 **Built-in agents** | **6** | planner · architect · executor · reviewer · debugger · memory |
-| 🛠 **Tools** available to agents | **18** | read · write · edit · grep · glob · run_command · git · web · … |
-| 💬 **CLI subcommands · slash commands** | **24 · 55** | `forge --help` · `/help` in REPL |
-| 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
-| ✅ **Tests** | **203 / 38 files** · 100% passing · ~3.3 s wall-clock | `npx vitest run` |
-| 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
-| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/forge/forge:latest` |
-
-</div>
-
 ---
 
 ## Why Forge
@@ -204,6 +208,11 @@ mindmap
   maxAutoRisk).
 - **Extensible.** Drop a Markdown file in `~/.forge/skills/`. Add an
   `Agent`. Wire an MCP connector. No rebuild required.
+- **Performant.** `forge doctor` cold-starts in 173 ms. The UI shell is a
+  single 89 KB JavaScript file with zero CDN dependencies. Providers are
+  probed in parallel with a 1.5 s timeout.
+- **Open source.** MIT license. No telemetry, no phoning home, no hidden
+  backdoors. You get the whole stack. Unlike hosted assistants, Forge is fully inspectable, replayable, and yours.
 
 ---
 
@@ -849,7 +858,7 @@ xychart-beta
 git clone https://github.com/forge/forge && cd forge
 npm install
 npm run build             # tsc + copy-assets
-npm test                  # 203 tests across 38 files; all must pass
+npm test                  # 249 tests across 43 files; all must pass
 ./bin/forge.js doctor
 ```
 
@@ -897,4 +906,11 @@ posture, security posture, and pre-completion checklist.
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MIT. See [LICENSE](LICENSE) for more details.
+
+---
+
+<div align="center" style="margin-top: 2em">
+<p>Son Nguyen · <a href="https://sonnguyenhoang.com">sonnguyenhoang.com</a> · <a href="https://github.com/hoangsonww">github.com/hoangsonww</a></p>
+<p>Thank you for checking out Forge! If you have any questions, feedback, or want to contribute, please open an issue or a pull request.</p>
+</div>

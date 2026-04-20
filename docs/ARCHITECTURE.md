@@ -512,7 +512,7 @@ Measured with reproducible commands. No synthetic benchmarks.
 | Provider probe timeout | **1.5 s** | `src/models/openai.ts#isAvailable` |
 | UI `app.js` uncompressed | **89 KB** (zero CDN fetches) | `wc -c src/ui/public/app.js` |
 | Full test suite | **~3.3 s** wall-clock | `npx vitest run` |
-| Tests | **203 / 38 files** · 100% passing | — |
+| Tests | **249 / 43 files** · 100% passing | — |
 | Container image | **~355 MB** multi-arch non-root | `docker images ghcr.io/forge/forge` |
 
 Executor turn budget per mode (hard runtime cap, from

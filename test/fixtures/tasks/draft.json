@@ -1,0 +1,28 @@
+{
+  "id": "task_draft_fixture",
+  "projectId": "proj_fixture",
+  "title": "Explain why the auth middleware rejects pre-2024 tokens",
+  "description": "Users report 401s for tokens issued before 2024. Investigate and summarise.",
+  "status": "draft",
+  "mode": "balanced",
+  "profile": {
+    "intent": "bugfix",
+    "secondary": ["analysis"],
+    "complexity": "moderate",
+    "scope": "multi-file",
+    "risk": "low",
+    "requiresPlan": true,
+    "requiresTests": false,
+    "requiresReview": true,
+    "agents": ["planner", "executor", "reviewer"],
+    "skills": [],
+    "explanation": "Debug-leaning analysis spanning src/auth."
+  },
+  "dependencies": [],
+  "traceId": "trace_fixture_draft",
+  "runId": "run_fixture_draft",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "attempts": 0,
+  "maxAttempts": 3
+}

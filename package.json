@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "Forge - a local-first, multi-agent, programmable software-engineering runtime",
   "license": "MIT",
+  "author": "Forge contributors",
+  "homepage": "https://github.com/forge/forge#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forge/forge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/forge/forge/issues"
+  },
   "bin": {
     "forge": "./bin/forge.js"
   },

@@ -93,6 +93,7 @@ const headerFor = (cmd: Command, version: string): string => {
 };
 
 const padRight = (s: string, width: number): string => {
+  // eslint-disable-next-line no-control-regex -- strip ANSI CSI escape sequences
   const visible = s.replace(/\x1b\[[0-9;]*m/g, '');
   const gap = Math.max(1, width - visible.length);
   return s + ' '.repeat(gap);

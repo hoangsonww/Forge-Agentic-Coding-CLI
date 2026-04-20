@@ -48,7 +48,7 @@ export const updateGlobalConfig = (
 
 export const findProjectRoot = (startDir: string = process.cwd()): string | null => {
   let dir = path.resolve(startDir);
-  while (true) {
+  for (;;) {
     if (fs.existsSync(path.join(dir, projectConfigDir))) return dir;
     if (fs.existsSync(path.join(dir, '.git'))) return dir;
     const parent = path.dirname(dir);

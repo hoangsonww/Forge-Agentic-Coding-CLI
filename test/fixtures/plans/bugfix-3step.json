@@ -1,0 +1,28 @@
+{
+  "id": "plan_bugfix_3step",
+  "goal": "Locate and patch a regression, then verify with tests.",
+  "steps": [
+    {
+      "id": "step_001",
+      "type": "analyze",
+      "description": "Search src/ for the symbol under investigation."
+    },
+    {
+      "id": "step_002",
+      "type": "edit_file",
+      "description": "Apply the minimal fix.",
+      "dependsOn": ["step_001"],
+      "risk": "low"
+    },
+    {
+      "id": "step_003",
+      "type": "run_tests",
+      "description": "Run the affected test file.",
+      "dependsOn": ["step_002"],
+      "risk": "low"
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "mode": "balanced",
+  "version": "1"
+}

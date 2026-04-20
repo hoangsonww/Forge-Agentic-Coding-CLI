@@ -1,0 +1,4 @@
+{"type":"session-created","conversation":{"id":"repl-fixture-001","title":"fixture convo","source":"repl","createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}}
+{"type":"turn-user","turn":{"id":"turn-1","at":"2026-01-01T00:00:01.000Z","input":"explain the agentic loop","mode":"balanced","status":"pending"}}
+{"type":"turn-result","turnId":"turn-1","status":"done","result":{"taskId":"task-fx-1","success":true,"summary":"Walked through classify → plan → approve → execute → verify → complete.","filesChanged":[],"durationMs":41000,"costUsd":0.0008}}
+{"type":"turn-user","turn":{"id":"turn-2","at":"2026-01-01T00:02:00.000Z","input":"now fix the failing login test","mode":"heavy","status":"pending"}}

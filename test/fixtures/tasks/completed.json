@@ -1,0 +1,38 @@
+{
+  "id": "task_completed_fixture",
+  "projectId": "proj_fixture",
+  "title": "Fix failing login test",
+  "status": "completed",
+  "mode": "balanced",
+  "profile": {
+    "intent": "bugfix",
+    "secondary": ["test"],
+    "complexity": "moderate",
+    "scope": "multi-file",
+    "risk": "low",
+    "requiresPlan": true,
+    "requiresTests": true,
+    "requiresReview": true,
+    "agents": ["planner", "executor", "reviewer"],
+    "skills": [],
+    "explanation": "Terminal-success fixture."
+  },
+  "dependencies": [],
+  "traceId": "trace_fixture_done",
+  "runId": "run_fixture_done",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:03:00.000Z",
+  "startedAt": "2026-01-01T00:00:10.000Z",
+  "completedAt": "2026-01-01T00:03:00.000Z",
+  "attempts": 1,
+  "maxAttempts": 3,
+  "result": {
+    "success": true,
+    "summary": "Patched src/auth/login.ts to accept pre-2024 tokens. Tests green.",
+    "filesChanged": ["src/auth/login.ts"],
+    "testsPassed": true,
+    "durationMs": 170000,
+    "costUsd": 0.0023,
+    "tokensUsed": 14230
+  }
+}

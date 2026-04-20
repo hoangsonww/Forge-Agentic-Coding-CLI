@@ -191,7 +191,7 @@ export interface SearchHit {
 const sanitizeQuery = (q: string): string => {
   // FTS5 MATCH is column:'term' or raw tokens; strip special chars that break syntax.
   const cleaned = q
-    .replace(/[^A-Za-z0-9_\s\-\.]/g, ' ')
+    .replace(/[^A-Za-z0-9_\s\-.]/g, ' ')
     .split(/\s+/)
     .filter((t) => t.length >= 2)
     .map((t) => `"${t.replace(/"/g, '')}"`)

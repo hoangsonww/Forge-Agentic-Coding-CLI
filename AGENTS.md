@@ -24,7 +24,7 @@ engineering. Node 20+. Ships via npm and a multi-arch Docker image.
 ```bash
 npm ci --ignore-scripts
 npm run build          # tsc + copy-assets
-npm test               # vitest; 203 tests must pass
+npm test               # vitest; 249 tests must pass
 npm run typecheck
 npm run lint
 npm run format         # writes

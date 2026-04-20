@@ -97,7 +97,7 @@ export const editFileTool: Tool<Args, Output> = {
 const countOccurrences = (haystack: string, needle: string): number => {
   let count = 0;
   let from = 0;
-  while (true) {
+  for (;;) {
     const i = haystack.indexOf(needle, from);
     if (i < 0) break;
     count++;

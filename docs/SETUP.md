@@ -40,7 +40,7 @@ local model. Hosted `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` also works.
 git clone https://github.com/forge/forge && cd forge
 npm install
 npm run build
-npm test              # 203 tests across 38 files; all must pass
+npm test              # 249 tests across 43 files; all must pass
 ./bin/forge.js doctor # sanity check
 ```
 
@@ -68,7 +68,7 @@ src/
   persistence/   tasks/sessions/conversations/events + SQLite index
   memory/        hot/warm/cold/learning
   ui/            HTTP + WS dashboard + static app shell
-test/            38 test files, 203 tests
+test/            43 test files, 249 tests
 docs/            you are here
 docker/          Dockerfile + docker-compose.yml
 .github/workflows/  ci.yml, release.yml, nightly.yml

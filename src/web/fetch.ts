@@ -93,7 +93,7 @@ export const webFetch = async (opts: FetchOptions): Promise<FetchResult> => {
       retryable: false,
     });
   }
-  let chunks: Buffer[] = [];
+  const chunks: Buffer[] = [];
   let bytes = 0;
   for await (const chunk of res.body) {
     const buf = chunk instanceof Buffer ? chunk : Buffer.from(chunk);

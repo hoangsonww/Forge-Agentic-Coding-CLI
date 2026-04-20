@@ -121,7 +121,7 @@ mcpCommand
       return;
     }
     if (conn.transport === 'http_stream') {
-      let headers: Record<string, string> = {};
+      const headers: Record<string, string> = {};
       if (conn.auth === 'api_key') {
         const apiKey = getSecret('mcp-api-key', conn.id);
         if (!apiKey) {

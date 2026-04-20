@@ -1,0 +1,11 @@
+{
+  "models": [
+    { "name": "llama3.1:8b", "size": 4900000000 },
+    { "name": "qwen2.5-coder:14b", "size": 8200000000 },
+    { "name": "deepseek-coder:6.7b", "size": 3800000000 },
+    { "name": "phi3:mini", "size": 2200000000 },
+    { "name": "gemma2:9b", "size": 5400000000 },
+    { "name": "mixtral:8x7b", "size": 26000000000 },
+    { "name": "mystery-model:42b", "size": 23000000000 }
+  ]
+}

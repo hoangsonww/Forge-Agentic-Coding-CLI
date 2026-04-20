@@ -1,0 +1,12 @@
+{
+  "id": "plan_invalid_cycle",
+  "goal": "Cyclic dependency — must be rejected by validatePlan/topoSort.",
+  "steps": [
+    { "id": "a", "type": "analyze", "description": "depends on c", "dependsOn": ["c"] },
+    { "id": "b", "type": "analyze", "description": "depends on a", "dependsOn": ["a"] },
+    { "id": "c", "type": "analyze", "description": "depends on b", "dependsOn": ["b"] }
+  ],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "mode": "balanced",
+  "version": "1"
+}

@@ -61,7 +61,7 @@ export class McpStdioClient {
             handler(msg);
           }
         }
-      } catch (err) {
+      } catch {
         log.debug('mcp: ignoring non-json line', { line });
       }
     }

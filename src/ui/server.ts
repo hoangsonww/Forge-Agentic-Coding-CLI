@@ -14,7 +14,7 @@ import { listTasks, listProjects, searchTasks, getDb } from '../persistence/inde
 import { loadTask } from '../persistence/tasks';
 import { loadSession } from '../persistence/sessions';
 import { loadGlobalConfig, updateGlobalConfig, findProjectRoot } from '../config/loader';
-import { projectSubdirs, ensureProjectDir } from '../config/paths';
+import { paths as forgePaths, projectSubdirs, ensureProjectDir } from '../config/paths';
 import { daemonStatus } from '../daemon/control';
 import { listProviders } from '../models/provider';
 import { log } from '../logging/logger';
@@ -155,7 +155,10 @@ const router = async (
       cwd: process.cwd(),
       version: (() => {
         try {
-          return require(path.join(__dirname, '..', '..', 'package.json')).version;
+          const pkg = JSON.parse(
+            fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
+          );
+          return (pkg.version as string) ?? null;
         } catch {
           return null;
         }
@@ -514,14 +517,10 @@ const router = async (
     const results: Array<{ name: string; ok: boolean; detail: string }> = [];
     const addCheck = (name: string, ok: boolean, detail: string) =>
       results.push({ name, ok, detail });
-    addCheck(
-      'forge home',
-      fs.existsSync(require('../config/paths').paths.home),
-      require('../config/paths').paths.home,
-    );
+    addCheck('forge home', fs.existsSync(forgePaths.home), forgePaths.home);
     try {
       getDb().prepare('SELECT 1').get();
-      addCheck('sqlite index', true, require('../config/paths').paths.globalIndex);
+      addCheck('sqlite index', true, forgePaths.globalIndex);
     } catch (e) {
       addCheck('sqlite index', false, String(e));
     }
@@ -747,7 +746,9 @@ export const startUiServer = (
         log.warn('ws: could not resolve events file', { projectPath, err: String(err) });
         try {
           socket.close(1011, 'event-file-unavailable');
-        } catch {}
+        } catch {
+          /* ignore close error */
+        }
         return;
       }
 
@@ -785,7 +786,9 @@ export const startUiServer = (
           log.debug('ws watcher error event', { err: String(err) });
           try {
             watcher?.close();
-          } catch {}
+          } catch {
+            /* ignore close error */
+          }
           watchers.delete(String(socket));
         });
       } catch (err) {
@@ -793,7 +796,9 @@ export const startUiServer = (
         log.warn('fs.watch failed', { resolved, err: String(err) });
         try {
           socket.close(1011, 'watch-failed');
-        } catch {}
+        } catch {
+          /* ignore close error */
+        }
         return;
       }
 

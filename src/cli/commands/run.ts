@@ -45,7 +45,7 @@ runOptions(runCommand);
 runCommand.action(async (promptParts: string[], opts) => {
   bootstrap();
   if (opts.trace) {
-    const { setLevel } = require('../../logging/logger');
+    const { setLevel } = await import('../../logging/logger');
     setLevel('debug');
     process.env.FORGE_LOG_STDOUT = '1';
   }

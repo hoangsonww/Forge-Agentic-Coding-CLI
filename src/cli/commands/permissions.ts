@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { clearSession } from '../../permissions/manager';
+import { getDb } from '../../persistence/index-db';
 import { ok, info } from '../ui';
 
 export const permissionsCommand = new Command('permissions').description('Permission management.');
@@ -19,7 +20,6 @@ permissionsCommand
   .description('Show persisted project/global grants.')
   .action(() => {
     bootstrap();
-    const { getDb } = require('../../persistence/index-db');
     const rows = getDb().prepare('SELECT * FROM permission_grants').all() as Array<{
       tool: string;
       project_id: string | null;

@@ -1,0 +1,10 @@
+{"type":"user","content":{"title":"Fix failing login test","description":"Run vitest on auth.login.test.ts, locate regression, patch it."},"timestamp":"2026-01-01T00:00:00.000Z","traceId":"trace_fixture_session"}
+{"type":"plan","content":{"id":"plan_fixture_001","goal":"Fix failing login test","steps":[{"id":"step_001","type":"analyze","description":"Locate the failing assertion."},{"id":"step_002","type":"edit_file","description":"Patch src/auth/login.ts.","dependsOn":["step_001"]},{"id":"step_003","type":"run_tests","description":"Run vitest auth.login","dependsOn":["step_002"]}]},"timestamp":"2026-01-01T00:00:05.000Z"}
+{"type":"tool_call","content":{"tool":"read_file","args":{"path":"src/auth/login.ts"}},"timestamp":"2026-01-01T00:00:06.000Z"}
+{"type":"tool_result","content":{"success":true,"durationMs":12},"timestamp":"2026-01-01T00:00:06.012Z"}
+{"type":"tool_call","content":{"tool":"apply_patch","args":{"path":"src/auth/login.ts"}},"timestamp":"2026-01-01T00:00:42.000Z"}
+{"type":"tool_result","content":{"success":true,"durationMs":38},"timestamp":"2026-01-01T00:00:42.038Z"}
+{"type":"tool_call","content":{"tool":"run_tests","args":{"pattern":"auth.login"}},"timestamp":"2026-01-01T00:00:55.000Z"}
+{"type":"tool_result","content":{"success":true,"durationMs":2800},"timestamp":"2026-01-01T00:00:57.800Z"}
+{"type":"event","content":{"review":{"approved":true,"summary":"Tests green, change minimal."}},"timestamp":"2026-01-01T00:01:02.000Z"}
+{"type":"result","content":{"success":true,"summary":"Patched login.ts; tests green.","filesChanged":["src/auth/login.ts"],"durationMs":62000,"testsPassed":true},"timestamp":"2026-01-01T00:01:02.100Z"}

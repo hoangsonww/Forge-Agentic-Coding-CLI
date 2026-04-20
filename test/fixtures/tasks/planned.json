@@ -1,0 +1,59 @@
+{
+  "id": "task_planned_fixture",
+  "projectId": "proj_fixture",
+  "title": "Fix failing login test",
+  "description": "Run vitest on auth.login.test.ts, locate the regression, patch it.",
+  "status": "planned",
+  "mode": "balanced",
+  "profile": {
+    "intent": "bugfix",
+    "secondary": ["test"],
+    "complexity": "moderate",
+    "scope": "multi-file",
+    "risk": "low",
+    "requiresPlan": true,
+    "requiresTests": true,
+    "requiresReview": true,
+    "agents": ["planner", "executor", "reviewer", "debugger"],
+    "skills": [],
+    "explanation": "Canonical bugfix fixture."
+  },
+  "plan": {
+    "id": "plan_fixture_001",
+    "goal": "Fix failing login test",
+    "steps": [
+      {
+        "id": "step_001",
+        "type": "analyze",
+        "description": "Locate the failing assertion and the code under test."
+      },
+      {
+        "id": "step_002",
+        "type": "edit_file",
+        "description": "Patch src/auth/login.ts to accept tokens issued before the cutoff.",
+        "target": "src/auth/login.ts",
+        "dependsOn": ["step_001"],
+        "risk": "low"
+      },
+      {
+        "id": "step_003",
+        "type": "run_tests",
+        "description": "Run vitest on auth.login.test.ts",
+        "dependsOn": ["step_002"],
+        "risk": "low",
+        "tool": "run_tests",
+        "args": { "pattern": "auth.login" }
+      }
+    ],
+    "createdAt": "2026-01-01T00:00:05.000Z",
+    "mode": "balanced",
+    "version": "1"
+  },
+  "dependencies": [],
+  "traceId": "trace_fixture_planned",
+  "runId": "run_fixture_planned",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:05.000Z",
+  "attempts": 0,
+  "maxAttempts": 3
+}

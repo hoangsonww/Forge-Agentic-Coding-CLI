@@ -1,0 +1,40 @@
+{
+  "version": "1",
+  "defaultMode": "balanced",
+  "defaultAgent": "general",
+  "provider": "ollama",
+  "models": {
+    "fast": "phi3:mini",
+    "balanced": "llama3:8b",
+    "heavy": "llama3:70b",
+    "code": "deepseek-coder:6.7b",
+    "planner": "qwen2.5:7b"
+  },
+  "ollama": { "endpoint": "http://127.0.0.1:11434" },
+  "anthropic": { "model": "claude-opus-4-7", "endpoint": "https://api.anthropic.com" },
+  "update": {
+    "autoCheck": true,
+    "notify": true,
+    "checkIntervalHours": 24,
+    "channel": "stable",
+    "ignoredVersions": []
+  },
+  "permissions": { "default": "ask", "trust": { "autoAllowAfter": 3 } },
+  "concurrency": { "maxTasks": 4, "maxGpuTasks": 1, "maxFileWrites": 2 },
+  "notifications": {
+    "enabled": true,
+    "channels": ["cli"],
+    "osNotifications": false,
+    "verbosity": "normal",
+    "sound": false
+  },
+  "completion": { "requireTests": false, "requireReview": true, "allowWarnings": true },
+  "limits": {
+    "maxSteps": 50,
+    "maxToolCalls": 100,
+    "maxRetries": 3,
+    "maxRuntimeSeconds": 600
+  },
+  "memory": { "learningEnabled": true, "coldRetentionDays": 90 },
+  "web": { "maxPages": 5, "maxDepth": 2, "allowed": false }
+}

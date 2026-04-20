@@ -85,8 +85,7 @@ program
   .option('--no-banner', 'skip the opening splash', false)
   .action(async (opts: { resume?: string; banner: boolean }) => {
     if (opts.banner !== false) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { revealLines } = require('./animations');
+      const { revealLines } = await import('./animations');
       await revealLines(welcome(pkg.version ?? '0.1.0'), 30);
     }
     const { startRepl } = await import('./repl');
@@ -104,8 +103,7 @@ const main = async (): Promise<void> => {
   const isTty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
   if (!hasArgs || (process.argv.length === 3 && process.argv[2] === '--no-repl')) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { revealLines, typeWriter } = require('./animations');
+    const { revealLines, typeWriter } = await import('./animations');
     await revealLines(welcome(pkg.version ?? '0.1.0'), 30);
 
     if (!wantsNoRepl && isTty) {
