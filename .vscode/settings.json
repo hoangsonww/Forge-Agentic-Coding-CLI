@@ -1,0 +1,121 @@
+{
+  // -------------------------------------------------------------------------
+  // Editor — match the prettier + eslint contract enforced in CI.
+  // -------------------------------------------------------------------------
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+  "files.eol": "\n",
+
+  // -------------------------------------------------------------------------
+  // TypeScript — use the workspace's own tsc, not the one bundled with VS Code.
+  // Keeps error messages aligned with `npm run typecheck` in CI.
+  // -------------------------------------------------------------------------
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.inlayHints.parameterNames.enabled": "literals",
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": false,
+  "javascript.preferences.importModuleSpecifier": "relative",
+
+  // -------------------------------------------------------------------------
+  // ESLint — run on .ts files; flat config is not used here.
+  // -------------------------------------------------------------------------
+  "eslint.validate": ["typescript", "typescriptreact", "javascript"],
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+
+  // -------------------------------------------------------------------------
+  // Per-language overrides
+  // -------------------------------------------------------------------------
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // -------------------------------------------------------------------------
+  // Search + explorer — hide build and native-module churn from the tree.
+  // -------------------------------------------------------------------------
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.tsbuildinfo": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.forge": true,
+    "package-lock.json": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/coverage/**": true,
+    "**/.forge/**": true
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.test.ts, ${capture}.d.ts, ${capture}.js.map, ${capture}.js, ${capture}.d.ts.map",
+    "package.json": "package-lock.json, .npmrc, .nvmrc, .node-version, .npmignore",
+    "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE, CODE_OF_CONDUCT.md, AGENTS.md, CLAUDE.md",
+    "tsconfig.json": "tsconfig.*.json",
+    ".gitignore": ".gitattributes, .editorconfig, .prettierrc*, .eslintrc*, .prettierignore, .eslintignore",
+    "vitest.config.ts": "vitest.config.*.ts"
+  },
+
+  // -------------------------------------------------------------------------
+  // Testing — Vitest extension integration (auto-detects vitest.config.ts).
+  // -------------------------------------------------------------------------
+  "vitest.commandLine": "npx vitest",
+  "vitest.enable": true,
+
+  // -------------------------------------------------------------------------
+  // Terminal + Git
+  // -------------------------------------------------------------------------
+  "terminal.integrated.scrollback": 10000,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.openRepositoryInParentFolders": "never",
+
+  // -------------------------------------------------------------------------
+  // Telemetry + UI noise
+  // -------------------------------------------------------------------------
+  "npm.packageManager": "npm",
+  "npm.enableRunFromFolder": true,
+  "editor.minimap.enabled": false
+}

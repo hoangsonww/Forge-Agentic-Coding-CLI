@@ -5,7 +5,20 @@ coverage/
 .env
 .env.local
 .DS_Store
-.vscode/
+
+# .vscode — commit shared editor config, ignore per-user noise.
+#   settings.json    — workspace formatter, tsdk, ESLint wiring
+#   extensions.json  — recommended extensions for contributors
+#   launch.json      — debug configs for bin/forge.js, tests, UI
+#   tasks.json       — build/test/lint task runners
+# Anything else under .vscode/ (caches, per-user overrides, sftp creds,
+# local histories) stays out of the repo.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
 .idea/workspace.xml
 *.tsbuildinfo
 .forge/

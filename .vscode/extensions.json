@@ -1,0 +1,23 @@
+{
+  // Recommended extensions for contributors. VS Code prompts to install
+  // these the first time the workspace is opened.
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "vitest.explorer",
+    "mikestead.dotenv",
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml",
+    "bierner.markdown-mermaid",
+    "yzhang.markdown-all-in-one",
+    "ms-azuretools.vscode-docker",
+    "github.vscode-github-actions",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": [
+    "hookyqr.beautify",
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ]
+}

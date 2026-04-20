@@ -1,0 +1,89 @@
+{
+  // Debug configurations for Forge. Each one uses an isolated FORGE_HOME
+  // so debugging never touches the developer's real ~/.forge state.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "forge · CLI (ts-node)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["ts-node", "--transpile-only", "src/cli/index.ts"],
+      "args": ["${input:cliArgs}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "FORGE_HOME": "${workspaceFolder}/.forge-debug",
+        "FORGE_LOG_LEVEL": "debug",
+        "FORGE_LOG_STDOUT": "1",
+        "NO_COLOR": "1"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "forge · built binary (dist)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/forge.js",
+      "args": ["doctor", "--no-banner"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "FORGE_HOME": "${workspaceFolder}/.forge-debug",
+        "FORGE_LOG_LEVEL": "debug",
+        "FORGE_LOG_STDOUT": "1"
+      },
+      "preLaunchTask": "npm: build",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "forge · UI dashboard (live)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/forge.js",
+      "args": ["ui", "start", "--port", "7823", "--bind", "127.0.0.1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "FORGE_HOME": "${workspaceFolder}/.forge-debug",
+        "FORGE_LOG_LEVEL": "debug",
+        "FORGE_LOG_STDOUT": "1"
+      },
+      "preLaunchTask": "npm: build",
+      "serverReadyAction": {
+        "pattern": "Dashboard at http://127.0.0.1:([0-9]+)",
+        "uriFormat": "http://127.0.0.1:%s",
+        "action": "openExternally"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "vitest · current file",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vitest", "run", "${relativeFile}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "vitest · full suite",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vitest", "run"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cliArgs",
+      "type": "promptString",
+      "description": "Arguments to pass to forge (e.g. 'doctor --no-banner' or 'run \"explain this repo\"')",
+      "default": "doctor --no-banner"
+    }
+  ]
+}
