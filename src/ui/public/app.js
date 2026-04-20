@@ -759,6 +759,10 @@ views.chat = async () => {
     const cost = r.costUsd ? `$${r.costUsd.toFixed(4)}` : '';
     const dur = r.durationMs ? `${(r.durationMs / 1000).toFixed(1)}s` : '';
     const files = (r.filesChanged || []).slice(0, 8);
+    // Render LLM-produced text through the markdown renderer (safe: input
+    // is HTML-escaped first, then a fixed allow-list of tags is introduced).
+    const md = (s) =>
+      (window.forgeMd && window.forgeMd.mdToHtml ? window.forgeMd.mdToHtml(s) : esc(s || ''));
     let body;
     if (status === 'running' || status === 'pending') {
       body = `<div class="chat-thinking">Planning and executing…</div>`;
@@ -766,11 +770,11 @@ views.chat = async () => {
       body = `
         <div class="chat-failure">
           <div class="chat-failure-title">${status === 'cancelled' ? 'Cancelled' : 'Failed'}</div>
-          <div class="chat-failure-body">${esc(r.summary || '(no error text recorded)')}</div>
+          <div class="chat-failure-body md">${md(r.summary || '(no error text recorded)')}</div>
           <button class="chat-retry" data-input="${esc(t.input)}">${icon('refresh')}<span>Retry</span></button>
         </div>`;
     } else {
-      body = `<div class="chat-summary">${esc(r.summary || '(no summary)')}</div>`;
+      body = `<div class="chat-summary md">${md(r.summary || '(no summary)')}</div>`;
     }
     return `
       <div class="chat-turn" data-turn="${esc(t.id)}">

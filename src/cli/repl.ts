@@ -43,6 +43,7 @@ import {
   rankSlash,
 } from './repl-commands';
 import { listProviders } from '../models/provider';
+import { renderMarkdown } from './markdown';
 import {
   Conversation,
   ConversationTurn,
@@ -849,7 +850,11 @@ const runTaskTurn = async (
           `(${((r.durationMs ?? 0) / 1000).toFixed(1)}s · ${r.filesChanged?.length ?? 0} files)`,
         )}${costBit}`,
       );
+      if (r.summary) {
+        process.stdout.write('\n' + renderMarkdown(r.summary, { indent: 2 }) + '\n');
+      }
       if (r.filesChanged?.length) {
+        process.stdout.write('\n');
         for (const f of r.filesChanged.slice(0, 8)) {
           process.stdout.write(`   ${chalk.rgb(...PALETTE.teal)('▸')} ${chalk.white(f)}\n`);
         }
@@ -858,7 +863,10 @@ const runTaskTurn = async (
         }
       }
     } else {
-      err(`turn ${turnsOf(state).length} failed — ${(r.summary ?? '').slice(0, 160)}`);
+      err(`turn ${turnsOf(state).length} failed`);
+      if (r.summary) {
+        process.stdout.write('\n' + renderMarkdown(r.summary, { indent: 2 }) + '\n');
+      }
     }
   } catch (e) {
     const result = {

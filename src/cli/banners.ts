@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { renderMarkdown } from './markdown';
 
 /**
  * Visual kit for Forge's interactive output: the boxed brand banner, bar
@@ -197,17 +198,26 @@ export const tag = (severity: 'info' | 'warning' | 'error' | 'critical'): string
   return chalk.rgb(r, g, b).bold(`[${severity}]`);
 };
 
-/** Completion summary, used by `run` at the end of a task. */
+/** Completion summary, used by `run` at the end of a task.
+ *  The `title` may contain markdown produced by the reviewer/model —
+ *  render it through the terminal markdown renderer so headings, code,
+ *  and bold render instead of showing literal asterisks/backticks. */
 export const completionSummary = (
   title: string,
   filesChanged: string[],
   durationMs: number,
   cost?: number,
 ): string => {
+  // Single-line summaries get inline markdown; multi-line ones get the
+  // full block renderer so lists / headings / code blocks breathe.
+  const isMultiline = title.includes('\n');
+  const rendered = isMultiline
+    ? renderMarkdown(title, { indent: 2 })
+    : `  ${sparkles()} ${renderMarkdown(title, { oneLine: false })}`;
   const lines = [
     divider('done'),
     '',
-    `  ${sparkles()} ${chalk.bold(title)}`,
+    rendered,
     '',
     kv('duration', chalk.rgb(...PALETTE.cyan)(`${(durationMs / 1000).toFixed(1)}s`)),
     kv(
