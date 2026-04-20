@@ -89,6 +89,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
+      - name: Rebuild native bindings (better-sqlite3 prebuild)
+        run: npm rebuild better-sqlite3
       - name: Run vitest
         run: npx vitest run --reporter=default --reporter=junit --outputFile=./test-results.xml
       - name: Upload test results
@@ -115,6 +117,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
+      - name: Rebuild native bindings (better-sqlite3 prebuild)
+        run: npm rebuild better-sqlite3
       - name: vitest --coverage
         run: npm run test:coverage --silent || true
       - name: Upload coverage
@@ -141,6 +145,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
+      - name: Rebuild native bindings (better-sqlite3 prebuild)
+        run: npm rebuild better-sqlite3
       - name: Build (tsc + asset copy)
         run: npm run build
       - name: Smoke — forge doctor

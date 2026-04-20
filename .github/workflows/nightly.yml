@@ -25,6 +25,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
       - run: npm run build
       - run: npx vitest run
       - name: Publish nightly to npm
