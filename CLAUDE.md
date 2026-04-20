@@ -15,8 +15,8 @@ coding agents) working on the Forge repository.
 **Forge** — a local-first, multi-agent, programmable software-engineering
 CLI runtime. Written in TypeScript, targets Node 20+. Ships as:
 
-- `@forge/cli` (npm)
-- `ghcr.io/forge/forge` (Docker image, multi-arch)
+- `@hoangsonw/forge` (npm)
+- `ghcr.io/hoangsonw/forge-agentic-coding-cli` (Docker image, multi-arch)
 - `docker/docker-compose.yml` for the full stack with Ollama + UI
 
 **It is not** a chat wrapper, a VS Code extension, or a web app. The

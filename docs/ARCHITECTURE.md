@@ -513,7 +513,7 @@ Measured with reproducible commands. No synthetic benchmarks.
 | UI `app.js` uncompressed | **89 KB** (zero CDN fetches) | `wc -c src/ui/public/app.js` |
 | Full test suite | **~3.3 s** wall-clock | `npx vitest run` |
 | Tests | **249 / 43 files** · 100% passing | — |
-| Container image | **~355 MB** multi-arch non-root | `docker images ghcr.io/forge/forge` |
+| Container image | **~355 MB** multi-arch non-root | `docker images ghcr.io/hoangsonw/forge-agentic-coding-cli` |
 
 Executor turn budget per mode (hard runtime cap, from
 `src/core/mode-policy.ts`):

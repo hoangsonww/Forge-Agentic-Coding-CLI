@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * Post-install hook for `npm install -g @forge/cli`.
+ * Post-install hook for `npm install -g @hoangsonw/forge`.
  *
  * 1. Creates the ~/.forge skeleton (idempotent).
  * 2. If FORGE_BINARY_PATH is set, stops there — treat Forge as "run from

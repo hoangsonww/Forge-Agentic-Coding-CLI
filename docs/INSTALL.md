@@ -29,9 +29,9 @@ flowchart TD
   START --> Q1{Prefer isolation?}:::q
   Q1 -->|yes| Q2{Docker or Podman installed?}:::q
   Q2 -->|yes| COMPOSE["§5 · compose stack<br/>forge + ollama + UI"]:::r
-  Q2 -->|no| NPM1["§2 · npm -g @forge/cli"]:::r
+  Q2 -->|no| NPM1["§2 · npm -g @hoangsonw/forge"]:::r
   Q1 -->|no| Q3{Node 20+ on path?}:::q
-  Q3 -->|yes| NPM2["§2 · npm -g @forge/cli"]:::r
+  Q3 -->|yes| NPM2["§2 · npm -g @hoangsonw/forge"]:::r
   Q3 -->|no| DOCK["§3 · one-shot docker run"]:::r
 ```
 
@@ -47,7 +47,7 @@ flowchart TD
 ## 2. npm (global)
 
 ```bash
-npm install -g @forge/cli
+npm install -g @hoangsonw/forge
 forge doctor       # verify
 forge init         # create ~/.forge
 forge run "explain this repo"
@@ -79,13 +79,13 @@ sequenceDiagram
 Upgrade:
 
 ```bash
-npm update -g @forge/cli
+npm update -g @hoangsonw/forge
 ```
 
 Local install from a checkout (for PR testing):
 
 ```bash
-git clone https://github.com/forge/forge && cd forge
+git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
 npm install
 npm run build
 npm link              # adds `forge` to PATH
@@ -124,7 +124,7 @@ flowchart LR
 Pull:
 
 ```bash
-docker pull ghcr.io/forge/forge:latest
+docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest
 ```
 
 One-shot invocation (your CWD → `/workspace`):
@@ -133,7 +133,7 @@ One-shot invocation (your CWD → `/workspace`):
 docker run --rm -it \
   -v forge-home:/data \
   -v "$PWD:/workspace" \
-  ghcr.io/forge/forge:latest \
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest \
   forge run "explain this repo"
 ```
 
@@ -142,7 +142,7 @@ Dashboard:
 ```bash
 docker run --rm -p 7823:7823 \
   -v forge-home:/data \
-  ghcr.io/forge/forge:latest \
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest \
   forge ui start --bind 0.0.0.0
 # open http://127.0.0.1:7823
 ```
@@ -168,11 +168,11 @@ docker build -f docker/Dockerfile -t forge/core:dev .
 Everything in §3 works by swapping `docker` for `podman`:
 
 ```bash
-podman pull ghcr.io/forge/forge:latest
+podman pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest
 podman run --rm -it \
   -v forge-home:/data \
   -v "$PWD:/workspace" \
-  ghcr.io/forge/forge:latest
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest
 ```
 
 Rootless mode is supported — the image uses a static uid (10001) so
@@ -183,7 +183,7 @@ volume ownership is predictable across hosts.
 ## 5. Compose (Forge + Ollama + UI)
 
 ```bash
-git clone https://github.com/forge/forge && cd forge
+git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
 docker compose -f docker/docker-compose.yml up -d
 # or:
 podman-compose -f docker/docker-compose.yml up -d
@@ -245,7 +245,7 @@ docker compose -f docker/docker-compose.yml down
 
 - PowerShell:
   ```powershell
-  npm install -g @forge/cli
+  npm install -g @hoangsonw/forge
   forge doctor
   ```
 - WSL 2: preferred for shell-intensive workflows (ripgrep, git).
@@ -313,8 +313,8 @@ what to start and which env vars unlock cloud fallback.
 ## 9. Uninstall
 
 ```bash
-npm uninstall -g @forge/cli    # or remove the image:
-docker rmi ghcr.io/forge/forge:latest
+npm uninstall -g @hoangsonw/forge    # or remove the image:
+docker rmi ghcr.io/hoangsonw/forge-agentic-coding-cli:latest
 
 # optional — wipe state:
 rm -rf ~/.forge                # global
@@ -333,10 +333,10 @@ docker compose -f docker/docker-compose.yml down --volumes --remove-orphans
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `forge: command not found` | npm global bin not on PATH | add `$(npm bin -g)` to PATH, or use `npx @forge/cli` |
+| `forge: command not found` | npm global bin not on PATH | add `$(npm bin -g)` to PATH, or use `npx @hoangsonw/forge` |
 | `No model provider is reachable` | nothing running on default ports | start Ollama / LM Studio / vLLM / llama.cpp, or export `ANTHROPIC_API_KEY` |
 | `adapter: substituted model` warning | your configured model isn't pulled | either `ollama pull <id>` or accept the substitution (Forge picked the best-fit) |
-| Container exits immediately | default CMD is `forge --help` | pass a subcommand: `docker run … ghcr.io/forge/forge:latest forge run "…"` |
+| Container exits immediately | default CMD is `forge --help` | pass a subcommand: `docker run … ghcr.io/hoangsonw/forge-agentic-coding-cli:latest forge run "…"` |
 | Permission prompts every single call | strict mode on, or no flags | `--skip-permissions` for routine tools, or `--allow-shell` / `--allow-files` |
 | UI can't reach backend services | bind address wrong | `forge ui start --bind 0.0.0.0 --port 7823` |
 | SQLite locked | daemon + REPL both writing | Forge handles this with O_APPEND; if you see this, file an issue with the full log |

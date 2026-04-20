@@ -11,7 +11,7 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [AGENTS.md](AGENTS.md) · [CLAUDE.md](CLAUDE.md) · [Landing](index.html)**
+**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Wiki Page](index.html) · [License](LICENSE)**
 
 </div>
 
@@ -60,7 +60,7 @@ Forge is a local-first, multi-agent, programmable software-engineering runtime. 
 | 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
 | ✅ **Tests** | **249 / 43 files** · 100% passing · ~3.3 s wall-clock | `npx vitest run` |
 | 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
-| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/forge/forge:latest` |
+| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest` |
 
 </div>
 
@@ -214,20 +214,23 @@ mindmap
 - **Open source.** MIT license. No telemetry, no phoning home, no hidden
   backdoors. You get the whole stack. Unlike hosted assistants, Forge is fully inspectable, replayable, and yours.
 
+> [!TIP]
+> Unlike Claude Code or OpenAI Codex, Forge is not a hosted assistant. It's local-first infrastructure. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
+
 ---
 
 ## Quick start
 
 ```bash
 # Option 1 — npm (global):
-npm install -g @forge/cli
+npm install -g @hoangsonw/forge
 forge doctor             # green checks + role→model mapping
 forge run "explain this repo"
 
 # Option 2 — Docker:
 docker run --rm -it \
   -v forge-home:/data -v "$PWD:/workspace" \
-  ghcr.io/forge/forge:latest forge run "explain this repo"
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest forge run "explain this repo"
 
 # Option 3 — full stack (forge + ollama + dashboard):
 docker compose -f docker/docker-compose.yml up -d
@@ -698,15 +701,15 @@ serves both CLI and UI.
 
 ```bash
 # Pull (multi-arch: linux/amd64 + linux/arm64):
-docker pull ghcr.io/forge/forge:latest
+docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest
 
 # One-shot CLI:
 docker run --rm -it -v forge-home:/data -v "$PWD:/workspace" \
-  ghcr.io/forge/forge:latest forge run "explain this repo"
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest forge run "explain this repo"
 
 # Dashboard:
 docker run --rm -p 7823:7823 -v forge-home:/data \
-  ghcr.io/forge/forge:latest forge ui start --bind 0.0.0.0
+  ghcr.io/hoangsonw/forge-agentic-coding-cli:latest forge ui start --bind 0.0.0.0
 
 # Full stack (forge + ollama + UI):
 docker compose -f docker/docker-compose.yml up -d
@@ -855,7 +858,7 @@ xychart-beta
 ## Development
 
 ```bash
-git clone https://github.com/forge/forge && cd forge
+git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
 npm install
 npm run build             # tsc + copy-assets
 npm test                  # 249 tests across 43 files; all must pass

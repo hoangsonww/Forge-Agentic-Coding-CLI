@@ -38,7 +38,7 @@ else
   say "dist/ is fresh — skipping build."
 fi
 
-say "Linking @forge/cli into $(npm prefix -g)/bin ..."
+say "Linking @hoangsonw/forge into $(npm prefix -g)/bin ..."
 npm link --silent
 
 GLOBAL_BIN="$(npm prefix -g)/bin"
