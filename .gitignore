@@ -24,3 +24,13 @@ coverage/
 .forge/
 forge-debug-*.log
 tmp/
+
+# Agentic coding tooling
+#   Commit shared config (.claude/, .codex/, .cursor/, .agents/) so every
+#   contributor's coding agent sees the same rules, skills, and
+#   permissions. Ignore only per-user overrides and transient state.
+.claude/settings.local.json
+.claude/.local/
+.codex/settings.local.toml
+.codex/.local/
+.cursor/.local/

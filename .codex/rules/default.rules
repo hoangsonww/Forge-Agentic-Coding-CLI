@@ -1,0 +1,150 @@
+# Forge project Codex rules.
+# Controls which commands Codex may run outside the sandbox.
+
+# ──────────────────────────────────────────────────────────────────────────
+# Canonical verification chain — always safe, no approval needed.
+# ──────────────────────────────────────────────────────────────────────────
+
+prefix_rule(
+    pattern = ["npm", "run", "build"],
+    decision = "allow",
+    justification = "Canonical build step — pure local, no network.",
+    match = ["npm run build", "npm run build:watch"],
+)
+
+prefix_rule(
+    pattern = ["npm", "test"],
+    decision = "allow",
+    justification = "Vitest suite — all 249 tests must remain green.",
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "typecheck"],
+    decision = "allow",
+    justification = "tsc --noEmit only, no writes.",
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "lint"],
+    decision = "allow",
+    justification = "ESLint read-only.",
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "format"],
+    decision = "allow",
+    justification = "Prettier write — confined to tracked files.",
+    match = ["npm run format", "npm run format:check"],
+)
+
+prefix_rule(
+    pattern = ["npx", "vitest", "run"],
+    decision = "allow",
+    justification = "Targeted vitest runs for a single file.",
+    match = [
+        "npx vitest run",
+        "npx vitest run test/unit/executor-loop.test.ts",
+    ],
+)
+
+# ──────────────────────────────────────────────────────────────────────────
+# Forge binary — safe self-inspection.
+# ──────────────────────────────────────────────────────────────────────────
+
+prefix_rule(
+    pattern = ["./bin/forge.js", "doctor"],
+    decision = "allow",
+    justification = "Doctor is read-only; <1s on a clean box.",
+)
+
+prefix_rule(
+    pattern = ["node", "./bin/forge.js", "doctor"],
+    decision = "allow",
+    justification = "Same as above, invoked via node.",
+)
+
+# ──────────────────────────────────────────────────────────────────────────
+# Git — allow read, prompt on write, forbid force-push to main.
+# ──────────────────────────────────────────────────────────────────────────
+
+prefix_rule(
+    pattern = ["git", "status"],
+    decision = "allow",
+    justification = "Read-only.",
+)
+
+prefix_rule(
+    pattern = ["git", "diff"],
+    decision = "allow",
+    justification = "Read-only.",
+)
+
+prefix_rule(
+    pattern = ["git", "log"],
+    decision = "allow",
+    justification = "Read-only.",
+)
+
+prefix_rule(
+    pattern = ["git", "show"],
+    decision = "allow",
+    justification = "Read-only.",
+)
+
+prefix_rule(
+    pattern = ["git", "rev-parse"],
+    decision = "allow",
+    justification = "Read-only.",
+)
+
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "prompt",
+    justification = "Commits change history; confirm each one.",
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Pushes are externally visible; confirm destination.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--force"],
+    decision = "forbidden",
+    justification = "Never force-push. Use --force-with-lease manually if truly needed.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "-f"],
+    decision = "forbidden",
+    justification = "Never force-push. Use --force-with-lease manually if truly needed.",
+)
+
+# ──────────────────────────────────────────────────────────────────────────
+# Hard blocks — irreversible or out-of-scope actions.
+# ──────────────────────────────────────────────────────────────────────────
+
+prefix_rule(
+    pattern = ["rm", "-rf", "/"],
+    decision = "forbidden",
+    justification = "Catastrophic. Never.",
+)
+
+prefix_rule(
+    pattern = ["sudo"],
+    decision = "forbidden",
+    justification = "Forge development never requires sudo.",
+)
+
+prefix_rule(
+    pattern = ["npm", "publish"],
+    decision = "forbidden",
+    justification = "Publishing is a release-workflow responsibility, not an agent action.",
+)
+
+prefix_rule(
+    pattern = ["docker", "push"],
+    decision = "forbidden",
+    justification = "Image publishing is a release-workflow responsibility.",
+)

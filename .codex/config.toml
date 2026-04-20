@@ -1,0 +1,22 @@
+# Project-scoped Codex configuration for the Forge repository.
+# This file is committed. Personal overrides go in your ~/.codex/config.toml.
+
+# Also treat these filenames as instruction files when discovering project
+# docs. AGENTS.md and CLAUDE.md already live at the repo root.
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+# Allow larger combined instructions (default is 32 KiB). Forge's AGENTS.md
+# + CLAUDE.md + nested rules comfortably fit under this cap.
+project_doc_max_bytes = 65536
+
+[features]
+# Hooks are still experimental in Codex. Enable them so the Forge-specific
+# guardrails in .codex/hooks.json take effect when you're on a Codex
+# version that supports them.
+codex_hooks = true
+
+[agents]
+# Don't fan out too aggressively — each subagent is a separate model
+# session and Forge CI is sensitive to wall-clock.
+max_threads = 4
+max_depth = 1

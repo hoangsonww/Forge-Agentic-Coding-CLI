@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Forge repo. Canonical verify sequence: npm run format && npm run lint && npm run build && npm test. 249 tests must stay green. Every tool call must go through requestPermission. State-machine transitions live in src/persistence/tasks.ts LEGAL_TRANSITIONS.\"}}'",
+            "statusMessage": "Loading Forge session context",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d=''; process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);const p=j.prompt||'';if(/AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(p)){console.log(JSON.stringify({decision:'block',reason:'Prompt appears to contain a credential or private key. Remove it before sending.'}));process.exit(0)}}catch(e){}process.exit(0)})\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -8,6 +8,23 @@ coding agents) working on the Forge repository.
 > [docs/SETUP.md](docs/SETUP.md). This file exists so automated agents
 > don't re-learn the repo on every turn.
 
+> **Claude-specific tooling** lives in `.claude/`:
+>
+> - `.claude/settings.json` — safe Bash allowlist, deny rules for
+>   destructive commands, status line.
+> - `.claude/rules/*.md` — path-scoped rules that only load when
+>   Claude reads matching files (TypeScript, testing, tools, models,
+>   security, UI).
+> - `.claude/skills/` — invocable workflows: `/verify`, `/add-tool`,
+>   `/add-provider`, `/add-agent`, `/debug-loop`, `/release-check`.
+> - `.claude/agents/` — subagents with isolated context:
+>   `code-reviewer`, `test-runner`, `docs-auditor`.
+> - `.claude/commands/` — `/metrics`, `/fix-issue`.
+>
+> Use `/verify` before claiming any change done. Delegate reviews to
+> the `code-reviewer` subagent so full diffs don't pollute the main
+> context.
+
 ---
 
 ## Identity of this repo

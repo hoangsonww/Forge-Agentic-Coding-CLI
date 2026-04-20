@@ -4,6 +4,28 @@ Project-wide guidance for any code-writing agent (Codex, OpenAI agent
 runtime, Cursor, Aider, Cline, Continue, …). Claude Code reads this too
 but also reads [CLAUDE.md](CLAUDE.md).
 
+> **Tooling infrastructure.** On top of this file, the repo ships
+> agent-specific wiring so every major coding agent has the same rules,
+> skills, and permissions:
+>
+> - `.claude/` — Claude Code settings, path-scoped rules, skills
+>   (`/verify`, `/add-tool`, `/add-provider`, `/add-agent`,
+>   `/debug-loop`, `/release-check`), subagents (`code-reviewer`,
+>   `test-runner`, `docs-auditor`), and safe/deny permissions.
+> - `.codex/` — Codex `config.toml`, execpolicy `rules/default.rules`,
+>   custom agents (`forge_explorer`, `forge_reviewer`,
+>   `forge_test_runner`), guardrail hooks, and Codex-native skills.
+> - `.cursor/rules/` — Cursor `*.mdc` rules (always-applied core +
+>   path-scoped TypeScript/testing/tools/models/security/UI rules).
+> - `.agents/skills/` — portable skills following the open
+>   [agentskills.io](https://agentskills.io/specification) spec. Any
+>   compliant agent can read these without vendor-specific wiring.
+>
+> If you update a workflow (e.g. the verify chain), update it in
+> `.agents/skills/verify/SKILL.md` first, then mirror the change into
+> `.claude/skills/verify/SKILL.md` and `.codex/skills/verify/SKILL.md`
+> if they diverge.
+
 > Conform to the OpenAI `AGENTS.md` convention: this file is a flat
 > Markdown cheat-sheet that answers the questions "where am I, what
 > can I run, and what shouldn't I break?".
