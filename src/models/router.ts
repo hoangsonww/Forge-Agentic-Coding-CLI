@@ -7,6 +7,7 @@ import * as cache from './cache';
 import * as rateLimit from './rate-limit';
 import * as breaker from './circuit-breaker';
 import * as cost from './cost';
+import { resolveLocalModel, isLocalProvider } from './adapter';
 
 export interface RoutingDecision {
   provider: string;
@@ -43,27 +44,35 @@ export const resolveModel = async (params: {
   }
   const desired = params.mode === 'offline-safe' ? 'ollama' : preferred;
 
+  const pickFor = async (providerName: string): Promise<string> => {
+    if (providerName === 'anthropic') {
+      return cfg.anthropic.model || pickAnthropicForRole(params.role);
+    }
+    const configured = pickOllamaForRole(params.role, cfg);
+    if (isLocalProvider(providerName)) {
+      try {
+        return await resolveLocalModel(getProvider(providerName), params.role, configured);
+      } catch (err) {
+        log.debug('adapter failed; falling back to configured model', {
+          provider: providerName,
+          err: String(err),
+        });
+      }
+    }
+    return configured;
+  };
+
   try {
     const provider = getProvider(desired);
     if (await provider.isAvailable()) {
-      const model =
-        desired === 'anthropic'
-          ? cfg.anthropic.model || pickAnthropicForRole(params.role)
-          : pickOllamaForRole(params.role, cfg);
-      const fallback = listProviders().find((p) => p.name !== desired);
+      const model = await pickFor(desired);
+      const fb = listProviders().find((p) => p.name !== desired);
+      const fbModel = fb ? await pickFor(fb.name) : undefined;
       return {
         provider: desired,
         model,
         reason: `routed to ${desired} for role=${params.role} mode=${params.mode}`,
-        fallback: fallback
-          ? {
-              provider: fallback.name,
-              model:
-                fallback.name === 'anthropic'
-                  ? pickAnthropicForRole(params.role)
-                  : pickOllamaForRole(params.role, cfg),
-            }
-          : undefined,
+        fallback: fb && fbModel ? { provider: fb.name, model: fbModel } : undefined,
       };
     }
   } catch {
@@ -72,20 +81,19 @@ export const resolveModel = async (params: {
 
   const fallback = await firstAvailableProvider();
   if (!fallback) {
+    const tried = listProviders().map((p) => p.name);
     throw new ForgeRuntimeError({
       class: 'model_error',
-      message: 'No model provider is available.',
+      message: `No model provider is available (tried: ${tried.join(', ') || 'none'}).`,
       retryable: false,
       recoveryHint:
-        'Start Ollama (`ollama serve`) or set ANTHROPIC_API_KEY. See `forge doctor` for diagnostics.',
+        'Start a local runtime — `ollama serve`, `vllm serve <model>`, or LM Studio → ' +
+        'Start Server — or set ANTHROPIC_API_KEY / OPENAI_API_KEY. `forge doctor` shows details.',
     });
   }
   return {
     provider: fallback.name,
-    model:
-      fallback.name === 'anthropic'
-        ? pickAnthropicForRole(params.role)
-        : pickOllamaForRole(params.role, cfg),
+    model: await pickFor(fallback.name),
     reason: `fallback: ${desired} unavailable, using ${fallback.name}`,
   };
 };

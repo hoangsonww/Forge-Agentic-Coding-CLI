@@ -4,13 +4,48 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.2.0). Must already exist on the ref.'
+        required: true
 
 permissions:
   contents: write
   id-token: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # ---------------------------------------------------------------------
+  # 🧪  Pre-release gate — don't cut a release if tests are red
+  # ---------------------------------------------------------------------
+  gate:
+    name: 🧪 pre-release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npx vitest run
+
+  # ---------------------------------------------------------------------
+  # 📦  Platform tarballs — kept as-is, one artefact per target
+  # ---------------------------------------------------------------------
   build-artifacts:
+    name: 📦 artifacts (${{ matrix.target }})
+    needs: [gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,9 +69,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx tsc -p tsconfig.json
+      - run: npm run build
       - run: npm pack
       - name: Upload tarball
         uses: actions/upload-artifact@v4
@@ -44,14 +81,73 @@ jobs:
           name: ${{ matrix.artifact }}
           path: forge-cli-*.tgz
 
+  # ---------------------------------------------------------------------
+  # 🐳  Multi-arch Docker image → GitHub Container Registry
+  # ---------------------------------------------------------------------
+  docker:
+    name: 🐳 docker publish
+    needs: [gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Build + push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            FORGE_VERSION=${{ github.ref_name }}
+            FORGE_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+      - name: Image summary
+        run: |
+          echo "## 🐳 Image published" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tags:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------
+  # 📝  Signed manifest + GitHub Release — aggregates the tarballs
+  # ---------------------------------------------------------------------
   manifest:
-    needs: build-artifacts
+    name: 📝 manifest + gh-release
+    needs: [build-artifacts]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: { path: artifacts }
-      - name: Build manifest.json + sign
+      - name: Build manifest.json
         run: |
           set -eu
           cat > manifest.json <<EOF
@@ -65,7 +161,7 @@ jobs:
           }
           EOF
           cat manifest.json
-      - name: Sign manifest with cosign (keyless)
+      - name: Sign manifest (ed25519)
         if: ${{ secrets.FORGE_RELEASE_ED25519_PRIV != '' }}
         run: |
           echo "${{ secrets.FORGE_RELEASE_ED25519_PRIV }}" > /tmp/ed25519.key
@@ -77,20 +173,66 @@ jobs:
             artifacts/**/*
             manifest.json
             manifest.sig
+          generate_release_notes: true
 
+  # ---------------------------------------------------------------------
+  # 📤  npm publish (with provenance)
+  # ---------------------------------------------------------------------
   publish-npm:
-    needs: manifest
+    name: 📤 npm publish
+    needs: [manifest]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx tsc -p tsconfig.json
+      - run: npm run build
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ---------------------------------------------------------------------
+  # 📊  Release status — final job, always runs, writes summary
+  # ---------------------------------------------------------------------
+  release-status:
+    name: 📊 release status
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [gate, build-artifacts, docker, manifest, publish-npm]
+    steps:
+      - name: Write release summary
+        env:
+          GATE_R:     ${{ needs.gate.result }}
+          ARTIF_R:    ${{ needs.build-artifacts.result }}
+          DOCKER_R:   ${{ needs.docker.result }}
+          MANIFEST_R: ${{ needs.manifest.result }}
+          NPM_R:      ${{ needs.publish-npm.result }}
+        run: |
+          set -eu
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹️" ;;
+              skipped)   echo "⏭️" ;;
+              *)         echo "❔" ;;
+            esac
+          }
+          {
+            echo "# 🚀 Forge release — ${GITHUB_REF_NAME}"
+            echo ""
+            echo "| Stage | Result |"
+            echo "|-------|--------|"
+            printf "| 🧪 pre-release gate  | %s  \`%s\` |\n" "$(icon "$GATE_R")"     "$GATE_R"
+            printf "| 📦 artifacts         | %s  \`%s\` |\n" "$(icon "$ARTIF_R")"    "$ARTIF_R"
+            printf "| 🐳 docker publish    | %s  \`%s\` |\n" "$(icon "$DOCKER_R")"   "$DOCKER_R"
+            printf "| 📝 manifest + GH     | %s  \`%s\` |\n" "$(icon "$MANIFEST_R")" "$MANIFEST_R"
+            printf "| 📤 npm publish       | %s  \`%s\` |\n" "$(icon "$NPM_R")"      "$NPM_R"
+            echo ""
+            echo "> Tag: \`${GITHUB_REF_NAME}\` · SHA: \`${GITHUB_SHA:0:7}\` · [Run ${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+          } >> "$GITHUB_STEP_SUMMARY"

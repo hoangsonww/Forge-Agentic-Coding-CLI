@@ -7,6 +7,7 @@ import {
   ModelResponse,
 } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
+import { classifyModel } from './local-catalog';
 
 /**
  * OpenAI-compatible provider. Works with api.openai.com out of the box and
@@ -25,7 +26,31 @@ export class OpenAIProvider implements ModelProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    return Boolean(this.apiKey) || this.endpoint !== 'https://api.openai.com/v1';
+    // Hosted OpenAI: needs an API key; if we have one, trust it. Skipping
+    // a probe here avoids an unnecessary network call per `forge` invocation.
+    if (this.endpoint === 'https://api.openai.com/v1') {
+      return Boolean(this.apiKey);
+    }
+    // Any other endpoint (LM Studio, vLLM, llama.cpp, LocalAI, Together…).
+    // We need to actually reach the server or the router will happily send
+    // traffic to a dead port. Short timeout keeps the probe cheap.
+    try {
+      const res = await request(`${this.endpoint}/models`, {
+        method: 'GET',
+        headers: this.apiKey ? { authorization: `Bearer ${this.apiKey}` } : {},
+        headersTimeout: 1_500,
+        bodyTimeout: 1_500,
+      });
+      // Drain the body so undici doesn't keep the socket pinned.
+      try {
+        await res.body.dump();
+      } catch {
+        // ignore
+      }
+      return res.statusCode >= 200 && res.statusCode < 500;
+    } catch {
+      return false;
+    }
   }
 
   async listModels(): Promise<ModelDescriptor[]> {
@@ -39,14 +64,17 @@ export class OpenAIProvider implements ModelProvider {
       });
       if (res.statusCode !== 200) return [];
       const body = (await res.body.json()) as { data?: Array<{ id: string }> };
-      return (body.data ?? []).map((m) => ({
-        provider: this.name,
-        id: m.id,
-        class: inferClass(m.id),
-        contextTokens: inferContext(m.id),
-        supportsStreaming: true,
-        roles: inferRoles(m.id),
-      }));
+      return (body.data ?? []).map((m) => {
+        const meta = classifyModel(m.id);
+        return {
+          provider: this.name,
+          id: m.id,
+          class: meta.class,
+          contextTokens: meta.contextTokens,
+          supportsStreaming: true,
+          roles: meta.roles,
+        } as ModelDescriptor;
+      });
     } catch {
       return [];
     }
@@ -118,24 +146,5 @@ export class OpenAIProvider implements ModelProvider {
   }
 }
 
-const inferClass = (id: string): ModelDescriptor['class'] => {
-  if (/gpt-?4|o1|o3/i.test(id)) return 'heavy';
-  if (/gpt-?3\.5|mini|haiku/i.test(id)) return 'mid';
-  if (/embedding|tiny|phi|7b\b/i.test(id)) return 'micro';
-  if (/code|coder/i.test(id)) return 'specialized';
-  return 'mid';
-};
-
-const inferContext = (id: string): number => {
-  if (/128k|turbo/i.test(id)) return 128_000;
-  if (/32k/.test(id)) return 32_000;
-  if (/o1|o3|4-turbo|4o/i.test(id)) return 128_000;
-  return 16_000;
-};
-
-const inferRoles = (id: string): ModelDescriptor['roles'] => {
-  if (/code|coder/i.test(id)) return ['executor', 'fast'];
-  if (/mini|haiku|nano/i.test(id)) return ['fast', 'executor'];
-  if (/o1|o3|opus/i.test(id)) return ['architect', 'planner', 'reviewer', 'debugger'];
-  return ['planner', 'executor', 'reviewer'];
-};
+// Model classification has moved to `./local-catalog.ts` so every provider
+// stays consistent. See `classifyModel()`.

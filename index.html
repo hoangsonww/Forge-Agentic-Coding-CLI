@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Forge — wiki · local-first, multi-agent, programmable software-engineering CLI runtime.">
+<meta name="theme-color" content="#0891b2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='100' y2='100' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%232dd4bf'/%3E%3Cstop offset='1' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Cpath d='M25 20 L75 20 L75 34 L40 34 L40 46 L65 46 L65 58 L40 58 L40 80 L25 80 Z' fill='white'/%3E%3C/svg%3E">
+<title>Forge — Wiki</title>
+<link rel="stylesheet" href="wiki/styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     TOP NAV + PROGRESS
+     ============================================================ -->
+<header class="topbar">
+  <div class="row">
+    <a class="logo" href="#top">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg)"/><path d="M25 20 L75 20 L75 34 L40 34 L40 46 L65 46 L65 58 L40 58 L40 80 L25 80 Z" fill="white"/></svg>
+      <span class="title">Forge</span>
+    </a>
+    <nav class="nav-links" aria-label="primary">
+      <a href="#overview">Overview</a>
+      <a href="#features">Features</a>
+      <a href="#loop">Loop</a>
+      <a href="#executor">Executor</a>
+      <a href="#memory">Memory</a>
+      <a href="#providers">Providers</a>
+      <a href="#security">Safety</a>
+      <a href="#modes">Modes</a>
+      <a href="#cli">CLI</a>
+      <a href="#install">Install</a>
+      <a href="#cicd">CI/CD</a>
+      <a href="#numbers">Metrics</a>
+    </nav>
+    <a class="nav-gh" href="https://github.com/forge/forge">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5A12 12 0 0 0 0 12.7a12 12 0 0 0 8.2 11.5c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 2 3 1.4 3.7 1 .1-.8.4-1.4.8-1.7-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.3-3.2-.1-.3-.6-1.6.1-3.2 0 0 1-.3 3.3 1.2a11 11 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.9.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 24 12.7 12 12 0 0 0 12 .5z"/></svg>
+      <span>GitHub</span>
+    </a>
+  </div>
+  <div class="progress" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
+</header>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<header class="hero" id="top">
+  <div class="hero-inner">
+    <span class="eyebrow"><span class="pulse"></span>&nbsp;Local-first · Multi-agent · Programmable</span>
+    <h1>
+      <span class="line"><span>A <em>runtime</em>.</span></span>
+      <span class="line"><span>Not a chat wrapper.</span></span>
+    </h1>
+    <p class="lede">
+      Forge ships its own scheduler, sandbox, permission system, state
+      machine, iterative tool-use executor, four-tier memory, and plugin
+      ecosystem. <strong style="color:var(--fg)">You pick the model.
+      You approve the actions.</strong> Everything is inspectable,
+      replayable, and yours.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="#install">Install Forge →</a>
+      <a class="btn" href="#loop">Read the wiki</a>
+      <a class="btn" href="https://github.com/forge/forge">GitHub</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="n"><span class="cu" data-to="173">0</span> ms</div><div class="l">doctor cold-start</div></div>
+      <div class="hero-stat"><div class="n"><span class="cu" data-to="89">0</span> KB</div><div class="l">UI shell · 0 CDN</div></div>
+      <div class="hero-stat"><div class="n"><span class="cu" data-to="1.5" data-decimals="1">0</span> s</div><div class="l">provider probe</div></div>
+      <div class="hero-stat"><div class="n"><span class="cu" data-to="6">0</span> · <span class="cu" data-to="41">0</span></div><div class="l">providers · families</div></div>
+      <div class="hero-stat"><div class="n"><span class="cu" data-to="203">0</span></div><div class="l">tests · 100% pass</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MARQUEES
+     ============================================================ -->
+<div class="marquee-band" aria-hidden="true">
+  <div class="marquee" style="--dur:38s;--gap:56px">
+    <span class="mq-item"><span class="dot"></span>Local-first</span><span class="mq-item ghost">Agentic</span><span class="mq-item accent">Inspectable</span><span class="mq-item ghost">Default-deny</span><span class="mq-item"><span class="dot"></span>Mode-driven</span><span class="mq-item ghost">Reproducible</span><span class="mq-item accent">Concurrent-writer-safe</span><span class="mq-item ghost">Programmable</span><span class="mq-item"><span class="dot"></span>Sandboxed</span><span class="mq-item ghost">Permissioned</span>
+    <span class="mq-item"><span class="dot"></span>Local-first</span><span class="mq-item ghost">Agentic</span><span class="mq-item accent">Inspectable</span><span class="mq-item ghost">Default-deny</span><span class="mq-item"><span class="dot"></span>Mode-driven</span><span class="mq-item ghost">Reproducible</span><span class="mq-item accent">Concurrent-writer-safe</span><span class="mq-item ghost">Programmable</span><span class="mq-item"><span class="dot"></span>Sandboxed</span><span class="mq-item ghost">Permissioned</span>
+  </div>
+</div>
+<div class="marquee-band" aria-hidden="true">
+  <div class="marquee reverse" style="--dur:44s;--gap:28px">
+    <span class="mq-small">Ollama</span><span class="mq-small">LM Studio</span><span class="mq-small">vLLM</span><span class="mq-small">llama.cpp</span><span class="mq-small">Anthropic</span><span class="mq-small">OpenAI-compat</span><span class="mq-small">LocalAI</span><span class="mq-small">Together AI</span><span class="mq-small">Groq</span><span class="mq-small">Azure OpenAI</span><span class="mq-small">Llama 3.x / 4.x</span><span class="mq-small">Qwen 2.5 / 3</span><span class="mq-small">DeepSeek V3 / R1 / Coder</span><span class="mq-small">Gemma 2 / 3</span><span class="mq-small">Phi 3 / 4</span><span class="mq-small">Mistral · Mixtral · Nemo</span><span class="mq-small">Command-R+</span><span class="mq-small">Granite · Granite-Code</span><span class="mq-small">Codestral · CodeLlama · StarCoder</span>
+    <span class="mq-small">Ollama</span><span class="mq-small">LM Studio</span><span class="mq-small">vLLM</span><span class="mq-small">llama.cpp</span><span class="mq-small">Anthropic</span><span class="mq-small">OpenAI-compat</span><span class="mq-small">LocalAI</span><span class="mq-small">Together AI</span><span class="mq-small">Groq</span><span class="mq-small">Azure OpenAI</span><span class="mq-small">Llama 3.x / 4.x</span><span class="mq-small">Qwen 2.5 / 3</span><span class="mq-small">DeepSeek V3 / R1 / Coder</span><span class="mq-small">Gemma 2 / 3</span><span class="mq-small">Phi 3 / 4</span><span class="mq-small">Mistral · Mixtral · Nemo</span><span class="mq-small">Command-R+</span><span class="mq-small">Granite · Granite-Code</span><span class="mq-small">Codestral · CodeLlama · StarCoder</span>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOC
+     ============================================================ -->
+<section style="padding-top:clamp(48px,6vw,80px);padding-bottom:0">
+  <div class="container narrow">
+    <div class="section-head">
+      <span class="tag">Wiki contents</span>
+      <h2>Jump anywhere</h2>
+    </div>
+    <div class="toc">
+      <a href="#overview"><span class="n">01</span>Overview</a>
+      <a href="#features"><span class="n">02</span>Features</a>
+      <a href="#loop"><span class="n">03</span>Agentic loop</a>
+      <a href="#state"><span class="n">04</span>State machine</a>
+      <a href="#executor"><span class="n">05</span>Executor &amp; validation</a>
+      <a href="#memory"><span class="n">06</span>Memory layers</a>
+      <a href="#providers"><span class="n">07</span>Providers &amp; routing</a>
+      <a href="#security"><span class="n">08</span>Safety &amp; sandbox</a>
+      <a href="#modes"><span class="n">09</span>Modes</a>
+      <a href="#cli"><span class="n">10</span>CLI reference</a>
+      <a href="#fs"><span class="n">11</span>Filesystem</a>
+      <a href="#skills"><span class="n">12</span>Skills &amp; MCP</a>
+      <a href="#install"><span class="n">13</span>Install</a>
+      <a href="#container"><span class="n">14</span>Containers</a>
+      <a href="#cicd"><span class="n">15</span>CI/CD</a>
+      <a href="#numbers"><span class="n">16</span>Runtime metrics</a>
+      <a href="#agents"><span class="n">17</span>Agent files</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     01 · OVERVIEW
+     ============================================================ -->
+<section id="overview" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">01 · Overview</span>
+      <h2>What <em>is</em> Forge?</h2>
+      <p>A TypeScript CLI runtime for local-first agentic software engineering. Every piece below lives in <code>src/</code>. Node 20+. Ships via npm and a multi-arch Docker image.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card"><div class="num">/ ORCHESTRATION</div><h3>Agentic loop</h3><p>Classify → plan → approve → execute with iterative tool-use → validate → review → complete → learn. Failures escalate to <code>diagnose</code> — never a silent loop.</p></div>
+      <div class="card"><div class="num">/ STATE</div><h3>Inspectable everything</h3><p>Tasks JSON, sessions JSONL, events JSONL. Conversations are JSONL with <code>O_APPEND</code> concurrency. Prompt hashes are deterministic.</p></div>
+      <div class="card"><div class="num">/ SAFETY</div><h3>Default-deny permissions</h3><p>Every tool call classified by risk × side-effect × sensitivity. Paths realpath-confined. Shell risk-rated; <code>critical</code> hard-blocked. Credentials in OS keychain.</p></div>
+      <div class="card"><div class="num">/ MODELS</div><h3>Bring your own LLM</h3><p>Auto-detects Ollama, LM Studio, vLLM, llama.cpp on default ports. 41 model families classified for role routing; auto-substitutes when your configured model isn't installed.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 · FEATURES
+     ============================================================ -->
+<section id="features">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">02 · Features</span>
+      <h2>Every capability, <em>highlighted</em>.</h2>
+      <p>Every feature below is in <code>src/</code>. Grep from any claim to a file.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card"><div class="num">/ 01</div><h3>Local-first</h3><p>Auto-detects Ollama, LM Studio, vLLM, llama.cpp. Hosted Anthropic / OpenAI / Azure / Groq / LocalAI / Together / Fireworks are opt-in.</p><div class="tags"><span>ollama</span><span>lmstudio</span><span>vllm</span><span>llama.cpp</span></div></div>
+      <div class="card"><div class="num">/ 02</div><h3>Iterative executor</h3><p>Model sees every tool result (stdout / stderr / exit) and adapts within a step. Mode-capped turn budgets.</p><div class="tags"><span>adaptive</span><span>bounded</span></div></div>
+      <div class="card"><div class="num">/ 03</div><h3>Validation gate</h3><p>Post-step <code>typecheck</code> / <code>lint</code> failures re-enter the loop as tool results — fixed before the next step runs.</p><div class="tags"><span>tsc</span><span>eslint</span></div></div>
+      <div class="card"><div class="num">/ 04</div><h3>DAG planner</h3><p>Plans have step dependencies, risk annotations, explicit tool calls. Auto-fixer repairs common issues; cycles rejected.</p><div class="tags"><span>topo-sort</span></div></div>
+      <div class="card"><div class="num">/ 05</div><h3>Reviewer + debugger</h3><p>Reviewer gates completion. On terminal failure, debugger agent diagnoses root cause before marking <code>failed</code>.</p><div class="tags"><span>diagnose</span></div></div>
+      <div class="card"><div class="num">/ 06</div><h3>4-tier memory</h3><p>Hot (session) · warm (SQLite recent) · cold (lazy project index) · learning (patterns with decaying confidence).</p><div class="tags"><span>SQLite</span><span>FTS5</span></div></div>
+      <div class="card"><div class="num">/ 07</div><h3>Default-deny permissions</h3><p>Risk × side-effect × sensitivity classified at every call. <code>--skip-permissions</code> only waives routine prompts.</p><div class="tags"><span>trust-calibrated</span></div></div>
+      <div class="card"><div class="num">/ 08</div><h3>Realpath sandbox</h3><p>Every path resolved to realpath, confined to project root. Always-forbidden targets (SSH keys, AWS creds) hard-blocked.</p><div class="tags"><span>symlink-proof</span></div></div>
+      <div class="card"><div class="num">/ 09</div><h3>Shell risk classifier</h3><p>Commands rated before execution. <code>rm -rf /</code>, <code>sudo</code>, fork bombs, curl-to-shell hard-blocked.</p><div class="tags"><span>sandbox</span></div></div>
+      <div class="card"><div class="num">/ 10</div><h3>OS keychain</h3><p>macOS Security, libsecret, Windows DPAPI. AES-GCM encrypted fallback if unavailable.</p><div class="tags"><span>DPAPI</span><span>libsecret</span></div></div>
+      <div class="card"><div class="num">/ 11</div><h3>Concurrent-writer safe</h3><p>REPL + UI + subagents edit the same conversation via POSIX <code>O_APPEND</code> + <code>mkdir</code> lockfile fallback.</p><div class="tags"><span>POSIX</span></div></div>
+      <div class="card"><div class="num">/ 12</div><h3>Prompt-injection defence</h3><p>Untrusted content (web / MCP) fenced as data, never instructions. Redactor scrubs secrets before logs.</p><div class="tags"><span>fence</span><span>redact</span></div></div>
+      <div class="card"><div class="num">/ 13</div><h3>MCP bridge</h3><p>Model Context Protocol: stdio + HTTP-stream. OAuth 2.0 + PKCE or API-key auth. Tokens in keychain.</p><div class="tags"><span>MCP</span><span>OAuth2</span></div></div>
+      <div class="card"><div class="num">/ 14</div><h3>Skills &amp; instructions</h3><p>Markdown + YAML frontmatter in <code>~/.forge/skills/</code>. Per-project overrides.</p><div class="tags"><span>.md skills</span></div></div>
+      <div class="card"><div class="num">/ 15</div><h3>Live dashboard</h3><p>HTTP + WebSocket UI. Vanilla JS, &lt; 100 KB, zero CDN. Delta watchers ref-counted across tabs.</p><div class="tags"><span>vanilla JS</span></div></div>
+      <div class="card"><div class="num">/ 16</div><h3>Router reliability</h3><p>Per-provider rate limit, circuit breaker, prompt cache, USD cost ledger. 1.5 s provider probes.</p><div class="tags"><span>breaker</span></div></div>
+      <div class="card"><div class="num">/ 17</div><h3>Release signing</h3><p>Manifest signed with Ed25519. SHA-256 per artefact. npm publishes with provenance.</p><div class="tags"><span>Ed25519</span><span>provenance</span></div></div>
+      <div class="card"><div class="num">/ 18</div><h3>Multi-arch containers</h3><p>Single Dockerfile serves CLI + UI. Non-root, HEALTHCHECK, OCI labels, ~355 MB.</p><div class="tags"><span>amd64</span><span>arm64</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 · AGENTIC LOOP
+     ============================================================ -->
+<section id="loop" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">03 · Agentic loop</span>
+      <h2>Classify · plan · approve · <em>execute</em> · validate · review · complete.</h2>
+      <p>Source: <code>src/core/loop.ts</code>. Retry cap is 3. The debugger agent runs root-cause diagnosis before marking a task <code>failed</code>.</p>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  look: handDrawn
+  theme: base
+  themeVariables:
+    fontSize: 16px
+---
+flowchart LR
+  IN(("USER<br/>prompt")) --> CLS["CLASSIFY<br/><small>intent · risk · scope</small>"]
+  CLS --> PL["PLAN<br/><small>DAG · steps · deps</small>"]
+  PL --> AP{"Approve?"}
+  AP -- edit --> PL
+  AP -- no --> CNCL(["cancelled"])
+  AP -- yes --> EX["EXECUTE<br/><small>iterative tool-use</small>"]
+  EX --> VG{"Validate<br/>(tsc · lint)"}
+  VG -- fails + budget --> EX
+  VG -- fails + out --> DX["DIAGNOSE"]
+  DX --> FL(["failed"])
+  VG -- pass --> RV["REVIEW<br/><small>reviewer agent</small>"]
+  RV -- bounce --> EX
+  RV -- pass --> DONE(["completed"])
+  DONE --> LRN["LEARN<br/><small>patterns updated</small>"]
+
+  classDef term fill:#0a1a14,stroke:#10b981,color:#d1fae5,stroke-width:2px
+  classDef fail fill:#1a0909,stroke:#f87171,color:#fee2e2,stroke-width:2px
+  classDef step fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:1.8px
+  classDef gate fill:#1a1634,stroke:#a78bfa,color:#ede9fe,stroke-width:1.8px
+  classDef io fill:#0c1a24,stroke:#22d3ee,color:#cffafe,stroke-width:2px
+  class IN io
+  class CNCL,FL fail
+  class DONE term
+  class CLS,PL,EX,RV,DX,LRN step
+  class AP,VG gate
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     04 · STATE MACHINE
+     ============================================================ -->
+<section id="state">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">04 · State machine</span>
+      <h2>10 task statuses. <em>Every move gated.</em></h2>
+      <p>Enforced by <code>LEGAL_TRANSITIONS</code> in <code>src/persistence/tasks.ts</code>. Illegal moves throw <code>state_invalid</code>. Terminal states only re-enter via <code>forge resume</code>, which resets them to <code>draft</code>.</p>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 16px
+---
+stateDiagram-v2
+  direction LR
+  [*] --> draft
+  draft --> planned : planner output
+  draft --> cancelled : user
+  planned --> approved : user approves
+  planned --> blocked : missing deps
+  planned --> cancelled
+  approved --> scheduled
+  approved --> cancelled
+  scheduled --> running
+  scheduled --> blocked
+  scheduled --> cancelled
+  running --> verifying
+  running --> failed
+  running --> blocked
+  running --> cancelled
+  verifying --> completed
+  verifying --> failed
+  verifying --> running : reviewer bounces
+  completed --> draft : forge resume
+  failed --> draft : forge resume
+  blocked --> draft : forge resume
+  cancelled --> draft : forge resume
+  blocked --> cancelled
+  completed --> [*]
+  failed --> [*]
+  cancelled --> [*]
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     05 · EXECUTOR
+     ============================================================ -->
+<section id="executor" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">05 · Executor</span>
+      <h2>Iterative tool use, <em>inside</em> each step.</h2>
+      <p>Model sees every tool result — stdout, stderr, exit, error — and can adapt. Source: <code>src/agents/executor.ts</code>.</p>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 15px
+    actorFontSize: 14px
+    messageFontSize: 13px
+---
+sequenceDiagram
+  autonumber
+  participant L as loop.ts
+  participant E as executor
+  participant M as model
+  participant T as tool
+  participant V as validator
+  L->>E: runStep(step)
+  loop up to maxExecutorTurns
+    E->>M: prompt + JSON schema
+    M-->>E: {actions, done?}
+    alt done
+      E-->>L: completed
+    else actions
+      E->>T: execute
+      T-->>E: stdout / stderr / exit
+      E->>E: digest + append
+    end
+  end
+  opt files changed
+    loop up to maxValidationRetries
+      E->>V: typecheck / lint
+      alt pass
+        E-->>L: completed
+      else fail
+        E->>M: VALIDATION_FAILED
+        M-->>E: corrective actions
+        E->>T: execute
+      end
+    end
+  end
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     06 · MEMORY
+     ============================================================ -->
+<section id="memory">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">06 · Memory</span>
+      <h2>Four tiers. <em>Decays over time.</em></h2>
+      <p>Planner reads top-K learning patterns before every plan.</p>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 15px
+---
+flowchart TB
+  Q["query<br/>retrieve.ts"] --> H["🔥 HOT<br/>in-session facts<br/><small>cleared on task end</small>"]
+  Q --> W["☀️ WARM<br/>recent tasks · SQLite<br/><small>ages out</small>"]
+  Q --> C["❄️ COLD<br/>project files · grep · AST<br/><small>lazy-indexed</small>"]
+  Q --> L["🧠 LEARNING<br/>patterns + confidence<br/><small>decays if unused</small>"]
+  classDef t fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:2px
+  classDef src fill:#0c1a24,stroke:#22d3ee,color:#cffafe,stroke-width:2px
+  class Q src
+  class H,W,C,L t
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     07 · PROVIDERS
+     ============================================================ -->
+<section id="providers" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">07 · Providers &amp; routing</span>
+      <h2>Bring your own LLM. <em>Forge auto-adapts.</em></h2>
+      <p>6 providers, auto-detected on default ports. 41 model families classified for role routing.</p>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 15px
+---
+flowchart LR
+  R["router<br/>resolveModel"] --> AD["adapter<br/>resolveLocalModel"]
+  AD --> L1["🟢 ollama<br/>:11434"]
+  AD --> L2["🔵 lmstudio<br/>:1234"]
+  AD --> L3["🟠 vllm<br/>:8000"]
+  AD --> L4["🟡 llama.cpp<br/>:8080"]
+  R --> H1["⬛ anthropic"]
+  R --> H2["⬛ openai-compat"]
+  R --> RL["rate limit"]
+  R --> CB["circuit breaker"]
+  R --> PC["prompt cache"]
+  R --> CT["USD ledger"]
+  classDef route fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:2px
+  classDef local fill:#0a1a14,stroke:#10b981,color:#d1fae5,stroke-width:2px
+  classDef hosted fill:#1a1634,stroke:#a78bfa,color:#ede9fe,stroke-width:2px
+  classDef util fill:#16121a,stroke:#f472b6,color:#fce7f3,stroke-width:1.8px
+  class R,AD route
+  class L1,L2,L3,L4 local
+  class H1,H2 hosted
+  class RL,CB,PC,CT util
+</pre>
+    </div>
+    <h3 class="subhead">Model families → preferred roles</h3>
+    <div class="table-wrap">
+      <table class="mx">
+        <thead><tr><th>Role</th><th>Preferred families</th></tr></thead>
+        <tbody>
+          <tr><td>architect · reviewer · debugger</td><td>Llama 3.x / 4.x, Mixtral, Command-R+, DeepSeek V3 / R1, Mistral-Large</td></tr>
+          <tr><td>planner</td><td>Qwen 2.5 / 3, Llama 3.x, DeepSeek V3, Gemma 3, Mistral-Nemo, Command-R, Phi 4</td></tr>
+          <tr><td>executor (code)</td><td>DeepSeek-Coder, Qwen 2.5-Coder, CodeLlama, Codestral, StarCoder, Granite-Code</td></tr>
+          <tr><td>fast</td><td>Phi 3 / 4, Gemma 2, TinyLlama, SmolLM, MiniCPM</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     08 · SECURITY
+     ============================================================ -->
+<section id="security">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">08 · Safety model</span>
+      <h2>Default-deny. <em>Every tool call gated.</em></h2>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 15px
+---
+flowchart TB
+  REQ["tool call"] --> C["classify<br/>risk · sideEffect · sensitivity"]
+  C --> S{"path in sandbox?<br/>cmd allow-listed?"}
+  S -->|"no"| X["⛔ HARD-BLOCK<br/>sandbox_violation"]
+  S -->|"yes"| G{"risk × sideEffect"}
+  G -->|"low / read"| A["✅ auto-allow"]
+  G -->|"med / write"| K["❓ ask user"]
+  G -->|"high / exec"| ST["🔒 ask · strict"]
+  K --> F{"session flags?"}
+  F -->|"allow-* flag"| A
+  F -->|"non-interactive"| D["⛔ deny silently"]
+  F -->|"interactive"| P["user prompt"]
+  P -->|"allow"| A
+  P -->|"deny"| D
+  A --> E["execute"]
+  E --> TR["trust calibration<br/>auto-allow after N confirms"]
+  classDef ok fill:#0a1a14,stroke:#10b981,color:#d1fae5,stroke-width:2px
+  classDef bad fill:#1a0909,stroke:#f87171,color:#fee2e2,stroke-width:2px
+  classDef gate fill:#1a1634,stroke:#a78bfa,color:#ede9fe,stroke-width:2px
+  classDef step fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:1.8px
+  class A,E,TR ok
+  class X,D bad
+  class S,G,F gate
+  class REQ,C,K,ST,P step
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     09 · MODES
+     ============================================================ -->
+<section id="modes" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">09 · Modes</span>
+      <h2>Nine modes. <em>Enforceable budgets.</em></h2>
+      <p>Each mode is a runtime cap, not a hint. Read from <code>src/core/mode-policy.ts</code>.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="mx">
+        <thead><tr><th>Mode</th><th>Executor turns</th><th>Validation retries</th><th>Mutations</th><th>Max auto-risk</th></tr></thead>
+        <tbody>
+          <tr><td><code>fast</code></td><td>2</td><td>0</td><td class="y">yes</td><td>low</td></tr>
+          <tr><td><code>balanced</code></td><td>4</td><td>1</td><td class="y">yes</td><td>medium</td></tr>
+          <tr><td><code>heavy</code></td><td>8</td><td>2</td><td class="y">yes</td><td>high</td></tr>
+          <tr><td><code>plan</code></td><td>0 → 1</td><td>0</td><td class="n">no</td><td>low</td></tr>
+          <tr><td><code>execute</code></td><td>4</td><td>1</td><td class="y">yes</td><td>medium</td></tr>
+          <tr><td><code>audit</code></td><td>3</td><td>0</td><td class="n">no</td><td>low</td></tr>
+          <tr><td><code>debug</code></td><td>6</td><td>2</td><td class="y">yes</td><td>medium</td></tr>
+          <tr><td><code>architect</code></td><td>3</td><td>1</td><td class="y">yes</td><td>medium</td></tr>
+          <tr><td><code>offline-safe</code></td><td>3</td><td>1</td><td class="y">yes</td><td>medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     10 · CLI
+     ============================================================ -->
+<section id="cli">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">10 · CLI reference</span>
+      <h2>24 subcommands. <em>55 slash commands in the REPL.</em></h2>
+    </div>
+    <div class="code-win">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">~ — forge --help</span><span class="lang">bash</span></div>
+<pre><span class="com"># Core</span>
+forge                          <span class="com"># REPL (default)</span>
+forge init                     <span class="com"># create ~/.forge + ./.forge</span>
+forge run <span class="str">"&lt;prompt&gt;"</span>           <span class="com"># full agentic loop</span>
+forge plan <span class="str">"&lt;prompt&gt;"</span>          <span class="com"># plan-only</span>
+forge execute <span class="str">"&lt;prompt&gt;"</span>       <span class="com"># auto-approve + execute</span>
+forge resume [taskId]          <span class="com"># resume any prior task</span>
+forge status                   <span class="com"># runtime state</span>
+forge doctor                   <span class="com"># health + role→model mapping</span>
+
+<span class="com"># State inspection</span>
+forge task list|search         <span class="com"># task history</span>
+forge session list|replay      <span class="com"># session JSONL</span>
+forge memory {hot|warm|cold}   <span class="com"># memory layers</span>
+
+<span class="com"># Models &amp; config</span>
+forge model list
+forge config get|set|path
+forge cost                     <span class="com"># USD ledger</span>
+
+<span class="com"># Integrations</span>
+forge mcp list|add|remove
+forge skills list|new
+forge agents list
+forge web {search|fetch}
+
+<span class="com"># Ops</span>
+forge ui start                 <span class="com"># dashboard :7823</span>
+forge daemon start|stop|status
+forge container up|down        <span class="com"># compose wrapper</span>
+forge bundle pack|unpack       <span class="com"># offline bundles</span>
+forge update                   <span class="com"># self-update</span>
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     11 · FILESYSTEM
+     ============================================================ -->
+<section id="fs" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">11 · Filesystem</span>
+      <h2>XDG-aware. <em>Per-project overrides.</em></h2>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 14px
+---
+flowchart TB
+  subgraph GLOBAL["global · ~/.forge"]
+    G1[config.json]
+    G2[instructions.md]
+    G3[skills/]
+    G4[agents/]
+    G5[mcp/]
+    G6[index.db]
+    G7["projects · tasks · sessions · events"]
+  end
+  subgraph PROJECT["per-project · ./.forge"]
+    P1[config.json]
+    P2[instructions.md]
+    P3[skills/]
+    P4[agents/]
+    P5[mcp/]
+  end
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     12 · SKILLS & MCP
+     ============================================================ -->
+<section id="skills">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">12 · Skills &amp; MCP</span>
+      <h2>Extend without <em>rebuilding</em>.</h2>
+    </div>
+    <h3 class="subhead">Skill example</h3>
+    <div class="code-win">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">~/.forge/skills/conventional-commit.md</span><span class="lang">md</span></div>
+<pre><span class="com">---</span>
+<span class="kw">name:</span> <span class="str">conventional-commit</span>
+<span class="kw">description:</span> <span class="str">Enforce Conventional Commits.</span>
+<span class="kw">triggers:</span> [commit, git]
+<span class="com">---</span>
+
+When writing commit messages, use Conventional Commits:
+  feat(scope): …
+  fix(scope): …
+  refactor(scope): …
+</pre>
+    </div>
+    <h3 class="subhead" style="margin-top:28px">Add MCP connector</h3>
+    <div class="code-win">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">forge mcp add</span><span class="lang">bash</span></div>
+<pre><span class="prompt"></span>forge mcp list
+<span class="prompt"></span>forge mcp add <span class="vi">linear</span> --transport stdio --command <span class="str">"mcp-linear-server"</span>
+<span class="prompt"></span>forge mcp add <span class="vi">postgres</span> --transport http --url https://mcp.example/v1 --auth oauth2-pkce
+<span class="prompt"></span>forge mcp status
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     13 · INSTALL
+     ============================================================ -->
+<section id="install" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">13 · Install</span>
+      <h2>Three paths. <em>Pick one.</em></h2>
+    </div>
+    <div class="grid grid-3">
+      <div>
+        <h4>01 / npm</h4>
+        <div class="code-win">
+          <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">global install</span><span class="lang">bash</span></div>
+<pre><span class="prompt"></span>npm i -g @forge/cli
+<span class="prompt"></span>forge doctor
+<span class="prompt"></span>forge run <span class="str">"…"</span>
+</pre>
+        </div>
+      </div>
+      <div>
+        <h4>02 / Docker</h4>
+        <div class="code-win">
+          <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">zero local Node</span><span class="lang">bash</span></div>
+<pre><span class="prompt"></span>docker run --rm -it \
+  -v forge-home:/data \
+  -v <span class="str">"$PWD:/workspace"</span> \
+  ghcr.io/forge/forge:latest
+</pre>
+        </div>
+      </div>
+      <div>
+        <h4>03 / Compose</h4>
+        <div class="code-win">
+          <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">full stack</span><span class="lang">bash</span></div>
+<pre><span class="prompt"></span>docker compose \
+  -f docker/docker-compose.yml \
+  up -d
+<span class="com"># podman-compose works</span>
+</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     14 · CONTAINERS
+     ============================================================ -->
+<section id="container">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">14 · Container posture</span>
+      <h2>Single image. <em>CLI + UI + daemon.</em></h2>
+    </div>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 14px
+---
+flowchart LR
+  subgraph BUILD["Stage 1 · builder"]
+    direction TB
+    B1[node:20-slim] --> B2[npm ci<br/>tsc + copy-assets]
+    B2 --> B3[npm prune --omit=dev]
+  end
+  subgraph RUN["Stage 2 · runtime · ~355 MB"]
+    direction TB
+    R1[node:20-slim] --> R2[apt: git · ripgrep · tini]
+    R2 --> R3[non-root uid 10001]
+    R3 --> R4[pruned node_modules + dist]
+    R4 --> R5[HEALTHCHECK · forge doctor]
+    R5 --> R6[OCI labels]
+  end
+  BUILD -.dist + prod deps.-> RUN
+  classDef s fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:1.8px
+  class B1,B2,B3,R1,R2,R3,R4,R5,R6 s
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     15 · CI/CD
+     ============================================================ -->
+<section id="cicd" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">15 · CI/CD</span>
+      <h2>9 jobs per PR. <em>6 release stages.</em></h2>
+    </div>
+    <h3 class="subhead">CI · every PR + push</h3>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 14px
+---
+flowchart LR
+  PR(["PR / push"]) --> FMT["🎨 format"]
+  PR --> LINT["🧹 lint"]
+  PR --> TYPE["🧠 typecheck"]
+  PR --> TEST["🧪 test matrix<br/>Ubuntu · macOS<br/>Node 20 · 22"]
+  TEST --> COV["📈 coverage"]
+  TYPE --> BUILD["🏗️ build"]
+  BUILD --> DOCKER["🐳 docker-build"]
+  PR --> AUDIT["🔐 audit"]
+  FMT --> S["📊 pipeline<br/>status"]
+  LINT --> S
+  TYPE --> S
+  TEST --> S
+  BUILD --> S
+  DOCKER --> S
+  AUDIT --> S
+  COV --> S
+  classDef job fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:2px
+  classDef tg fill:#0c1a24,stroke:#22d3ee,color:#cffafe,stroke-width:2px
+  classDef sum fill:#1a1634,stroke:#a78bfa,color:#ede9fe,stroke-width:2px
+  class PR tg
+  class FMT,LINT,TYPE,TEST,COV,BUILD,DOCKER,AUDIT job
+  class S sum
+</pre>
+    </div>
+    <h3 class="subhead" style="margin-top:32px">Release · on <code>v*</code> tag</h3>
+    <div class="mermaid-wrap">
+<pre class="mermaid">
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: 14px
+---
+flowchart LR
+  T(["git tag v*"]) --> G["🧪 pre-release<br/>gate"]
+  G --> A["📦 artifacts<br/>5 targets"]
+  G --> D["🐳 docker<br/>multi-arch → GHCR"]
+  A --> M["📝 manifest<br/>ed25519-signed"]
+  M --> N["📤 npm publish<br/>--provenance"]
+  G --> R["📊 release<br/>status"]
+  A --> R
+  D --> R
+  M --> R
+  N --> R
+  classDef tg fill:#0c1a24,stroke:#22d3ee,color:#cffafe,stroke-width:2px
+  classDef job fill:#0f1726,stroke:#38bdf8,color:#e0f2fe,stroke-width:2px
+  classDef ship fill:#1a1409,stroke:#fb923c,color:#ffedd5,stroke-width:2px
+  classDef sum fill:#1a1634,stroke:#a78bfa,color:#ede9fe,stroke-width:2px
+  class T tg
+  class G job
+  class A,D,M,N ship
+  class R sum
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     16 · RUNTIME METRICS
+     ============================================================ -->
+<section id="numbers">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">16 · Runtime metrics</span>
+      <h2>What it <em>actually</em> costs to run.</h2>
+      <p>All measured locally — reproducers in the table at the bottom. No synthetic benchmarks, no comparisons against straw-man tools.</p>
+    </div>
+
+    <!-- KPI row -->
+    <div class="grid grid-4" style="margin-bottom:22px">
+      <div class="kpi"><div class="k">doctor cold-start</div><div class="big">173<span class="u"> ms</span></div><div class="h">Full provider probe + SQLite open + role→model mapping.</div></div>
+      <div class="kpi"><div class="k">--help cold-start</div><div class="big">238<span class="u"> ms</span></div><div class="h">Commander.js boot + command-tree discovery.</div></div>
+      <div class="kpi"><div class="k">UI shell</div><div class="big">89<span class="u"> KB</span></div><div class="h">Vanilla JS, zero frameworks, zero CDN fetches.</div></div>
+      <div class="kpi"><div class="k">provider probe timeout</div><div class="big">1.5<span class="u"> s</span></div><div class="h">Not 30 s hangs. Dead runtimes surface fast.</div></div>
+    </div>
+
+    <!-- Bar chart: startup times -->
+    <div class="chart">
+      <h3>Startup times</h3>
+      <div class="sub">cold, no state reused · lower is better · measured via `time node bin/forge.js &lt;cmd&gt;`</div>
+      <div class="bars">
+        <div class="bar-row"><span class="lbl">forge doctor</span><div class="track"><div class="fill" style="width:17.3%"></div></div><span class="v">173<span class="u">ms</span></span></div>
+        <div class="bar-row"><span class="lbl">forge --help</span><div class="track"><div class="fill" style="width:23.8%"></div></div><span class="v">238<span class="u">ms</span></span></div>
+        <div class="bar-row"><span class="lbl">forge status</span><div class="track"><div class="fill" style="width:19%"></div></div><span class="v">190<span class="u">ms</span></span></div>
+        <div class="bar-row"><span class="lbl">forge model list</span><div class="track"><div class="fill" style="width:31%"></div></div><span class="v">310<span class="u">ms</span></span></div>
+        <div class="bar-row"><span class="lbl">full test suite</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="v">3.3<span class="u">s</span></span></div>
+      </div>
+    </div>
+
+    <!-- Bar chart: mode turn budgets -->
+    <div class="chart" style="margin-top:18px">
+      <h3>Executor turn budget per mode</h3>
+      <div class="sub">hard runtime cap · from `src/core/mode-policy.ts` · higher = more iteration, more tokens</div>
+      <div class="bars">
+        <div class="bar-row"><span class="lbl">plan</span><div class="track"><div class="fill muted" style="width:12.5%"></div></div><span class="v">1</span></div>
+        <div class="bar-row"><span class="lbl">fast</span><div class="track"><div class="fill" style="width:25%"></div></div><span class="v">2</span></div>
+        <div class="bar-row"><span class="lbl">audit · architect · offline-safe</span><div class="track"><div class="fill" style="width:37.5%"></div></div><span class="v">3</span></div>
+        <div class="bar-row"><span class="lbl">balanced · execute</span><div class="track"><div class="fill" style="width:50%"></div></div><span class="v">4</span></div>
+        <div class="bar-row"><span class="lbl">debug</span><div class="track"><div class="fill" style="width:75%"></div></div><span class="v">6</span></div>
+        <div class="bar-row"><span class="lbl">heavy</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="v">8</span></div>
+      </div>
+    </div>
+
+    <!-- Bar chart: UI shell size -->
+    <div class="chart" style="margin-top:18px">
+      <h3>UI shell asset sizes</h3>
+      <div class="sub">uncompressed · served from disk · no network fetches at runtime</div>
+      <div class="bars">
+        <div class="bar-row"><span class="lbl">index.html (landing)</span><div class="track"><div class="fill" style="width:25%"></div></div><span class="v">~67<span class="u">KB</span></span></div>
+        <div class="bar-row"><span class="lbl">dashboard app.js</span><div class="track"><div class="fill" style="width:33%"></div></div><span class="v">89<span class="u">KB</span></span></div>
+        <div class="bar-row"><span class="lbl">dashboard styles.css</span><div class="track"><div class="fill" style="width:15%"></div></div><span class="v">40<span class="u">KB</span></span></div>
+        <div class="bar-row"><span class="lbl">dashboard index.html</span><div class="track"><div class="fill" style="width:8%"></div></div><span class="v">22<span class="u">KB</span></span></div>
+      </div>
+    </div>
+
+    <!-- Reproducer table -->
+    <div class="table-wrap" style="margin-top:22px">
+      <table class="mx">
+        <thead><tr><th>Target</th><th>Measured</th><th>Reproducer</th></tr></thead>
+        <tbody>
+          <tr><td><code>forge doctor</code> cold-start</td><td class="y">173 ms</td><td><code>time node bin/forge.js doctor --no-banner</code></td></tr>
+          <tr><td><code>forge --help</code> cold-start</td><td class="y">238 ms</td><td><code>time node bin/forge.js --help</code></td></tr>
+          <tr><td>full test suite</td><td class="y">~3.3 s</td><td><code>npx vitest run</code></td></tr>
+          <tr><td>UI app.js uncompressed</td><td class="y">89 KB</td><td><code>wc -c src/ui/public/app.js</code></td></tr>
+          <tr><td>container image</td><td class="y">~355 MB</td><td><code>docker images ghcr.io/forge/forge</code></td></tr>
+          <tr><td>CDN fetches at runtime</td><td class="y">0</td><td>inspect <code>app.js</code> · no external URLs</td></tr>
+          <tr><td>provider probe timeout</td><td class="y">1.5 s</td><td><code>src/models/openai.ts#isAvailable</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     17 · AGENT FILES
+     ============================================================ -->
+<section id="agents" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">17 · Agent-facing files</span>
+      <h2>Works with <em>every</em> coding agent.</h2>
+      <p>Context files so agents don't re-learn the repo every turn.</p>
+    </div>
+    <div class="grid grid-2">
+      <a class="card" href="AGENTS.md">
+        <div class="num">/ AGENTS.md</div>
+        <h3>For Codex · Cursor · Aider · Cline · Continue</h3>
+        <p>OpenAI <code>AGENTS.md</code> convention. Flat Markdown cheat-sheet: identity, commands, layout, rules, testing patterns, CI reference, performance + security posture.</p>
+      </a>
+      <a class="card" href="CLAUDE.md">
+        <div class="num">/ CLAUDE.md</div>
+        <h3>For Claude Code</h3>
+        <p>Repo identity, hot paths, conventions, pre-completion checklist, style prefs. Kept short and grep-able so every line is load-bearing.</p>
+      </a>
+    </div>
+    <div class="cta-block" style="margin-top:48px">
+      <h3>Ready to install?</h3>
+      <p style="color:var(--fg2);font-size:15px;max-width:60ch">
+        Cold-start <strong style="color:var(--teal)">173 ms</strong>.
+        UI shell <strong style="color:var(--teal)">89 KB</strong> · zero CDN.
+        Providers probe with <strong style="color:var(--teal)">1.5 s</strong> timeouts.
+      </p>
+      <div class="cta" style="margin-top:20px">
+        <a class="btn primary" href="docs/INSTALL.md">Install Forge →</a>
+        <a class="btn" href="https://github.com/forge/forge">GitHub</a>
+        <a class="btn" href="docs/ARCHITECTURE.md">Architecture</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container row">
+    <span>© Forge contributors · MIT</span>
+    <span>TypeScript · Node 20+</span>
+    <span><a href="https://github.com/forge/forge">GitHub</a> · <a href="docs/ARCHITECTURE.md">Architecture</a> · <a href="docs/INSTALL.md">Install</a></span>
+  </div>
+</footer>
+
+<script type="module" src="wiki/app.js"></script>
+</body>
+</html>

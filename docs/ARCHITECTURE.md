@@ -1,249 +1,547 @@
-# Forge architecture
+# Forge — Architecture
 
-This doc is the engineering map. It reflects what's in `src/` today, not a
-hypothetical future.
+> The engineering map. Every diagram and file reference here reflects what
+> lives in `src/` today, so you can grep from any claim straight to the code.
 
-## Layered overview
+## Table of contents
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                  CLI (commander)                              │
-│  init · run · plan · execute · status · task · session · …    │
-└──────────┬────────────────────────────────────────────────────┘
-           │
-┌──────────▼────────────────────────────────────────────────────┐
-│                  Orchestrator                                 │
-│   classify → plan → approve → execute → verify → complete     │
-│                        (src/core/)                            │
-└──┬────────────────┬──────────────────────┬───────────────────┘
-   │                │                      │
-┌──▼─────┐    ┌─────▼─────┐          ┌─────▼──────┐
-│ Agents │    │ Scheduler │          │ Persistence│
-│        │    │  + DAG    │          │  JSONL     │
-│ planner│    │  + locks  │          │  + SQLite  │
-│ exec   │    │ (src/scheduler/)     │ (src/persistence/)
-│ review │    └───────────┘          └─────┬──────┘
-│ debug  │                                  │
-│(src/agents/)                              │
-└──┬─────┘                                  │
-   │                                        │
-┌──▼────────────────────────────────────────▼────────────────┐
-│                  Tools                                      │
-│ read/write/patch/grep/glob/run/tests/git/ask_user           │
-│                   (src/tools/)                              │
-└────┬───────────────────────────────────────────────────────┘
-     │
-┌────▼────────────────────────────────────────────────────────┐
-│ Sandbox   ·  Permissions  ·  Security                       │
-│ fs + shell   risk+prompts    redact + injection             │
-│ (src/sandbox/)  (src/permissions/)   (src/security/)        │
-└─────────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│ Model providers  +  Prompt assembler                         │
-│  ollama / anthropic    (layered, reproducible hash)          │
-│  (src/models/, src/prompts/)                                 │
-└──────────────────────────────────────────────────────────────┘
-```
+- [1. Layered overview](#1-layered-overview)
+- [2. Agentic loop](#2-agentic-loop)
+- [3. Task state machine](#3-task-state-machine)
+- [4. Executor — iterative tool-use with validation gate](#4-executor--iterative-tool-use-with-validation-gate)
+- [5. Memory layers](#5-memory-layers)
+- [6. Model routing & provider registry](#6-model-routing--provider-registry)
+- [7. Permission + sandbox model](#7-permission--sandbox-model)
+- [8. Conversation & persistence](#8-conversation--persistence)
+- [9. UI topology](#9-ui-topology)
+- [10. CI/CD pipeline](#10-cicd-pipeline)
+- [11. Deployment topologies](#11-deployment-topologies)
+- [12. Subsystem size at a glance](#12-subsystem-size-at-a-glance)
+- [13. Directory map](#13-directory-map)
 
-## Control plane
+---
 
-### Orchestrator (`src/core/orchestrator.ts`)
+## 1. Layered overview
 
-Single public entry for "run a task":
+```mermaid
+flowchart TB
+  classDef surface fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:6,ry:6
+  classDef core    fill:#082f49,stroke:#38bdf8,color:#e0f2fe,rx:6,ry:6
+  classDef agent   fill:#1e293b,stroke:#a78bfa,color:#ede9fe,rx:6,ry:6
+  classDef io      fill:#0f172a,stroke:#10b981,color:#d1fae5,rx:6,ry:6
+  classDef store   fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:6,ry:6
 
-```ts
-orchestrateRun({ input, mode, flags, autoApprove?, planOnly? })
-```
+  subgraph S[User surfaces]
+    CLI["CLI (commander)"]:::surface
+    REPL["REPL (raw-mode editor)"]:::surface
+    UI["Dashboard (HTTP + WS)"]:::surface
+  end
 
-Responsibilities: identify project, classify the task, create the Task
-record, call into `runAgenticLoop`.
+  ORCH["Orchestrator<br/>src/core/orchestrator.ts"]:::core
+  LOOP["Agentic loop<br/>src/core/loop.ts"]:::core
+  CLASS["Classifier"]:::core
 
-### Agentic loop (`src/core/loop.ts`)
+  subgraph A[Agents src/agents]
+    PL["planner"]:::agent
+    AR["architect"]:::agent
+    EX["executor"]:::agent
+    RV["reviewer"]:::agent
+    DB["debugger"]:::agent
+    ME["memory"]:::agent
+  end
 
-Implements the full pipeline with state-machine transitions and hard limits.
-Every step emits a structured event to `logs/events.jsonl` and a session
-entry to the project's `sessions/<id>.jsonl`. Retry cap is 3; on final
-failure, the debugger agent diagnoses before the task is marked `failed`.
+  subgraph I[I/O surfaces]
+    TOOLS["Tools (18)<br/>src/tools"]:::io
+    MODELS["Model providers (6)<br/>src/models"]:::io
+    PERM["Permissions<br/>src/permissions"]:::io
+    SAND["Sandbox (fs + shell)<br/>src/sandbox"]:::io
+    MCP["MCP bridge<br/>src/mcp"]:::io
+  end
 
-## State machine
+  subgraph P[Durable state]
+    TASKS["tasks/*.json"]:::store
+    SESS["sessions/*.jsonl"]:::store
+    CONV["conversations/*.jsonl"]:::store
+    IDX["SQLite index<br/>global/index.db"]:::store
+    MEM["memory/{hot,warm,cold,learning}"]:::store
+  end
 
-Canonical lifecycle (see `src/persistence/tasks.ts#LEGAL_TRANSITIONS`):
+  CLI --> ORCH
+  REPL --> ORCH
+  UI --> ORCH
 
-```
-draft ─→ planned ─→ approved ─→ scheduled ─→ running ─→ verifying ─→ completed
-   │         │                      │           │            │
-   ▼         ▼                      ▼           ▼            ▼
-cancelled  cancelled            cancelled   failed ─→ scheduled  (operator retry)
-           blocked              blocked     blocked   failed
-```
+  ORCH --> CLASS --> LOOP
+  LOOP --> PL --> EX --> RV
+  RV --> LOOP
+  LOOP --> AR
+  LOOP --> DB
+  LOOP --> ME
 
-Illegal transitions throw `state_invalid`. There is no "pending" or
-"queued" short-cut — every running task has passed approval.
+  EX --> TOOLS
+  TOOLS --> PERM
+  TOOLS --> SAND
+  TOOLS --> MCP
+  PL --> MODELS
+  EX --> MODELS
 
-## Permission model
-
-- `src/permissions/risk.ts` classifies every tool by `risk` + `sideEffect`.
-- `src/permissions/manager.ts` is the single choke-point.
-- `--skip-permissions` removes only *routine* (low/medium + readonly/write)
-  prompts. Critical/high risk, `execute`, and `network` side-effects always
-  prompt (unless pre-authorized via `--allow-*` flags).
-- Trust calibration: after N (config) successful confirmations of the same
-  low-risk tool, Forge switches to auto-allow for that session.
-- Persisted project/global grants live in SQLite (`permission_grants` table).
-
-## Sandbox
-
-- **Filesystem** (`src/sandbox/fs.ts`): every path is resolved to its realpath
-  and verified inside the project root (plus explicit extra roots).
-  Always-forbidden targets (`/etc/passwd`, SSH keys, AWS credentials) are
-  blocked regardless of policy.
-- **Shell** (`src/sandbox/shell.ts`): runs commands through `/bin/bash` with
-  a blocklist (`rm -rf /`, `sudo`, fork bombs, curl-to-shell, …), risk
-  classification (`git push` → high, `npm install` → medium), timeouts, and
-  output-size truncation.
-
-## Security
-
-- **Redaction** (`src/security/redact.ts`): patterns for AWS / GitHub /
-  OpenAI / Anthropic / Slack / JWT / bearer / PEM keys plus env-key
-  heuristics. Applied before every log, session entry, and prompt.
-- **Prompt-injection defense** (`src/security/injection.ts`): untrusted
-  content (tool output, web, MCP) is fenced with visible "treat as data"
-  markers and scanned for jailbreak patterns.
-
-## Prompt assembly
-
-Layered assembler (`src/prompts/assembler.ts`) produces:
-
-```
-[system_core] [mode] [project_instructions] [global_instructions]
-[context (fenced)] [tools] [task_instructions] → system message
-[user_input] → user message
+  LOOP --> TASKS
+  LOOP --> SESS
+  LOOP --> CONV
+  LOOP --> IDX
+  ME  --> MEM
 ```
 
-Output includes a SHA-256 hash of the full prompt (reproducibility) and a
-layer manifest (auditability). Token budgeting truncates lowest priority
-first; `system_core`, `mode`, and `task_instructions` are never truncated.
+Code it maps to:
 
-## Model routing
-
-`src/models/router.ts` picks provider+model by role (planner / architect /
-executor / reviewer / debugger / fast) and mode. `offline-safe` forces
-Ollama. On provider error there is an automatic single-retry against the
-fallback provider, with the decision emitted to traces.
-
-## Persistence
-
-- **Task store** (`src/persistence/tasks.ts`): one JSON file per task with
-  strict state-transition enforcement.
-- **Sessions** (`src/persistence/sessions.ts`): append-only JSONL per session.
-  Trivially streamable and replayable.
-- **Events** (`src/persistence/events.ts`): append-only JSONL per project.
-  Source of truth for post-hoc audits.
-- **Global index** (`src/persistence/index-db.ts`): SQLite WAL with tables
-  for `projects`, `tasks`, `sessions`, `permission_grants`,
-  `learning_patterns`, `mcp_connections`. Migrations tracked in
-  `schema_migrations`.
-
-## Scheduler / concurrency
-
-- `src/scheduler/resource-manager.ts` provides read/write/exclusive locks and
-  semaphores for `maxTasks`, `maxGpuTasks`, `maxFileWrites`. Writer-priority
-  so long-running readers don't starve writes.
-- `src/scheduler/dag.ts` does topological sort + validation (cycles,
-  duplicates, dangling deps) before execution.
-
-## Agents
-
-Each agent is a small module that (a) assembles a prompt via the shared
-assembler and (b) calls the model router:
-
-- **Planner** (`src/agents/planner.ts`): intent → DAG. Has a deterministic
-  fallback if model output fails to parse so the loop never dead-ends.
-- **Executor** (`src/agents/executor.ts`): one-step-at-a-time. Asks the model
-  which tools to call and with what args, then executes each via the
-  registry + permission manager.
-- **Reviewer** (`src/agents/reviewer.ts`): post-execution validation. Can
-  block completion if `completion.requireReview=true`.
-- **Debugger** (`src/agents/debugger.ts`): root-cause analysis after retry
-  exhaustion. Captures patterns to `learning_patterns`.
-
-## MCP
-
-- `src/mcp/client.ts`: minimal stdio JSON-RPC client (initialize,
-  `tools/list`, `tools/call`). Deliberately small; grows to match real
-  connectors.
-- `src/mcp/registry.ts`: persistent connection registry backed by SQLite.
-- HTTP-stream transport and OAuth are stubbed for the next iteration.
-
-## Notifications
-
-- Event bus (`src/notifications/manager.ts`) delivers severity-coded messages
-  to the CLI (colored inline) and optionally OS notifications (macOS
-  osascript / Linux `notify-send`). Verbosity is configurable
-  (minimal/normal/verbose). All payloads pass through `redact()`.
-
-## Daemon & updates
-
-- `src/daemon/server.ts`: optional background process; listens on a unix
-  socket (`~/.forge/daemon.sock`), polls the update registry.
-- `src/daemon/updater.ts`: periodic check with cache +
-  ignored-versions support. Today uses npm registry; will pivot to GitHub
-  Releases with signature verification for native-binary distribution.
-
-## Configuration
-
-- Schema in `src/config/schema.ts` (zod). Invalid global config falls back
-  to defaults and logs a warning instead of crashing — self-healing.
-- Project config extends/overrides the global config.
-- Both global and project have a parallel Markdown instructions file that
-  gets layered into every prompt.
-
-## Testing
-
-Vitest covers the risk-critical code. As of v0.1.0 there are 25 test files /
-88 tests:
-
-- **Redaction** (8)
-- **Injection defense** (3)
-- **Sandbox fs + shell** (8)
-- **Classifier heuristics** (5)
-- **State machine** (5)
-- **DAG validation** (4)
-- **Prompt assembler reproducibility** (5)
-- **Permission risk helpers** (4)
-- **Hot memory** (3), **warm memory** (2), **web sanitize** (5), **web fetch guards** (4)
-- **Edit file** (4), **release verify** (4), **keychain** (1)
-- **Plan fixer** (4), **loop detector** (3), **estimation** (1)
-- **Circuit breaker** (2), **rate limit** (2), **cost** (3), **spec parser** (2)
-- **Log rotation** (2), **marketplace URL guard** (2), **signals** (2)
-
-Run `npm test`.
-
-## Second-pass additions (v0.1 final)
-
-| Concern | Module |
+| Layer | Path |
 |---|---|
-| OpenAI / LocalAI / Azure / vLLM | `src/models/openai.ts` |
-| llama.cpp | `src/models/llamacpp.ts` |
-| Per-provider rate limit | `src/models/rate-limit.ts` |
-| Circuit breaker | `src/models/circuit-breaker.ts` |
-| Prompt cache | `src/models/cache.ts` |
-| USD cost ledger | `src/models/cost.ts` |
-| Architect agent | `src/agents/architect.ts` |
-| Memory agent | `src/agents/memory.ts` |
-| Plan auto-fixer | `src/core/plan-fixer.ts` |
-| Loop detection | `src/core/loop-detection.ts` |
-| Resource estimation | `src/core/estimation.ts` |
-| Cross-session continuity | `src/core/continuity.ts` |
-| Signal handling | `src/core/signals.ts` |
-| Spec-driven development | `src/core/spec.ts` |
-| Session forking | `src/core/fork.ts` |
-| Log rotation | `src/logging/rotation.ts` |
-| Session compression | `src/persistence/compression.ts` |
-| Post-edit formatters | `src/tools/format.ts` |
-| Skills marketplace | `src/skills/marketplace.ts` |
-| Windows keychain | `src/keychain/windows.ts` |
-| XDG compliance | `src/config/xdg.ts` |
-| UI /healthz endpoint | `src/ui/server.ts` |
+| CLI surface | `src/cli/` (24 commands) |
+| REPL | `src/cli/repl.ts` + `src/cli/repl-input.ts` |
+| UI | `src/ui/server.ts` + `src/ui/public/` |
+| Orchestrator | `src/core/orchestrator.ts` |
+| Agentic loop | `src/core/loop.ts` |
+| Agents | `src/agents/{planner,architect,executor,reviewer,debugger,memory}.ts` |
+| Tools | `src/tools/*.ts` |
+| Providers | `src/models/{ollama,openai,anthropic,llamacpp,vllm,lmstudio}.ts` |
+| Permissions | `src/permissions/` |
+| Sandbox | `src/sandbox/` |
+
+---
+
+## 2. Agentic loop
+
+The canonical pipeline every non-trivial task flows through.
+
+```mermaid
+flowchart LR
+  classDef step fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef gate fill:#1e1b4b,stroke:#a78bfa,color:#ede9fe,rx:4,ry:4
+  classDef term fill:#14532d,stroke:#10b981,color:#d1fae5,rx:4,ry:4
+  classDef fail fill:#450a0a,stroke:#f87171,color:#fee2e2,rx:4,ry:4
+
+  IN([user prompt]):::step --> CLASSIFY[classify]:::step
+  CLASSIFY --> PLAN[plan]:::step
+  PLAN --> VALID{valid plan?}:::gate
+  VALID -->|no| FIX[auto-fix]:::step --> VALID
+  VALID -->|yes| APPROVE{user approves?}:::gate
+  APPROVE -->|edit| PLAN
+  APPROVE -->|cancel| CANCEL([cancelled]):::fail
+  APPROVE -->|yes| EXEC[execute DAG]:::step
+  EXEC --> STEP[next step]:::step
+  STEP --> TOOLS[iterative tool use]:::step
+  TOOLS --> VGATE{validation gate?}:::gate
+  VGATE -->|fail + budget left| TOOLS
+  VGATE -->|fail + exhausted| RETRY{retries left?}:::gate
+  VGATE -->|ok| DONE{more steps?}:::gate
+  RETRY -->|yes| STEP
+  RETRY -->|no| DIAG[diagnose]:::step --> FAIL([failed]):::fail
+  DONE -->|yes| STEP
+  DONE -->|no| VERIFY[reviewer]:::step
+  VERIFY --> VSUM{approves?}:::gate
+  VSUM -->|no| STEP
+  VSUM -->|yes| COMP([completed]):::term
+```
+
+Source: `src/core/loop.ts:91` (entry: `runAgenticLoop`).
+
+---
+
+## 3. Task state machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> draft
+  draft --> planned: planner output
+  draft --> cancelled
+
+  planned --> approved: user approves
+  planned --> cancelled
+  planned --> blocked
+
+  approved --> scheduled
+  approved --> cancelled
+
+  scheduled --> running
+  scheduled --> cancelled
+  scheduled --> blocked
+
+  running --> verifying
+  running --> failed
+  running --> blocked
+  running --> cancelled
+
+  verifying --> completed
+  verifying --> failed
+  verifying --> running: reviewer bounces
+
+  completed --> draft: forge resume
+  failed    --> draft: forge resume
+  blocked   --> draft: forge resume
+  blocked   --> cancelled
+  cancelled --> draft: forge resume
+
+  completed --> [*]
+  failed    --> [*]
+  cancelled --> [*]
+```
+
+Source: `src/persistence/tasks.ts#LEGAL_TRANSITIONS`. Illegal moves throw
+`state_invalid`. Terminal states can only be re-entered via `forge resume`,
+which resets them to `draft` so the loop starts cleanly.
+
+---
+
+## 4. Executor — iterative tool-use with validation gate
+
+Each plan step runs a **bounded tool-use conversation**, not a single model
+call. The model sees every tool result and can adapt within the same step.
+
+```mermaid
+sequenceDiagram
+  participant L as loop.ts
+  participant E as executor.ts
+  participant M as model
+  participant T as tool
+  participant V as validator
+
+  L->>E: runStep(step)
+  loop up to maxExecutorTurns (mode-capped)
+    E->>M: prompt + schema
+    M-->>E: { actions, summary, done? }
+    alt done && !anyFailed
+      E-->>L: completed
+    else has actions
+      E->>T: execute each action
+      T-->>E: stdout/stderr/exit/error
+      E->>E: digest + push user turn
+    end
+  end
+  opt step wrote files & mode enables gate
+    loop up to maxValidationRetries
+      E->>V: run typecheck / lint / tsc
+      alt passes
+        E-->>L: completed
+      else fails
+        E->>M: VALIDATION_FAILED: <output>
+        M-->>E: corrective actions
+        E->>T: execute
+      end
+    end
+  end
+  E-->>L: { toolResults, summary, filesChanged, completed }
+```
+
+| Mode | maxExecutorTurns | maxValidationRetries | allowMutations |
+|------|------------------|----------------------|----------------|
+| fast | 2 | 0 | yes |
+| balanced | 4 | 1 | yes |
+| heavy | 8 | 2 | yes |
+| plan | 0 → 1 (clamp) | 0 | no |
+| audit | 3 | 0 | no |
+| debug | 6 | 2 | yes |
+| architect | 3 | 1 | yes |
+| offline-safe | 3 | 1 | yes |
+
+Source: `src/core/mode-policy.ts`, `src/agents/executor.ts`,
+`src/core/validation.ts`.
+
+---
+
+## 5. Memory layers
+
+Four tiers with distinct retention, access cost, and eviction:
+
+```mermaid
+flowchart TB
+  classDef hot  fill:#450a0a,stroke:#f87171,color:#fee2e2,rx:4,ry:4
+  classDef warm fill:#451a03,stroke:#fb923c,color:#ffedd5,rx:4,ry:4
+  classDef cold fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef learn fill:#14532d,stroke:#10b981,color:#d1fae5,rx:4,ry:4
+
+  H["Hot — current-session facts<br/>src/memory/hot.ts"]:::hot
+  W["Warm — recent tasks (SQLite)<br/>src/memory/warm.ts"]:::warm
+  C["Cold — project files, git, docs<br/>src/memory/cold.ts"]:::cold
+  L["Learning — patterns + confidence<br/>src/memory/learning.ts"]:::learn
+
+  Q[retrieve.ts query] --> H
+  Q --> W
+  Q --> C
+  Q --> L
+  H -.evict after session.-> W
+  W -.age out after 90 days.-> DROP([drop])
+  L -.decay if unreinforced.-> L
+```
+
+- **Hot** — in-process, per-task facts (current filesChanged, pending
+  assertions). Cleared when the task completes.
+- **Warm** — recent task metadata in SQLite (`global/index.db`). Feeds
+  "what was I doing last week?" queries in the REPL and UI.
+- **Cold** — lazy file/grep/AST index scoped to `projectRoot`. Populated
+  on demand; no background indexer.
+- **Learning** — patterns keyed by `intent:scope` with confidence evolving
+  on success/failure. Planner reads the top-K before producing a plan
+  (`src/agents/planner.ts#learnedPatternBlock`).
+
+Retention defaults live in `GlobalConfig.memory` (`src/config/schema.ts`).
+
+---
+
+## 6. Model routing & provider registry
+
+```mermaid
+flowchart LR
+  classDef local fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef hosted fill:#3f1d5c,stroke:#a78bfa,color:#ede9fe,rx:4,ry:4
+  classDef route fill:#1e293b,stroke:#f1f5f9,color:#f1f5f9,rx:4,ry:4
+
+  R[router.ts<br/>resolveModel]:::route
+  CB[circuit-breaker.ts]:::route
+  RL[rate-limit.ts]:::route
+  CACHE[prompt cache<br/>cache.ts]:::route
+  COST[cost ledger<br/>cost.ts]:::route
+  AD[adapter.ts<br/>resolveLocalModel]:::route
+
+  subgraph LOCAL[Local runtimes]
+    OLL["ollama<br/>:11434"]:::local
+    LMS["lmstudio<br/>:1234"]:::local
+    VLL["vllm<br/>:8000"]:::local
+    LCP["llamacpp<br/>:8080"]:::local
+  end
+  subgraph HOSTED[Hosted]
+    ANT["anthropic"]:::hosted
+    OAI["openai-compat<br/>api.openai.com / custom"]:::hosted
+  end
+
+  R --> AD
+  AD --> OLL & LMS & VLL & LCP
+  R --> ANT
+  R --> OAI
+  R --> CB
+  R --> RL
+  R --> CACHE
+  R --> COST
+```
+
+**Local-model catalogue** (`src/models/local-catalog.ts`) classifies every
+Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / CodeLlama / Codestral /
+StarCoder / Granite / Yi / Solar / Command-R / Aya / … id — 41 families
+total — into `{class, roles, contextTokens}`.
+
+**Adapter** (`src/models/adapter.ts`) auto-substitutes when the configured
+model isn't installed on the user's provider. Picks best-fit from what's
+actually there, caches per process, warns once.
+
+---
+
+## 7. Permission + sandbox model
+
+```mermaid
+flowchart TB
+  classDef ask fill:#1e1b4b,stroke:#a78bfa,color:#ede9fe,rx:4,ry:4
+  classDef allow fill:#14532d,stroke:#10b981,color:#d1fae5,rx:4,ry:4
+  classDef deny  fill:#450a0a,stroke:#f87171,color:#fee2e2,rx:4,ry:4
+
+  REQ[tool invocation] --> CLASSIFY[classify risk<br/>src/permissions/risk.ts]
+  CLASSIFY --> CHECK{risk × sideEffect}
+  CHECK -->|low + read| AUTOALLOW[auto-allow]:::allow
+  CHECK -->|med + write| ASK[ask user]:::ask
+  CHECK -->|high + execute| STRICT[ask + strict]:::ask
+  CHECK -->|sandbox violation| BLOCK[hard-block]:::deny
+
+  ASK --> FLAGS{session flags?}
+  FLAGS -->|--allow-shell etc.| AUTOALLOW
+  FLAGS -->|nonInteractive| DENY[deny silently]:::deny
+  FLAGS -->|else| PROMPT[interactive prompt]
+  PROMPT -->|allow| AUTOALLOW
+  PROMPT -->|deny| DENY
+
+  AUTOALLOW --> EXEC[execute]
+  EXEC --> TRUST[trust calibration<br/>permission_grants]
+  DENY --> ERR[permission_denied error]
+```
+
+- All paths resolved via **realpath** + confined to `projectRoot` plus
+  explicitly whitelisted extra roots (`src/sandbox/fs.ts`).
+- Always-forbidden targets: `/etc/passwd`, SSH keys, AWS credentials, etc.
+- Shell commands classified (`classifyCommandRisk`) before execution;
+  `critical` is hard-blocked.
+- Grants persist in SQLite (`permission_grants` table) scoped per
+  project + tool.
+
+---
+
+## 8. Conversation & persistence
+
+Two concurrent writers — the REPL and the UI — can edit the same
+conversation without corruption thanks to POSIX `O_APPEND` + a `mkdir`
+fallback for lines >4 KB.
+
+```mermaid
+flowchart LR
+  classDef w fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef s fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  REPL[REPL process]:::w
+  UI[UI process]:::w
+  SUB[subagent]:::w
+
+  JSONL[conversations/&lt;id&gt;.jsonl]:::s
+  LOCK[.lock directory<br/>mkdir fallback]:::s
+  WATCH[delta watcher<br/>byte-offset tail]:::s
+
+  REPL -->|O_APPEND| JSONL
+  UI -->|O_APPEND| JSONL
+  SUB -->|O_APPEND| JSONL
+  JSONL -.if line >4 KB.-> LOCK
+  JSONL --> WATCH
+  WATCH --> REPL
+  WATCH --> UI
+```
+
+Source: `src/persistence/conversation-store.ts`, `src/core/conversation.ts`.
+Event schema: `session-created`, `turn-user`, `turn-result`, `meta-updated`.
+
+---
+
+## 9. UI topology
+
+```mermaid
+flowchart LR
+  classDef b fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef s fill:#082f49,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef d fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  BROWSER[browser<br/>index.html + app.js]:::b
+  SERVER["Node HTTP server<br/>src/ui/server.ts"]:::s
+  WS1["/ws/tasks/:id"]:::s
+  WS2["/ws/conversations/:id"]:::s
+  API["REST /api/*"]:::s
+  EVENTS[events.jsonl]:::d
+  CONV[conversations/*.jsonl]:::d
+  TASKS[tasks/*.json]:::d
+
+  BROWSER <--> WS1
+  BROWSER <--> WS2
+  BROWSER <--> API
+  WS1 --> EVENTS
+  WS2 --> CONV
+  API --> TASKS
+```
+
+- Ref-counted broadcasters so multiple tabs share a single file watcher.
+- Conversation ids validated against `^(?:repl|chat|conv)-[a-z0-9_-]+$`
+  for path-traversal safety.
+- Healthcheck endpoint `/api/status` used by the Docker HEALTHCHECK.
+
+---
+
+## 10. CI/CD pipeline
+
+```mermaid
+flowchart LR
+  classDef pass fill:#14532d,stroke:#10b981,color:#d1fae5,rx:4,ry:4
+  classDef gate fill:#1e1b4b,stroke:#a78bfa,color:#ede9fe,rx:4,ry:4
+  classDef ship fill:#451a03,stroke:#fb923c,color:#ffedd5,rx:4,ry:4
+
+  PR[PR / push] --> FMT["🎨 format"]:::pass
+  PR --> LINT["🧹 lint"]:::pass
+  PR --> TYPE["🧠 typecheck"]:::pass
+  PR --> TEST["🧪 test matrix<br/>Ubuntu+macOS × Node 20+22"]:::pass
+  TEST --> COV["📈 coverage"]:::pass
+  TYPE --> BUILD["🏗️ build"]:::pass
+  BUILD --> DOCKER["🐳 docker-build"]:::pass
+  PR --> AUDIT["🔐 audit"]:::pass
+  FMT & LINT & TYPE & TEST & BUILD & DOCKER & AUDIT & COV --> STATUS["📊 pipeline status<br/>GitHub summary"]:::gate
+
+  TAG[git tag v*] --> GATE["🧪 pre-release gate"]:::gate
+  GATE --> ART["📦 artifacts (5 targets)"]:::ship
+  GATE --> DOCKP["🐳 docker publish<br/>ghcr.io · multi-arch"]:::ship
+  ART --> MAN["📝 manifest + gh-release<br/>ed25519-signed"]:::ship
+  MAN --> NPM["📤 npm publish --provenance"]:::ship
+  GATE & ART & DOCKP & MAN & NPM --> RSUM["📊 release status"]:::gate
+```
+
+Source: `.github/workflows/{ci,release,nightly}.yml`.
+
+---
+
+## 11. Deployment topologies
+
+```mermaid
+flowchart LR
+  classDef host fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef vol fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  subgraph A[Host install  npm i -g]
+    HCLI["forge CLI"]:::host
+    HUI["forge ui"]:::host
+    HFH["~/.forge"]:::vol
+    HCLI --> HFH
+    HUI --> HFH
+  end
+
+  subgraph B[Container  docker / podman]
+    CIMG["forge/core:<ver>"]:::host
+    DATA["-v forge-home:/data"]:::vol
+    WORK["-v CWD:/workspace"]:::vol
+    CIMG --> DATA
+    CIMG --> WORK
+  end
+
+  subgraph C[Compose]
+    CCORE["forge-core"]:::host
+    CUI["forge-ui"]:::host
+    COLL["ollama"]:::host
+    CVOL["forge-home + ollama-models"]:::vol
+    CCORE --> CVOL
+    CUI --> CVOL
+    COLL --> CVOL
+  end
+```
+
+---
+
+## 12. Subsystem size at a glance
+
+Lines of code per subsystem (from `docs/metrics.json`, regenerate via
+`scripts/metrics.sh`):
+
+```mermaid
+xychart-beta
+  title "Lines of code per subsystem"
+  x-axis ["cli","core","ui","tools","models","agents","persistence","memory","mcp","types","web"]
+  y-axis "LoC" 0 --> 6000
+  bar [5212, 1661, 1603, 1601, 1509, 1053, 1018, 754, 520, 516, 512]
+```
+
+Totals — **18,863 LoC** across `src/`, **203 tests** in **38 files**, 100%
+passing (`npm test`).
+
+---
+
+## 13. Directory map
+
+```
+src/
+├── cli/            # commander CLI + 24 commands + REPL + input editor
+├── core/           # orchestrator, agentic loop, mode-policy, validation
+├── agents/         # 6 agents (planner/architect/executor/reviewer/debugger/memory)
+├── classifier/     # heuristic + LLM task classification
+├── models/         # 6 providers + router + adapter + catalog
+├── prompts/        # layered assembler, deterministic hash
+├── tools/          # 18 tools (read/write/edit/grep/glob/run/git/web/…)
+├── sandbox/        # fs scope + command risk classifier
+├── permissions/    # risk classifier + interactive manager + trust calibration
+├── persistence/    # tasks, sessions, conversations, events, SQLite index
+├── memory/         # 4-layer memory + retrieval
+├── scheduler/      # DAG + resource manager (concurrency permits)
+├── ui/             # HTTP + WS dashboard; public/ = app shell
+├── mcp/            # Model Context Protocol bridge
+├── daemon/         # optional background process
+├── keychain/       # macOS/Linux/Windows credential storage
+├── release/        # manifest signing + verification
+├── security/       # prompt-injection guard, redaction
+├── logging/        # structured logger + rotation
+├── config/         # zod schema + XDG paths
+└── types/          # shared contracts
+```

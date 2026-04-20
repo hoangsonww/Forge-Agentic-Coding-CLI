@@ -1,51 +1,94 @@
+# =============================================================================
 # Forge compose: core + ui + ollama, sharing model + forge-home volumes.
-# Use `docker compose up -d` from the repo root (path is ./docker/).
-# `forge container up` wraps this command for a consistent UX.
+#
+# Bring it up from the repo root:
+#   docker compose -f docker/docker-compose.yml up -d
+#
+# The `forge container up` wrapper runs this command for consistent UX.
+#
+# Podman (works unchanged with podman-compose ≥ 1.1):
+#   podman-compose -f docker/docker-compose.yml up -d
+# =============================================================================
+
+name: forge
 
 services:
+  # --- Ollama (local LLM runtime) ------------------------------------------
   ollama:
     image: ollama/ollama:latest
+    container_name: forge-ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama-models:/root/.ollama
-    # Uncomment for GPU passthrough:
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:11434/api/tags || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    # Uncomment for GPU passthrough (NVIDIA Container Toolkit required):
     # deploy:
     #   resources:
     #     reservations:
     #       devices:
     #         - capabilities: [gpu]
-    restart: unless-stopped
 
+  # --- Forge CLI (interactive, on demand) ----------------------------------
+  # Use `docker compose run --rm forge-core <args>` to invoke the CLI.
+  # Kept as `restart: no` so it does not hold a slot when idle.
   forge-core:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        FORGE_VERSION: dev
     image: forge/core:latest
-    depends_on: [ollama]
+    container_name: forge-core
+    depends_on:
+      ollama:
+        condition: service_healthy
     environment:
       FORGE_HOME: /data/.forge
       OLLAMA_ENDPOINT: http://ollama:11434
     volumes:
       - forge-home:/data
-      - ../examples:/workspace:rw
+      - ../:/workspace:rw
     stdin_open: true
     tty: true
+    restart: "no"
     command: ["forge", "doctor"]
 
+  # --- Forge dashboard (long-running) --------------------------------------
   forge-ui:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.ui
-    image: forge/ui:latest
-    depends_on: [forge-core]
+      dockerfile: docker/Dockerfile
+      args:
+        FORGE_VERSION: dev
+    image: forge/core:latest
+    container_name: forge-ui
+    depends_on:
+      ollama:
+        condition: service_healthy
     ports:
       - "7823:7823"
     environment:
       FORGE_HOME: /data/.forge
+      OLLAMA_ENDPOINT: http://ollama:11434
+      FORGE_UI_BIND: 0.0.0.0
+      FORGE_UI_PORT: "7823"
     volumes:
       - forge-home:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7823/api/status || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
+    command: ["forge", "ui", "start", "--bind", "0.0.0.0", "--port", "7823"]
 
 volumes:
   forge-home:

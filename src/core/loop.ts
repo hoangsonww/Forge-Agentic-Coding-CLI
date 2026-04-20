@@ -274,19 +274,27 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
           }
           for (const f of out.filesChanged) filesChanged.add(f);
 
-          const anyFailure = out.toolResults.some((r) => !r.result.success);
-          if (anyFailure) {
-            const firstFailure = out.toolResults.find((r) => !r.result.success);
+          // The executor now self-heals within a step via iterative tool use
+          // (see `src/agents/executor.ts`), so a transient tool failure that
+          // the model recovered from is no longer a step failure. We trust
+          // the executor's `completed` flag, falling back to the legacy
+          // "no surviving failures at the tail" check so we still catch the
+          // case where no recovery was attempted.
+          const tail = out.toolResults[out.toolResults.length - 1];
+          const stepFailed = !out.completed || (tail ? !tail.result.success : false);
+          if (stepFailed) {
+            const lastFailure = [...out.toolResults].reverse().find((r) => !r.result.success);
             loopDetector.record({
               stepId: step.id,
               success: false,
-              errorClass: firstFailure?.result.error?.class,
+              errorClass: lastFailure?.result.error?.class,
               timestamp: Date.now(),
             });
             throw new ForgeRuntimeError({
               class: 'tool_error',
-              message: `Step ${step.id} had tool failures`,
+              message: lastFailure?.result.error?.message ?? `Step ${step.id} did not complete`,
               retryable: true,
+              recoveryHint: lastFailure?.result.error?.recoveryHint,
             });
           }
           loopDetector.record({ stepId: step.id, success: true, timestamp: Date.now() });

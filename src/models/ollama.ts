@@ -8,21 +8,7 @@ import {
 } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { loadGlobalConfig } from '../config/loader';
-
-const DEFAULT_ROLES_BY_SIZE = (name: string): ModelDescriptor['roles'] => {
-  if (/phi|gemma|tiny/i.test(name)) return ['fast'];
-  if (/deepseek|starcoder|codellama|code-/i.test(name)) return ['executor', 'fast'];
-  if (/qwen/i.test(name)) return ['planner', 'debugger'];
-  if (/mixtral|70b/i.test(name)) return ['architect', 'reviewer', 'planner'];
-  return ['executor', 'planner'];
-};
-
-const classFor = (name: string): ModelDescriptor['class'] => {
-  if (/phi|tiny|gemma/i.test(name)) return 'micro';
-  if (/70b|mixtral|8x/i.test(name)) return 'heavy';
-  if (/coder|code/i.test(name)) return 'specialized';
-  return 'mid';
-};
+import { classifyModel } from './local-catalog';
 
 export class OllamaProvider implements ModelProvider {
   readonly name = 'ollama';
@@ -43,14 +29,17 @@ export class OllamaProvider implements ModelProvider {
       const res = await request(`${this.endpoint}/api/tags`, { method: 'GET' });
       if (res.statusCode !== 200) return [];
       const body = (await res.body.json()) as { models: Array<{ name: string; size?: number }> };
-      return (body.models ?? []).map((m) => ({
-        provider: 'ollama',
-        id: m.name,
-        class: classFor(m.name),
-        contextTokens: 8192,
-        supportsStreaming: true,
-        roles: DEFAULT_ROLES_BY_SIZE(m.name),
-      }));
+      return (body.models ?? []).map((m) => {
+        const meta = classifyModel(m.name);
+        return {
+          provider: 'ollama',
+          id: m.name,
+          class: meta.class,
+          contextTokens: meta.contextTokens,
+          supportsStreaming: true,
+          roles: meta.roles,
+        } as ModelDescriptor;
+      });
     } catch {
       return [];
     }

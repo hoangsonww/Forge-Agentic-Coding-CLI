@@ -8,6 +8,7 @@ import { allTools } from '../tools/registry';
 import { ForgeRuntimeError } from '../types/errors';
 import { loadGlobalInstructions, loadProjectInstructions } from '../config/loader';
 import { retrieve } from '../memory/retrieval';
+import { relevantPatterns } from '../memory/learning';
 
 const planSchemaPrompt = `Produce a PLAN as strict JSON with the shape:
 
@@ -100,19 +101,46 @@ const coerceSteps = (raw: unknown): PlanStep[] => {
   });
 };
 
+/**
+ * Pull patterns that the learning layer has accumulated for this task's
+ * intent:scope. Only surfaces rows confident enough to be actionable so we
+ * don't bias the planner with weak or stale signals.
+ */
+const learnedPatternBlock = (task: Task): { source: string; content: string } | null => {
+  const profile = task.profile;
+  if (!profile) return null;
+  const key = `${profile.intent}:${profile.scope}`;
+  const rows = relevantPatterns(key, 5).filter((p) => p.confidence >= 0.55);
+  if (!rows.length) return null;
+  const lines = rows.map((p) => {
+    const hint = p.fix.trim().slice(0, 200);
+    const tag = p.confidence >= 0.8 ? 'strong' : 'moderate';
+    return `- (${tag} ${p.confidence.toFixed(2)}) ${p.pattern.slice(0, 120)} → ${hint}`;
+  });
+  return {
+    source: 'learned_patterns',
+    content:
+      `The following patterns have been observed on prior ${key} tasks. Prefer ` +
+      `fixes that align with strong patterns; avoid repeating moves that have ` +
+      `failed before.\n\n${lines.join('\n')}`,
+  };
+};
+
 export const buildPlannerPrompt = (task: Task, projectRoot: string, mode: Mode) => {
   const retrieved = retrieve({
     projectRoot,
     query: `${task.title}\n${task.description ?? ''}`,
     maxColdHits: mode === 'heavy' ? 12 : 6,
   });
+  const patternBlock = learnedPatternBlock(task);
+  const contextBlocks = patternBlock ? [...retrieved.blocks, patternBlock] : retrieved.blocks;
   return assembleTaskPrompt({
     mode,
     title: task.title,
     description: task.description,
     globalInstructions: loadGlobalInstructions(),
     projectInstructions: loadProjectInstructions(projectRoot),
-    contextBlocks: retrieved.blocks,
+    contextBlocks,
     tools: allTools(),
     additionalUserText: `${planSchemaPrompt}\n\nTASK:\n${task.title}\n${task.description ?? ''}`,
   });

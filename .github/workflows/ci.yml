@@ -3,44 +3,267 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref so rapid pushes don't queue up.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORGE_HOME: ${{ github.workspace }}/.forge-ci
+  NODE_VERSION: '20'
 
 jobs:
-  build:
+  # ---------------------------------------------------------------------
+  # 🎨  Format check — fast fail on obvious style drift
+  # ---------------------------------------------------------------------
+  format:
+    name: 🎨 format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Prettier --check
+        run: npx prettier --check 'src/**/*.ts' 'test/**/*.ts'
+
+  # ---------------------------------------------------------------------
+  # 🧹  Lint
+  # ---------------------------------------------------------------------
+  lint:
+    name: 🧹 lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: ESLint
+        run: npx eslint 'src/**/*.ts' --max-warnings=100
+
+  # ---------------------------------------------------------------------
+  # 🧠  Type-check
+  # ---------------------------------------------------------------------
+  typecheck:
+    name: 🧠 typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: TypeScript
+        run: npx tsc -p tsconfig.json --noEmit
+
+  # ---------------------------------------------------------------------
+  # 🧪  Tests — matrix over OS × Node
+  # ---------------------------------------------------------------------
+  test:
+    name: 🧪 test (${{ matrix.os }} · node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        node: [20, 22]
+        node: ['20', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npx tsc -p tsconfig.json
-      - run: npx vitest run
-      - run: ./bin/forge.js doctor
-        env:
-          FORGE_HOME: ${{ runner.temp }}/forge-ci
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Run vitest
+        run: npx vitest run --reporter=default --reporter=junit --outputFile=./test-results.xml
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-node${{ matrix.node }}
+          path: test-results.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
-  lint:
+  # ---------------------------------------------------------------------
+  # 📈  Coverage — single OS to keep reports deterministic
+  # ---------------------------------------------------------------------
+  coverage:
+    name: 📈 coverage
     runs-on: ubuntu-latest
+    needs: [test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci --ignore-scripts
-      - run: npx eslint 'src/**/*.ts' --max-warnings=100
-      - run: npx prettier --check 'src/**/*.ts' 'test/**/*.ts'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: vitest --coverage
+        run: npm run test:coverage --silent || true
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: ignore
+          retention-days: 14
 
+  # ---------------------------------------------------------------------
+  # 🏗️  Build — produces the same dist that ships
+  # ---------------------------------------------------------------------
+  build:
+    name: 🏗️ build
+    runs-on: ubuntu-latest
+    needs: [typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build (tsc + asset copy)
+        run: npm run build
+      - name: Smoke — forge doctor
+        run: |
+          mkdir -p "${FORGE_HOME}"
+          ./bin/forge.js doctor --no-banner || true  # no providers on CI runners — allowed
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  # ---------------------------------------------------------------------
+  # 🐳  Docker build — catches Dockerfile / asset-copy regressions
+  # ---------------------------------------------------------------------
+  docker:
+    name: 🐳 docker-build
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          tags: forge/core:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            FORGE_VERSION=${{ github.sha }}
+            FORGE_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+      - name: Smoke — run forge doctor inside the image
+        run: |
+          docker run --rm forge/core:ci forge doctor --no-banner || true
+
+  # ---------------------------------------------------------------------
+  # 🔐  Dependency audit — informational, doesn't fail the build
+  # ---------------------------------------------------------------------
   audit:
+    name: 🔐 audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci --ignore-scripts
-      - run: npm audit --audit-level=high || true
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: npm audit (high)
+        run: npm audit --audit-level=high || true
+
+  # ---------------------------------------------------------------------
+  # 📊  Pipeline status — runs last, always; writes job-by-job summary
+  # ---------------------------------------------------------------------
+  pipeline-status:
+    name: 📊 pipeline status
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [format, lint, typecheck, test, coverage, build, docker, audit]
+    steps:
+      - name: Write GitHub summary
+        env:
+          FORMAT_R:   ${{ needs.format.result }}
+          LINT_R:     ${{ needs.lint.result }}
+          TYPE_R:     ${{ needs.typecheck.result }}
+          TEST_R:     ${{ needs.test.result }}
+          COV_R:      ${{ needs.coverage.result }}
+          BUILD_R:    ${{ needs.build.result }}
+          DOCKER_R:   ${{ needs.docker.result }}
+          AUDIT_R:    ${{ needs.audit.result }}
+        run: |
+          set -eu
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹️" ;;
+              skipped)   echo "⏭️" ;;
+              *)         echo "❔" ;;
+            esac
+          }
+          {
+            echo "# 🔨 Forge CI pipeline"
+            echo ""
+            echo "| Job | Result |"
+            echo "|-----|--------|"
+            printf "| 🎨 format        | %s  \`%s\` |\n" "$(icon "$FORMAT_R")" "$FORMAT_R"
+            printf "| 🧹 lint          | %s  \`%s\` |\n" "$(icon "$LINT_R")"   "$LINT_R"
+            printf "| 🧠 typecheck     | %s  \`%s\` |\n" "$(icon "$TYPE_R")"   "$TYPE_R"
+            printf "| 🧪 test (matrix) | %s  \`%s\` |\n" "$(icon "$TEST_R")"   "$TEST_R"
+            printf "| 📈 coverage      | %s  \`%s\` |\n" "$(icon "$COV_R")"    "$COV_R"
+            printf "| 🏗️ build         | %s  \`%s\` |\n" "$(icon "$BUILD_R")"  "$BUILD_R"
+            printf "| 🐳 docker-build  | %s  \`%s\` |\n" "$(icon "$DOCKER_R")" "$DOCKER_R"
+            printf "| 🔐 audit         | %s  \`%s\` |\n" "$(icon "$AUDIT_R")"  "$AUDIT_R"
+            echo ""
+            echo "> Commit: \`${GITHUB_SHA:0:7}\` · Ref: \`${GITHUB_REF_NAME}\` · Run: [#${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any required job failed
+        env:
+          FORMAT_R: ${{ needs.format.result }}
+          LINT_R:   ${{ needs.lint.result }}
+          TYPE_R:   ${{ needs.typecheck.result }}
+          TEST_R:   ${{ needs.test.result }}
+          BUILD_R:  ${{ needs.build.result }}
+          DOCKER_R: ${{ needs.docker.result }}
+        run: |
+          set -eu
+          bad=0
+          for v in "$FORMAT_R" "$LINT_R" "$TYPE_R" "$TEST_R" "$BUILD_R" "$DOCKER_R"; do
+            if [ "$v" != "success" ] && [ "$v" != "skipped" ]; then
+              bad=1
+            fi
+          done
+          if [ "$bad" -ne 0 ]; then
+            echo "::error ::One or more required jobs failed — see the pipeline status table."
+            exit 1
+          fi
+          echo "All required jobs passed."

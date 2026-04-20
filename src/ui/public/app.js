@@ -194,6 +194,117 @@ const greeting = () => {
 // padding doesn't feel empty on wide monitors.
 const page = (html) => `<div class="content-inner">${html}</div>`;
 
+// ---------- Prompt history (arrow-up recall, UI-wide) ----------
+//
+// Mirrors the REPL's up/down recall. Shared pool across the hero, run, and
+// chat inputs so a prompt you typed on one surface can be pulled back on
+// another. Persists to localStorage; capped at 500 entries.
+
+const PROMPT_HIST_KEY = 'forge:prompt-history';
+const PROMPT_HIST_MAX = 500;
+
+const loadPromptHistory = () => {
+  try {
+    const raw = localStorage.getItem(PROMPT_HIST_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((s) => typeof s === 'string' && s) : [];
+  } catch {
+    return [];
+  }
+};
+
+const savePromptHistory = (arr) => {
+  try {
+    localStorage.setItem(PROMPT_HIST_KEY, JSON.stringify(arr.slice(-PROMPT_HIST_MAX)));
+  } catch { /* quota — ignore */ }
+};
+
+const pushPromptHistory = (text) => {
+  const s = (text || '').trim();
+  if (!s) return;
+  const hist = loadPromptHistory();
+  // Drop an immediately-repeated entry so a double submit doesn't duplicate.
+  if (hist[hist.length - 1] === s) return;
+  hist.push(s);
+  savePromptHistory(hist);
+};
+
+/**
+ * Wire ArrowUp/ArrowDown history recall on an `<input>` or `<textarea>`.
+ *
+ * UX rules (mirrors bash/zsh + the REPL line editor):
+ *  - ArrowUp when the field is empty OR the cursor is on the first line
+ *    → replace value with the previous history entry
+ *  - ArrowDown on the last line → step newer, eventually restoring the
+ *    live draft that was in progress when navigation began
+ *  - Esc while navigating → restore the live draft and stop navigating
+ *  - Typing at any point cancels navigation so the next up-arrow picks up
+ *    from the newest entry again
+ */
+const attachPromptHistory = (el) => {
+  if (!el || el.dataset.historyAttached === '1') return;
+  el.dataset.historyAttached = '1';
+
+  let hist = loadPromptHistory();
+  // -1 = live draft, 0..hist.length-1 = navigating from newest → oldest
+  let idx = -1;
+  let stash = '';
+
+  const isTextarea = el.tagName === 'TEXTAREA';
+  const onFirstLine = () => {
+    if (!isTextarea) return true;
+    const before = el.value.slice(0, el.selectionStart ?? 0);
+    return !before.includes('\n');
+  };
+  const onLastLine = () => {
+    if (!isTextarea) return true;
+    const after = el.value.slice(el.selectionEnd ?? el.value.length);
+    return !after.includes('\n');
+  };
+
+  const show = (value) => {
+    el.value = value;
+    // Place caret at the end so the next ArrowUp keeps navigating.
+    const end = value.length;
+    try { el.setSelectionRange(end, end); } catch { /* not all inputs support it */ }
+    if (isTextarea && typeof autosize === 'function') {
+      try { autosize(el); } catch { /* autosize is optional */ }
+    }
+  };
+
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') {
+      if (!onFirstLine()) return;
+      hist = loadPromptHistory();
+      if (!hist.length) return;
+      if (idx === -1) stash = el.value;
+      idx = Math.min(idx + 1, hist.length - 1);
+      e.preventDefault();
+      show(hist[hist.length - 1 - idx]);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      if (idx === -1 || !onLastLine()) return;
+      idx--;
+      e.preventDefault();
+      show(idx === -1 ? stash : hist[hist.length - 1 - idx]);
+      return;
+    }
+    if (e.key === 'Escape' && idx !== -1) {
+      idx = -1;
+      e.preventDefault();
+      show(stash);
+      return;
+    }
+    // Any ordinary typing cancels navigation.
+    if (idx !== -1 && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      idx = -1;
+      stash = '';
+    }
+  });
+};
+
 // ---------- View router ----------
 
 const views = {};
@@ -361,6 +472,7 @@ views.dashboard = async () => {
     const go = async (prompt = null) => {
       const p = (prompt ?? input.value).trim();
       if (!p) return;
+      pushPromptHistory(p);
       try {
         const { taskId } = await apiPost('/api/tasks/run', { prompt: p, autoApprove: false });
         toast('Task started', 'ok');
@@ -368,6 +480,7 @@ views.dashboard = async () => {
       } catch (e) { toast(String(e), 'err'); }
     };
     document.getElementById('hero-go').addEventListener('click', () => go());
+    attachPromptHistory(input);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); }
       if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); setView('run'); }
@@ -594,6 +707,7 @@ views.chat = async () => {
     const input = document.getElementById('chat-input');
     if (input && !isRunning) {
       input.focus();
+      attachPromptHistory(input);
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -609,6 +723,7 @@ views.chat = async () => {
         e.preventDefault();
         const text = (input.value || '').trim();
         if (!text) return;
+        pushPromptHistory(text);
         const mode = document.getElementById('chat-mode').value;
         const auto = document.getElementById('chat-auto').checked;
         input.disabled = true;
@@ -778,6 +893,7 @@ views.run = async () => {
   const go = async () => {
     const prompt = document.getElementById('run-prompt').value.trim();
     if (!prompt) return toast('prompt required', 'warn');
+    pushPromptHistory(prompt);
     const mode = document.getElementById('run-mode').value;
     const cwd = document.getElementById('run-cwd').value.trim() || undefined;
     const flags = {};
@@ -796,6 +912,7 @@ views.run = async () => {
   };
 
   document.getElementById('run-go').addEventListener('click', go);
+  attachPromptHistory(document.getElementById('run-prompt'));
   document.getElementById('run-prompt').addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') go();
   });

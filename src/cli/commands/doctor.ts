@@ -3,12 +3,14 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import { bootstrap } from '../bootstrap';
 import { listProviders } from '../../models/provider';
+import { isLocalProvider, resolveLocalModel } from '../../models/adapter';
 import { banner, divider, section, kv, success, attention, PALETTE } from '../ui';
 import { paths } from '../../config/paths';
 import { loadGlobalConfig } from '../../config/loader';
 import { getDb } from '../../persistence/index-db';
 import { daemonStatus } from '../../daemon/control';
 import { runCommand } from '../../sandbox/shell';
+import { ModelRole } from '../../types';
 
 interface Check {
   name: string;
@@ -99,15 +101,81 @@ export const doctorCommand = new Command('doctor')
       process.stdout.write(kv(k, String(v)) + '\n');
     }
 
+    // Role → model mapping for each local provider. Helps users confirm
+    // that Forge has picked something sensible from what they've pulled.
+    const cfg = loadGlobalConfig();
+    const roles: ModelRole[] = ['fast', 'executor', 'planner', 'architect', 'reviewer'];
+    process.stdout.write(section('model routing', '◆'));
+    for (const p of listProviders()) {
+      let up = false;
+      try {
+        up = await p.isAvailable();
+      } catch {
+        up = false;
+      }
+      if (!up) {
+        process.stdout.write(kv(p.name, chalk.dim('(unavailable — skipped)')) + '\n');
+        continue;
+      }
+      process.stdout.write(chalk.bold(`  ${p.name}\n`));
+      for (const role of roles) {
+        let model: string;
+        try {
+          if (p.name === 'anthropic') {
+            model = cfg.anthropic.model;
+          } else if (isLocalProvider(p.name)) {
+            const configured =
+              role === 'fast'
+                ? cfg.models.fast
+                : role === 'executor'
+                  ? cfg.models.code
+                  : role === 'planner'
+                    ? cfg.models.planner
+                    : cfg.models.balanced;
+            model = await resolveLocalModel(p, role, configured);
+          } else {
+            model = '(provider resolves its own)';
+          }
+        } catch (err) {
+          model = `(error: ${String(err).slice(0, 60)})`;
+        }
+        process.stdout.write(kv(`   ${role}`, model) + '\n');
+      }
+    }
+
     process.stdout.write('\n');
     if (allOk) {
       process.stdout.write(
         success('All checks passed', [chalk.dim('try: forge run "…your task…"')]) + '\n',
       );
     } else {
-      process.stdout.write(
-        attention('Some checks failed', ['run: forge config path', 'or:  forge init']) + '\n',
-      );
+      // Probe providers one more time so we can tell the user *which* check
+      // tripped and how to fix it without digging through the list above.
+      const names = listProviders().map((p) => p.name);
+      const anyUp = (
+        await Promise.all(
+          listProviders().map(async (p) => {
+            try {
+              return await p.isAvailable();
+            } catch {
+              return false;
+            }
+          }),
+        )
+      ).some(Boolean);
+      if (!anyUp) {
+        process.stdout.write(
+          attention(`No model provider is reachable (tried: ${names.join(', ')})`, [
+            'Start one of:  `ollama serve`  ·  LM Studio → Start Server  ·  `vllm serve <model>`  ·  `llama-server …`',
+            'Or export:     ANTHROPIC_API_KEY  ·  OPENAI_API_KEY  ·  OPENAI_BASE_URL',
+            'Then:          forge doctor',
+          ]) + '\n',
+        );
+      } else {
+        process.stdout.write(
+          attention('Some checks failed', ['run: forge config path', 'or:  forge init']) + '\n',
+        );
+      }
       process.exitCode = 1;
     }
     // Silence unused-import warnings for optional helpers loaded for side-effect.

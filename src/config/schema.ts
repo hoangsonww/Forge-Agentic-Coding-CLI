@@ -14,7 +14,14 @@ export const modeEnum = z.enum([
 
 export const updateChannelEnum = z.enum(['stable', 'beta', 'nightly']);
 
-export const providerEnum = z.enum(['ollama', 'anthropic', 'openai', 'llamacpp', 'vllm']);
+export const providerEnum = z.enum([
+  'ollama',
+  'anthropic',
+  'openai',
+  'llamacpp',
+  'vllm',
+  'lmstudio',
+]);
 
 export const globalConfigSchema = z.object({
   version: z.string().default('1'),

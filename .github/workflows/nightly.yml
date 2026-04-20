@@ -2,18 +2,30 @@ name: nightly
 
 on:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '0 5 * * *' # daily at 05:00 UTC
   workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   nightly-build:
+    name: 🌙 nightly build + publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with:
+          node-version: '20'
+          registry-url: https://registry.npmjs.org
+          cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx tsc -p tsconfig.json
+      - run: npm run build
       - run: npx vitest run
       - name: Publish nightly to npm
         if: success() && env.NODE_AUTH_TOKEN != ''
@@ -23,3 +35,8 @@ jobs:
           npm publish --tag nightly --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🌙 Nightly — $(date -u +%Y-%m-%d)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
