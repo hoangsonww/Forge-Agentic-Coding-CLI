@@ -6,7 +6,7 @@ coverage/
 .env.local
 .DS_Store
 .vscode/
-.idea/
+.idea/workspace.xml
 *.tsbuildinfo
 .forge/
 forge-debug-*.log
