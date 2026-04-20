@@ -60,6 +60,12 @@ const gradientLines = (
 
 /** The primary brand banner. Matches the ASCII the user requested exactly. */
 export const banner = (): string => {
+  const cols = process.stdout.columns && process.stdout.columns > 0 ? process.stdout.columns : 80;
+  const center = (text: string, rawLength: number) => {
+    const pad = Math.max(0, Math.floor((cols - rawLength) / 2));
+    return ' '.repeat(pad) + text;
+  };
+
   const art = [
     `.------------------------------.`,
     `| _____                        |`,
@@ -70,28 +76,47 @@ export const banner = (): string => {
     `|                  |___/       |`,
     `'------------------------------'`,
   ];
-  const coloured = gradientLines(art, PALETTE.cyan, PALETTE.violet).join('\n');
-  const tagline = chalk.rgb(...PALETTE.muted)('    local-first · multi-agent · programmable');
-  const subtitle = chalk
-    .rgb(...PALETTE.pink)
-    .italic('    forge — software engineering as a runtime');
+  const coloured = gradientLines(art, PALETTE.cyan, PALETTE.violet)
+    .map((line, i) => center(line, art[i].length))
+    .join('\n');
+
+  const subtitleRaw = 'forge — software engineering as a runtime';
+  const subtitle = center(chalk.rgb(...PALETTE.pink).italic(subtitleRaw), subtitleRaw.length);
+
+  const taglineRaw = 'local-first · multi-agent · programmable';
+  const tagline = center(chalk.rgb(...PALETTE.muted)(taglineRaw), taglineRaw.length);
+
   return `\n${coloured}\n${subtitle}\n${tagline}\n`;
 };
 
 /** Welcome hero used by `forge init` and a blank `forge`. */
 export const welcome = (version: string): string => {
+  const cols = process.stdout.columns && process.stdout.columns > 0 ? process.stdout.columns : 80;
+  const center = (text: string, rawLength: number) => {
+    const pad = Math.max(0, Math.floor((cols - rawLength) / 2));
+    return ' '.repeat(pad) + text;
+  };
+
   const left = chalk.rgb(...PALETTE.cyan)('⟡');
   const right = chalk.rgb(...PALETTE.pink)('⟡');
   const v = chalk.rgb(...PALETTE.muted)(`v${version}`);
-  const header = `${banner()}${' '.repeat(6)}${left} ${chalk.bold('Welcome to Forge')} ${right}  ${v}\n`;
-  const hint =
-    chalk.rgb(...PALETTE.muted)('    try: ') +
-    chalk.bold.rgb(...PALETTE.cyan)('forge run ') +
-    chalk.rgb(...PALETTE.amber)('"add a /health endpoint"') +
-    chalk.rgb(...PALETTE.muted)('   ·   ') +
-    chalk.bold.rgb(...PALETTE.cyan)('forge ui start') +
-    '\n';
-  return header + hint;
+  const welcomeRaw = `⟡ Welcome to Forge ⟡  v${version}`;
+  const headerLine = center(
+    `${left} ${chalk.bold('Welcome to Forge')} ${right}  ${v}`,
+    welcomeRaw.length,
+  );
+
+  const hintRaw = `try: forge run "add a /health endpoint"   ·   forge ui start`;
+  const hintLine = center(
+    chalk.rgb(...PALETTE.muted)('try: ') +
+      chalk.bold.rgb(...PALETTE.cyan)('forge run ') +
+      chalk.rgb(...PALETTE.amber)('"add a /health endpoint"') +
+      chalk.rgb(...PALETTE.muted)('   ·   ') +
+      chalk.bold.rgb(...PALETTE.cyan)('forge ui start'),
+    hintRaw.length,
+  );
+
+  return `${banner()}${headerLine}\n${hintLine}\n`;
 };
 
 /** Heavy divider with gradient and optional title. */
