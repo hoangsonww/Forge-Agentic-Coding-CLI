@@ -37,7 +37,7 @@ local model. Hosted `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` also works.
 ## 2. Clone, install, verify
 
 ```bash
-git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
+git clone https://github.com/hoangsonww/Forge-Agentic-Coding-CLI && cd forge
 npm install
 npm run build
 npm test              # 249 tests across 43 files; all must pass

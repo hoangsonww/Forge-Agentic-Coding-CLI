@@ -4,13 +4,13 @@
   "description": "Forge - a local-first, multi-agent, programmable software-engineering runtime",
   "license": "MIT",
   "author": "Son Nguyen (hoangsonw)",
-  "homepage": "https://github.com/hoangsonw/Forge-Agentic-Coding-CLI#readme",
+  "homepage": "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoangsonw/Forge-Agentic-Coding-CLI.git"
+    "url": "git+https://github.com/hoangsonww/Forge-Agentic-Coding-CLI.git"
   },
   "bugs": {
-    "url": "https://github.com/hoangsonw/Forge-Agentic-Coding-CLI/issues"
+    "url": "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/issues"
   },
   "bin": {
     "forge": "bin/forge.js"

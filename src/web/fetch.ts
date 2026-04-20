@@ -75,7 +75,7 @@ export const webFetch = async (opts: FetchOptions): Promise<FetchResult> => {
     method: 'GET',
     headers: {
       accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'user-agent': 'Forge/0.1 (+https://github.com/forge/forge)',
+      'user-agent': 'Forge/0.1 (+https://github.com/hoangsonww/Forge-Agentic-Coding-CLI)',
     },
     maxRedirections: 5,
     bodyTimeout: opts.timeoutMs ?? 15_000,

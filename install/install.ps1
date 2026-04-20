@@ -36,7 +36,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $home 'bin') | Out-Null
 
 $arch = if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' }
 $artifact = "forge-windows-$arch.exe"
-$url = "https://github.com/forge/forge/releases/latest/download/$artifact"
+$url = "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/releases/latest/download/$artifact"
 $dst = Join-Path $home 'bin\forge.exe'
 
 Write-Host "Downloading $url..."

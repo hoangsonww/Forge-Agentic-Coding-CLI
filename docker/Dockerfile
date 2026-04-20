@@ -53,7 +53,7 @@ LABEL org.opencontainers.image.title="Forge" \
       org.opencontainers.image.version="${FORGE_VERSION}" \
       org.opencontainers.image.revision="${FORGE_COMMIT}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.source="https://github.com/hoangsonw/Forge-Agentic-Coding-CLI" \
+      org.opencontainers.image.source="https://github.com/hoangsonww/Forge-Agentic-Coding-CLI" \
       org.opencontainers.image.licenses="MIT"
 
 ENV NODE_ENV=production \

@@ -52,7 +52,7 @@ export const openSession = async (
   const context: BrowserContext = await browser.newContext({
     javaScriptEnabled: true,
     bypassCSP: false,
-    userAgent: 'Forge/0.1 (+https://github.com/forge/forge)',
+    userAgent: 'Forge/0.1 (+https://github.com/hoangsonww/Forge-Agentic-Coding-CLI)',
   });
   const page: Page = await context.newPage();
   page.setDefaultTimeout(opts.timeoutMs ?? 20_000);
