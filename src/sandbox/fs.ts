@@ -2,6 +2,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { ForgeRuntimeError } from '../types/errors';
 
+/**
+ * Sandboxed filesystem access. Provides utilities to resolve paths safely within a sandbox defined by a project root and optional extra allowed roots. The main function is `resolveSafe`, which checks that a given path is within the allowed scope and does not access any permanently forbidden locations. This is used to implement the sandboxing mechanism for actions, ensuring they cannot read or write files outside their designated area.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 // Paths we NEVER allow regardless of scope configuration.
 const ALWAYS_FORBIDDEN = [
   '/etc/passwd',

@@ -85,7 +85,7 @@ npm update -g @hoangsonw/forge
 Local install from a checkout (for PR testing):
 
 ```bash
-git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
+git clone https://github.com/hoangsonww/Forge-Agentic-Coding-CLI && cd forge
 npm install
 npm run build
 npm link              # adds `forge` to PATH
@@ -183,7 +183,7 @@ volume ownership is predictable across hosts.
 ## 5. Compose (Forge + Ollama + UI)
 
 ```bash
-git clone https://github.com/hoangsonw/Forge-Agentic-Coding-CLI && cd forge
+git clone https://github.com/hoangsonww/Forge-Agentic-Coding-CLI && cd forge
 docker compose -f docker/docker-compose.yml up -d
 # or:
 podman-compose -f docker/docker-compose.yml up -d

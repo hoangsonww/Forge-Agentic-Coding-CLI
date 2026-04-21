@@ -1,9 +1,11 @@
 /**
- * HTTP error normalisation for the UI server.
+ * HTTP error normalization for the UI server.
  *
  * Kept in its own tiny module so unit tests can exercise the mapping rules
  * without pulling in the entire server (which requires better-sqlite3,
  * WebSocket bindings, etc.).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 export interface HttpError {

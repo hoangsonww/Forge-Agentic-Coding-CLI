@@ -3,6 +3,14 @@ import * as path from 'path';
 import Database, { Database as DB } from 'better-sqlite3';
 import { paths } from '../config/paths';
 
+/**
+ * Index database module.
+ *
+ * This module manages a global SQLite database that serves as an index for projects, tasks, permission grants, learning patterns, and MCP connections. It provides functions to initialize the database, perform migrations, and execute CRUD operations on the various entities. The database is stored in a location defined by the application's configuration paths.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 let db: DB | null = null;
 
 const ensureDb = (): DB => {
@@ -214,6 +222,18 @@ export const listTasks = (projectId?: string, limit = 50): TaskIndexRow[] => {
   return conn
     .prepare('SELECT * FROM tasks ORDER BY updated_at DESC LIMIT ?')
     .all(limit) as TaskIndexRow[];
+};
+
+export const getTask = (id: string): TaskIndexRow | null => {
+  const conn = ensureDb();
+  return (conn.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskIndexRow) ?? null;
+};
+
+export const deleteTaskFromIndex = (id: string): { task: number; sessions: number } => {
+  const conn = ensureDb();
+  const sessions = conn.prepare('DELETE FROM sessions WHERE task_id = ?').run(id).changes;
+  const task = conn.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes;
+  return { task, sessions };
 };
 
 // ----------- Permission grants -----------

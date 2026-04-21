@@ -5,6 +5,8 @@
  * as load-bearing: if a field is added here, persistence/migrations need to
  * follow. Names match the planning docs verbatim where possible so that a
  * grep-driven audit of the spec is trivial.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 // ---------- Task lifecycle ----------

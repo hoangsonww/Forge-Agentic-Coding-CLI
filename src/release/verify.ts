@@ -10,6 +10,8 @@
  * If verification fails the download is refused and the existing binary is
  * retained. `FORGE_ALLOW_UNSIGNED=1` is supported for development only and
  * emits a loud warning.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as crypto from 'crypto';

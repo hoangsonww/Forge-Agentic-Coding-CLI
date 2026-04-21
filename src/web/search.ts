@@ -7,6 +7,8 @@
  * Provider precedence follows the env vars above. Results are normalized to a
  * common shape and always traverse the injection/redaction pipeline before
  * being returned to a caller.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { request } from 'undici';
 import { redactString } from '../security/redact';

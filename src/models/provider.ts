@@ -8,6 +8,12 @@ import {
 import { ForgeRuntimeError } from '../types/errors';
 import { log } from '../logging/logger';
 
+/**
+ * Provider registry and utilities. Providers must be registered to be used by the rest of the system. The registry also supports probing for provider availability, which is used to implement the local-first provider selection strategy.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 const providers: Map<string, ModelProvider> = new Map();
 
 export const registerProvider = (p: ModelProvider): void => {

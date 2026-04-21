@@ -13,6 +13,8 @@
  * State is read from disk on every request. This means multiple UI server
  * processes (load-balanced, say) see each other's writes without a shared
  * coordinator — the file system IS the coordinator.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 import * as fs from 'fs';

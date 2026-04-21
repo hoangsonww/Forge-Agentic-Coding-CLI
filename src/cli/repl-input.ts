@@ -25,6 +25,8 @@
  *
  * The editor itself only deals with input + presentation. The REPL passes
  * in callbacks for prompt/status/suggestions/history/onSubmit/etc.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 import * as readline from 'readline';

@@ -6,6 +6,8 @@
  * structured feedback so it can repair the file (or escalate). Validators
  * are discovered conservatively — we only run what the project clearly
  * opted into (package.json scripts, a visible tsconfig).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

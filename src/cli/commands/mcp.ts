@@ -1,3 +1,10 @@
+/**
+ * MCP (Model-Tool Communication Protocol) connection management commands.
+ * Supports listing, adding, removing, and probing connections, as well as handling authentication for API key and OAuth-based connections. This command allows users to manage their MCP connections in a centralized way, making it easier to integrate various tools and services that support the MCP protocol.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import prompts from 'prompts';
 import { bootstrap } from '../bootstrap';

@@ -3,6 +3,8 @@
  *
  * Bounded by token budget (approximate, via 4-char-per-token heuristic).
  * Never persisted. Cleared when the task ends.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 export interface HotEntry {

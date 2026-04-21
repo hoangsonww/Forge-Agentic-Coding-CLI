@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { runBrowseSteps, BrowseStep, BrowseOutput } from '../web/browse';
 import { ForgeRuntimeError } from '../types/errors';
 
+/**
+ * Web browsing tool that executes a sequence of browser actions using Playwright. This tool can perform various actions such as navigating to URLs, clicking elements, typing into fields, pressing keys, waiting for elements, and extracting information from the page. The input is an array of steps that define the actions to be performed in order. Use with caution, as this tool can interact with any website and may have side effects (e.g., submitting forms, making purchases) depending on the actions specified.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   steps: BrowseStep[];
   headless?: boolean;

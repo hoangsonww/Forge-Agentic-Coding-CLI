@@ -13,6 +13,8 @@
  *   - Events that arrive before a WS connects are held in a ring buffer so
  *     late subscribers catch up.
  *   - Cancelling a task sets `shouldAbort`; the loop checks it between steps.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as crypto from 'crypto';
 import type { WebSocket } from 'ws';

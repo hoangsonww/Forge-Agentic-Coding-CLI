@@ -1,6 +1,8 @@
 /**
  * Learning memory: patterns that Forge has seen before, with confidence
  * evolution. Strengthens after successful fixes, decays otherwise.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { getDb, upsertLearning, loadLearning, LearningRow } from '../persistence/index-db';
 

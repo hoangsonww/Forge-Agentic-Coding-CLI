@@ -8,6 +8,8 @@
  *   3. Turns added by one side are read correctly by the other.
  *   4. The task-resolution bridge on the UI side correctly persists a result
  *      back to any conversation (chat- or repl-prefixed).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';

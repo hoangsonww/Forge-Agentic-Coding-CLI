@@ -1,3 +1,9 @@
+/**
+ * Web-related commands (search/fetch).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { webSearch } from '../../web/search';

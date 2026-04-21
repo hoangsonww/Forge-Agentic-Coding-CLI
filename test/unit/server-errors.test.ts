@@ -4,6 +4,8 @@
  * isolation via a re-export. This verifies: the 'Error:' prefix is stripped,
  * status-code annotations on Errors are honoured, and "not found" messages
  * map to 404.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect } from 'vitest';
 import { errorBody } from '../../src/ui/server-errors';

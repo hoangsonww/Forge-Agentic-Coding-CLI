@@ -3,6 +3,8 @@
  * orchestrator can break out early instead of burning retries. The signal
  * is simple: if the last N step outcomes are all `false` for the same step
  * id with a similar error class, call it a loop.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export interface StepOutcome {
   stepId: string;

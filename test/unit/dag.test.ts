@@ -1,3 +1,15 @@
+/**
+ * DAG utilities tests for topoSort and validatePlan functions.
+ *
+ * These tests verify the correctness of the topological sorting and validation logic for task plans represented as directed acyclic graphs (DAGs). The tests cover:
+ *   topoSort correctly orders steps based on their dependencies.
+ *   topoSort throws an error when a cycle is detected in the plan.
+ *   validatePlan flags duplicate step IDs as invalid.
+ *   validatePlan flags empty plans as invalid.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { topoSort, validatePlan } from '../../src/scheduler/dag';
 import { Plan } from '../../src/types';

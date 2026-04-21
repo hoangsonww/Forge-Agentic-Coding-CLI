@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { runCommand, classifyCommandRisk, isBlocked } from '../sandbox/shell';
 
+/**
+ * Run an arbitrary shell command inside the project sandbox. This is a powerful tool that can be used for a wide range of tasks, such as building the project, running tests, generating files, or performing complex file operations that aren't covered by other tools. However, it also carries significant risks, as it can potentially modify or delete files, consume excessive resources, or perform other harmful actions if misused. To mitigate these risks, we have implemented a blocklist of dangerous commands and a risk classification system that can be used to prompt the user for permission when executing high-risk commands. Use this tool with caution and always ensure that the commands being run are safe and necessary for the task at hand.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   command: string;
   timeoutMs?: number;

@@ -3,6 +3,8 @@
  * prior task — incomplete or otherwise. The historical helpers
  * findIncompleteTasks/mostRecentIncomplete are kept for callers that
  * specifically want the "still-running" subset (e.g. daemon recovery).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { listLocalTasks } from '../persistence/tasks';
 import { Task } from '../types';

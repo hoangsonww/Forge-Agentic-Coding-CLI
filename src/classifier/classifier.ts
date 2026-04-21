@@ -3,6 +3,12 @@ import { heuristicClassify } from './heuristics';
 import { callModel } from '../models/router';
 import { log } from '../logging/logger';
 
+/**
+ * Classifier module — responsible for analyzing the user's task description and determining the nature of the task. This includes classifying the intent (e.g., bugfix, feature, refactor), estimating complexity, assessing risk, and determining the scope of changes. The classifier uses a combination of heuristics and LLM analysis to produce a TaskProfile that guides the subsequent planning and execution steps.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export interface ClassifyParams {
   input: string;
   filesReferenced?: string[];

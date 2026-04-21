@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Regenerate docs/metrics.json from the current source tree.
 # Every number cited in the docs comes from this script so claims are verifiable.
+# @author Son Nguyen <hoangson091104@gmail.com>
+
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

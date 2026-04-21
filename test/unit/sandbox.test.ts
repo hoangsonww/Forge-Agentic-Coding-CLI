@@ -1,3 +1,13 @@
+/**
+ * Sandbox tests: ensure that the fs and shell sandboxes correctly identify safe vs unsafe operations. We don't need to test every possible path or command, just a representative sample to ensure the logic is working as intended.
+ *
+ * For the fs sandbox, we test that:
+ *   - Paths inside the project root are resolved successfully.
+ *   - Paths outside the project root are rejected.
+ *   - Always-forbidden paths (like /etc/passwd) are blocked even if they appear under the project root (e.g., via symlinks or on Windows).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

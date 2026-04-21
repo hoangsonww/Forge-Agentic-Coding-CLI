@@ -2,6 +2,8 @@
  * Unified retrieval engine. Hybrid: FTS5 cold + dependency graph warm +
  * recency boost from the hot cache + failure-aware lookup from learning
  * memory. Returns a small, focused context bundle for the prompt assembler.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as path from 'path';
 import { HotMemory } from './hot';

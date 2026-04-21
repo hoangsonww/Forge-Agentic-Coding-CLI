@@ -1,5 +1,10 @@
-// Forge dashboard — vanilla ES modules. Honest layout, dismissable overlays,
-// real command palette, Monaco-backed config editor.
+/**
+ * Forge dashboard frontend
+ *
+ * Tiny vanilla JS app for managing Forge tasks, projects, and runtime status. Kept intentionally simple and dependency-free since it's the entry point for users and we want it to be as fast and robust as possible. The UI is basic but functional, with a focus on clarity and ease of use.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 
 const app = document.getElementById('app');
 const toasts = document.getElementById('toasts');

@@ -5,6 +5,8 @@
  * so that a restructure doesn't ripple into 30 suites. Every helper
  * returns a fresh deep-clone (via JSON round-trip) so mutation in one
  * test can't leak into another.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

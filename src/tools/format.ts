@@ -2,7 +2,10 @@
  * Post-edit code formatter. Runs the project's preferred formatter against
  * the touched files after successful plan steps. Non-blocking: formatter
  * failure is logged but doesn't fail the task.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import * as path from 'path';
 import { runCommand } from '../sandbox/shell';
 import { log } from '../logging/logger';

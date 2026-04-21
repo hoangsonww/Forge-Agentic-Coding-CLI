@@ -1,3 +1,13 @@
+/**
+ * Circuit breaker tests. These are not intended to be exhaustive, but rather to verify the core state transitions and timing logic of the circuit breaker implementation. The tests assert that:
+ *   After the configured number of failures, the circuit opens and canTry returns false.
+ *   After the reset timeout elapses, the circuit transitions to half-open and allows a probe attempt.
+ *   If the probe attempt succeeds, the circuit closes and canTry returns true again.
+ *   If the probe attempt fails, the circuit re-opens and canTry returns false again.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   configure,

@@ -1,3 +1,8 @@
+/**
+ * Keychain tests. These are not meant to be exhaustive, but just to verify that the fallback mechanism works at all. The OS keychain is tested separately in its own test suite.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as os from 'os';
 import * as fs from 'fs';

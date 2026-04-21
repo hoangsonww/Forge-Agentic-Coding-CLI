@@ -15,6 +15,8 @@
  *   • groups commands by category using COMMAND_CATEGORIES below
  *   • highlights primary commands and shortcuts
  *   • writes errors with a red prefix, and routes help to stdout not stderr.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { Command, Help, Option } from 'commander';
 import chalk from 'chalk';

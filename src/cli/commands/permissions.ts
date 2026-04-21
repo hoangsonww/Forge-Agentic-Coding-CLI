@@ -1,3 +1,9 @@
+/**
+ * Permission management commands. Supports resetting in-session grants and listing persisted grants. This command allows users to manage the permissions that have been granted to tools, both for the current session and those that have been persisted across sessions, giving them control over what tools can access and for which projects.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { clearSession } from '../../permissions/manager';

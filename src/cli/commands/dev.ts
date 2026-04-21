@@ -1,3 +1,9 @@
+/**
+ * Dev command for contributor workflows. Supports setup (installing dependencies and building), as well as individual steps like build, test, and lint. This command is intended to streamline common development tasks for contributors, providing a simple interface to get up and running quickly. Each subcommand runs a series of predefined steps, such as installing dependencies, building the project, running tests, or checking code style with ESLint and Prettier.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { spawnSync } from 'child_process';
 import * as path from 'path';

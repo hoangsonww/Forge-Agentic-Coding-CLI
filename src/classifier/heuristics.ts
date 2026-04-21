@@ -1,5 +1,11 @@
 import { TaskType, Complexity, Risk, Scope } from '../types';
 
+/**
+ * Heuristic-based classifier for software development tasks. This module analyzes the input text (e.g., task description, commit message) to classify the type of task (bugfix, feature, refactor, etc.), estimate its complexity, assess potential risks, and determine the scope of changes. The classification is based on a set of predefined rules and keywords commonly associated with different types of development tasks. The output includes a primary task type, secondary types, scope, complexity, risk level, and a confidence score indicating the reliability of the classification.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface KeywordRule {
   re: RegExp;
   type: TaskType;

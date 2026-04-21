@@ -5,6 +5,8 @@ import { OpenAIProvider } from './openai';
  * http://127.0.0.1:1234/v1 and speaks the OpenAI chat-completions API.
  *
  * Override with `LMSTUDIO_ENDPOINT`.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export class LmStudioProvider extends OpenAIProvider {
   constructor(endpoint: string = process.env.LMSTUDIO_ENDPOINT ?? 'http://127.0.0.1:1234/v1') {

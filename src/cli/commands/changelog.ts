@@ -1,3 +1,9 @@
+/**
+ * Show the CHANGELOG.md shipped with this Forge install. This is useful for users to quickly see what's new without having to navigate to the GitHub releases page. By default, it shows the first 200 lines of the changelog, but users can adjust this with the `--limit` option if they want to see more or less of the changelog content.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';

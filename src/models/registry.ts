@@ -8,6 +8,12 @@ import { LmStudioProvider } from './lmstudio';
 import * as rateLimit from './rate-limit';
 import * as breaker from './circuit-breaker';
 
+/**
+ * Registers all built-in providers and sets up their default rate limits and circuit breaker configs. This is idempotent and can be called multiple times without issue, but only needs to be called once at app startup.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 let initialized = false;
 
 export const initProviders = (): void => {

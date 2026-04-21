@@ -1,3 +1,16 @@
+/**
+ * Classifier unit tests for heuristicClassify function.
+ *
+ * These tests verify that the heuristic classification logic correctly identifies task types, scopes, complexities, and risks based on common keywords and patterns in task descriptions. The tests cover:
+ *   Detection of bugfix intent from keywords like "fix" and "bug".
+ *   Detection of refactor intent from keywords like "refactor".
+ *   Escalation of scope to "system-wide" for tasks mentioning "entire" or "monorepo".
+ *   Assignment of "critical" risk for tasks containing destructive keywords like "delete".
+ *   Classification of trivial complexity for simple rename operations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { heuristicClassify } from '../../src/classifier/heuristics';
 

@@ -9,7 +9,14 @@ prefix_rule(
     pattern = ["npm", "run", "build"],
     decision = "allow",
     justification = "Canonical build step — pure local, no network.",
-    match = ["npm run build", "npm run build:watch"],
+    match = ["npm run build"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "build:watch"],
+    decision = "allow",
+    justification = "Canonical build step — pure local, no network.",
+    match = ["npm run build:watch"],
 )
 
 prefix_rule(
@@ -34,7 +41,14 @@ prefix_rule(
     pattern = ["npm", "run", "format"],
     decision = "allow",
     justification = "Prettier write — confined to tracked files.",
-    match = ["npm run format", "npm run format:check"],
+    match = ["npm run format"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "format:check"],
+    decision = "allow",
+    justification = "Prettier write — confined to tracked files.",
+    match = ["npm run format:check"],
 )
 
 prefix_rule(

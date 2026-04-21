@@ -1,0 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push tests..."
+
+# Run backend tests
+echo "🧪 Running tests..."
+npm test
+
+
+echo "✅ Pre-push tests passed!"

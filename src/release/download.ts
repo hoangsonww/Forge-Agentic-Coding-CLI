@@ -5,6 +5,8 @@
  *   1. resolve() → {tag, artifactUrl, manifestUrl, signatureUrl}
  *   2. downloadArtifact(...) → local path
  *   3. verifyRelease(...) → refuses to activate on failure
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

@@ -3,6 +3,8 @@
  * JSONL sessions are summarized into a one-line synopsis so we can drop the
  * raw file. The synopsis goes into the SQLite `sessions` table for fast
  * lookup and cross-project search without paying full replay cost.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

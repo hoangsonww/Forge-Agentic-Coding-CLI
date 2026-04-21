@@ -5,6 +5,8 @@
  *
  * Point FORGE_HOME at a disposable directory so tests don't pollute the
  * developer's real ~/.forge.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as os from 'os';

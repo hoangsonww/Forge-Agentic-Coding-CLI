@@ -1,3 +1,11 @@
+/**
+ * Warm memory traversal tests. These are not meant to be exhaustive, just to verify that the basic traversal and sampling logic works as expected. We rely on the fact that the traversal and sampling logic is deterministic, so we can test it with a simple fixture. The tests cover:
+ *   - collectRelated correctly follows relative imports and collects related files.
+ *   - sampleFileExcerpts returns excerpts with source metadata that matches the input files.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

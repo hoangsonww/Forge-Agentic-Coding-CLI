@@ -1,4 +1,8 @@
-/* Forge dashboard — restrained palette, honest hierarchy, no gradient titles. */
+/*
+ * Forge dashboard — restrained palette, honest hierarchy, no gradient titles.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 
 :root {
   --bg: #0a0b0d;

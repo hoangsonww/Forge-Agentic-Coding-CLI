@@ -1,3 +1,12 @@
+/**
+ * Session management commands: list, replay, fork.
+ * - list: shows all sessions for the current project.
+ * - replay: replays a session (prints events in order).
+ * - fork: forks a task (and its most recent session) into a new branch to explore alternatives.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';

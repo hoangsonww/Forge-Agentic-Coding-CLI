@@ -6,6 +6,8 @@
  *
  * Playwright is loaded lazily so users who don't need browsing don't pay for
  * it. If it's not installed, every browse call returns a helpful error.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { ForgeRuntimeError } from '../types/errors';
 import { log } from '../logging/logger';
@@ -52,7 +54,7 @@ export const openSession = async (
   const context: BrowserContext = await browser.newContext({
     javaScriptEnabled: true,
     bypassCSP: false,
-    userAgent: 'Forge/0.1 (+https://github.com/forge/forge)',
+    userAgent: 'Forge/0.1 (+https://github.com/hoangsonww/Forge-Agentic-Coding-CLI)',
   });
   const page: Page = await context.newPage();
   page.setDefaultTimeout(opts.timeoutMs ?? 20_000);

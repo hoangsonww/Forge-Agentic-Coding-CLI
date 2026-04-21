@@ -1,3 +1,17 @@
+/**
+ * Edit File Tool Tests
+ *
+ * These tests cover the editFileTool's behavior in various scenarios, including:
+ * - Replacing a single occurrence of text
+ * - Handling ambiguous replacements without replaceAll flag
+ * - Replacing all occurrences when replaceAll flag is set
+ * - Erroring when the oldText is not found in the file
+ *
+ * The tests use a temporary directory to create and manipulate test files, ensuring that they do not affect the actual filesystem. Each test case sets up the necessary file content, executes the tool, and then asserts the expected outcomes.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

@@ -2,6 +2,16 @@ import prompts from 'prompts';
 import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 
+/**
+ * Ask the user a question and return their answer. Use this for clarifications or decisions that require human judgment. Avoid overusing, as it interrupts flow and requires user attention.
+ *
+ * If `choices` are provided, the user will be prompted to select from them. Otherwise, they can enter free-form text.
+ *
+ * In non-interactive environments (e.g. when stdin is not a TTY), this tool will return `nonInteractiveDefault` if provided, or an error if not.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   question: string;
   choices?: string[];

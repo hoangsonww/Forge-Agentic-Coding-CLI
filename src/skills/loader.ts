@@ -5,6 +5,12 @@ import { SkillManifest, AgentManifest } from '../types';
 import { paths, projectConfigDir } from '../config/paths';
 import { log } from '../logging/logger';
 
+/**
+ * Loads skill and agent manifests from markdown files. Each file can optionally start with a YAML frontmatter section delimited by `---` lines, which is parsed for metadata. The metadata can include fields like `name`, `description`, `inputs`, `tools`, `tags` for skills, and `name`, `description`, `capabilities`, `default_mode`, `tools`, `skills` for agents. The body of the markdown file (after the frontmatter) is treated as the skill's body or agent's behavior. The loader looks for markdown files in both the global directories and the project-specific directories, with project files taking precedence over global ones in case of name conflicts.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 const frontmatter = (raw: string): { meta: Record<string, unknown>; body: string } => {
   const m = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
   if (!m) return { meta: {}, body: raw };

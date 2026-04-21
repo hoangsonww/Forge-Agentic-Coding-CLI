@@ -28,7 +28,14 @@ forge execute <prompt...>
 
 forge task list [-n 20] [-p <projectId>]
 forge task search <query>
+forge task delete <id> [-y|--yes]           # alias: forge task rm
 ```
+
+`task delete` removes the project-local task JSON (`<projectRoot>/tasks/<id>.json`)
+and the row from the global SQLite index. It prompts for confirmation
+interactively; pass `-y` / `--yes` to skip the prompt in CI or scripts.
+Conversation JSONL files are *not* touched — they're keyed by conversation
+id and can span multiple tasks.
 
 ## Sessions
 
@@ -121,6 +128,15 @@ forge update ignore <version>
 
 Native binary distribution downloads from GitHub Releases and verifies the
 manifest's SHA-256 + Ed25519 signature before activation.
+
+**Automatic check on REPL start.** Every `forge` invocation that opens the
+REPL (bare `forge` or `forge repl`) fires a non-blocking update check.
+Network hits are rate-limited by `update.checkIntervalHours` (default 24h),
+so repeated starts read from the on-disk cache. When a newer version is
+available and `update.notify` is true, a single-line notice is printed
+after the hero directing the user to `/update` or `/update ignore <version>`.
+Disable via `forge config set update.autoCheck false` or silence the
+banner with `forge config set update.notify false`.
 
 ## Configuration
 

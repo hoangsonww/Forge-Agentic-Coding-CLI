@@ -4,6 +4,8 @@
  * The real model provider is replaced with a scripted stub so each test can
  * assert exactly how the loop reacts to tool results — iteration, failure
  * recovery, validation-gate feedback, and turn-cap enforcement.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 

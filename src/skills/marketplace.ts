@@ -3,6 +3,8 @@
  * manifests from any HTTPS URL; the user is always asked before we fetch or
  * install. Results live in `~/.forge/skills/<name>.md`. A hosted registry
  * can be layered on top later — the surface stays the same.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

@@ -1,3 +1,14 @@
+/**
+ * Cost estimation tests for estimateCostUsd function.
+ *
+ * These tests verify that the cost estimation logic correctly computes the estimated cost in USD for different model providers and models based on their token usage. The tests cover:
+ *   Local providers (ollama, llamacpp) should always return 0 cost.
+ *   Hosted providers (anthropic, openai) should return a positive cost based on their pricing.
+ *   Unknown models should be treated as having 0 cost.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { estimateCostUsd } from '../../src/models/cost';
 

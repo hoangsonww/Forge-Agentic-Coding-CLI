@@ -7,6 +7,8 @@
  *
  * Directories to mirror:
  *   src/ui/public   → dist/ui/public
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 'use strict';
 

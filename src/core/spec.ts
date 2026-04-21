@@ -4,6 +4,8 @@
  * Reads a spec file, extracts the user-facing task goal, and optionally a
  * rough sub-task list. Everything is fed into the standard agentic loop —
  * we don't introduce a second pipeline, we just prime the inputs.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import { ForgeRuntimeError } from '../types/errors';

@@ -10,6 +10,8 @@ import { decay as decayLearning } from '../memory/learning';
  * Forge daemon — a lightweight background process that periodically checks
  * for updates and exposes a minimal IPC endpoint for future UI/daemon
  * features. Deliberately tiny; the real work happens in the CLI process.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const start = async (): Promise<void> => {

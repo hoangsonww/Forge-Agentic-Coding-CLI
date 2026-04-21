@@ -1,3 +1,11 @@
+/**
+ * Local catalog tests cover the logic for parsing model ids to extract family and size information, classifying models into "micro", "mid", "heavy", or "specialized" classes, and picking the best model for a given role from a list of installed models. The tests use a variety of realistic model id formats to ensure robust parsing and classification.
+ *
+ * The family detection tests verify that the correct family is identified for a range of model id formats, including those from Ollama and hosted providers. The size extraction tests check that parameter counts are correctly parsed, including for MoE models. The classification tests ensure that models are assigned to the correct class based on size and specialization, and that even unknown models receive a reasonable meta. Finally, the role picker tests confirm that the best model is chosen for "executor", "fast", and "architect" roles according to the expected preferences.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import {
   classifyModel,

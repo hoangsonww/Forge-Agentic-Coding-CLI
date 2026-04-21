@@ -16,6 +16,8 @@
  * blockquotes (>), horizontal rules (---), paragraphs.
  *
  * Kept in plain ES5-ish JS so the UI shell stays dependency-free.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 (function (root) {
   'use strict';

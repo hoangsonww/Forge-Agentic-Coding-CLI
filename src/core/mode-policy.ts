@@ -4,6 +4,8 @@
  * These caps are read by the loop/executor at runtime (not just by the model
  * router). Keeping them in one table makes it obvious which knobs each mode
  * tightens and prevents a "fast" task from racking up ten executor turns.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { Mode } from '../types';
 

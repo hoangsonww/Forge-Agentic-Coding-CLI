@@ -13,6 +13,8 @@ import { currentHost } from '../core/interactive-host';
  * proceeds. Default-deny; high-risk actions ALWAYS ask even with
  * --skip-permissions; trust calibration can auto-allow low-risk after N
  * confirmations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 type SessionMemory = {

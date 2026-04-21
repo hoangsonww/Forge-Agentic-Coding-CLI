@@ -2,6 +2,8 @@
  * Signal + abort plumbing. The loop subscribes at start; tool executions
  * can poll `shouldAbort()` for cooperative cancellation. SIGINT/SIGTERM
  * set the abort flag; a second SIGINT within 3s exits immediately.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 let aborting = false;
 let abortReason = '';

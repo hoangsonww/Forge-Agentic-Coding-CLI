@@ -5,6 +5,8 @@
  * This shim locates the compiled CLI and forwards argv.
  * In production (installed via npm), dist/ is shipped.
  * In development, we fall back to ts-node on src/cli/index.ts.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 'use strict';
 

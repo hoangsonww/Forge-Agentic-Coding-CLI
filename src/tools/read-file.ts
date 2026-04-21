@@ -3,6 +3,12 @@ import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { resolveSafe } from '../sandbox/fs';
 
+/**
+ * Read a text file from the project sandbox. Returns the content as a string, along with the number of lines and whether the content was truncated due to size limits. Use `maxBytes` to limit the amount of data read and avoid overwhelming the system with very large files. Optionally, use `startLine` and `endLine` to read only a specific range of lines from the file. This is a read-only operation, but be cautious when reading files with sensitive information or very large sizes.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   path: string;
   maxBytes?: number;

@@ -2,6 +2,7 @@
 // Forge — Wiki runtime script
 // Loaded as a module by index.html. Initialises mermaid with a dark theme,
 // wires the scroll progress bar, scrollspy, and smooth anchor scroll.
+// @author Son Nguyen <hoangson091104@gmail.com>
 // =============================================================================
 
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';

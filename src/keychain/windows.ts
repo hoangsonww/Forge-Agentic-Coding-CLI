@@ -2,6 +2,8 @@
  * Windows Credential Manager integration via `cmdkey` + PowerShell. Only
  * active when process.platform === 'win32'. Follows the same
  * service/account key layout as the macOS/Linux paths.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { spawnSync } from 'child_process';
 

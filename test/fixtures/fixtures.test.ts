@@ -6,7 +6,10 @@
  * fixtures validate against the real zod schemas (config) and obey the
  * shape invariants the rest of the codebase assumes (task status set,
  * plan IDs unique, etc.).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import { describe, it, expect } from 'vitest';
 import {
   bugfix3stepPlan,
@@ -20,6 +23,7 @@ import {
   plannedTask,
   replConversationEntries,
   replSessionEntries,
+  // @ts-ignore
 } from './index';
 import { globalConfigSchema } from '../../src/config/schema';
 import { validatePlan } from '../../src/scheduler/dag';

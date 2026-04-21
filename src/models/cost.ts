@@ -3,6 +3,8 @@
  * based on static per-model rates. Costs are a rough indicator — the
  * provider's invoice is the source of truth. Rates live in one table so
  * corrections are cheap.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { getDb } from '../persistence/index-db';
 import { ModelResponse } from '../types';

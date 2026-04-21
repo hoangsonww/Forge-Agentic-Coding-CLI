@@ -8,6 +8,8 @@ import { log } from '../logging/logger';
  * Memory agent — maintains the project's context graph. Invoked after
  * planning with a seed file (if any) to populate `imports` edges derived
  * from warm-memory traversal. Deliberately idempotent; safe to re-run.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export const memoryAgent: Agent = {
   name: 'memory',

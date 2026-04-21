@@ -25,6 +25,8 @@
  * Concurrency: all mutations route through conversation-store's atomic
  * append primitives, so multiple writers (CLI REPL + UI chat + tasks) are
  * safe without an explicit coordinator.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 import * as fs from 'fs';

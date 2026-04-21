@@ -5,7 +5,7 @@ Forge is engineering infrastructure. Contributions should meet the bar you'd hol
 ## Dev setup
 
 ```bash
-git clone https://github.com/forge/forge
+git clone https://github.com/hoangsonww/Forge-Agentic-Coding-CLI
 cd forge
 npm install
 npm run build

@@ -5,6 +5,8 @@ import { renderMarkdown } from './markdown';
  * Visual kit for Forge's interactive output: the boxed brand banner, bar
  * separators, status boxes, and a set of decorative ASCII glyphs used across
  * commands. All helpers return strings so callers compose them freely.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const PALETTE = {

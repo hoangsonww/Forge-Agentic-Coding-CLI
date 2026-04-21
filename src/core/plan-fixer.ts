@@ -8,6 +8,8 @@ import { newStepId } from '../logging/trace';
  *   - adds a missing test step when profile.requiresTests
  *   - repairs dangling dependsOn references
  *   - dedupes step ids
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export interface FixerReport {
   fixed: boolean;

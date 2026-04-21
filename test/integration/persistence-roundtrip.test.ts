@@ -4,13 +4,24 @@
  * Exercises the real saveTask / loadTask / transitionTask code path
  * (including the SQLite index write) against an isolated tmp project
  * root so we don't touch the developer's ~/.forge.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+// @ts-ignore
 import { draftTask, plannedTask, completedTask, failedTask } from '../fixtures';
-import { listLocalTasks, loadTask, saveTask, transitionTask } from '../../src/persistence/tasks';
+import {
+  deleteTask,
+  listLocalTasks,
+  loadTask,
+  saveTask,
+  transitionTask,
+} from '../../src/persistence/tasks';
+import { getTask } from '../../src/persistence/index-db';
 import { ensureProjectDir, projectId as computeProjectId } from '../../src/config/paths';
 import type { Task } from '../../src/types';
 
@@ -121,6 +132,22 @@ describe('persistence round-trip — state-machine transitions', () => {
     expect(() => transitionTask(projectRoot, 'task_terminal_fixture_2', 'scheduled')).toThrowError(
       /Illegal transition/,
     );
+  });
+
+  it('deleteTask removes JSON file and index row; re-delete throws not_found', () => {
+    const base = stamp(draftTask());
+    saveTask(projectRoot, base);
+    expect(loadTask(projectRoot, base.id)).not.toBeNull();
+    expect(getTask(base.id)?.id).toBe(base.id);
+
+    const res = deleteTask(projectRoot, base.id);
+    expect(res.taskFile).toBe(true);
+    expect(res.indexRows.task).toBe(1);
+
+    expect(loadTask(projectRoot, base.id)).toBeNull();
+    expect(getTask(base.id)).toBeNull();
+
+    expect(() => deleteTask(projectRoot, base.id)).toThrowError(/not found/);
   });
 
   it('failed + blocked + cancelled all reset to draft', () => {

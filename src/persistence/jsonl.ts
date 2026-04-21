@@ -5,6 +5,8 @@ import { redact } from '../security/redact';
 /**
  * Append-only JSONL writer. Failures to serialize are logged and dropped —
  * never crash the pipeline for a log write.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export const appendJsonl = (filePath: string, entry: unknown): void => {
   try {

@@ -1,3 +1,9 @@
+/**
+ * Release verification tests. These are mostly focused on the sha256 verification, since the signature verification is a bit more complex and we don't want to have to generate signatures in the test suite. The main point is to ensure that the sha256 verification works correctly and that the FORGE_ALLOW_UNSIGNED override behaves as expected.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

@@ -11,6 +11,8 @@ import { resolveSafe } from '../sandbox/fs';
  * for precise edits where you already know the surrounding context.
  *
  * For full-file rewrites or trivial inserts, prefer write_file.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 interface Args {
   patch: string;

@@ -6,6 +6,8 @@
  * The matcher intentionally handles both Ollama-style ids (`llama3.1:8b`,
  * `qwen2.5-coder:14b`) and HF-style ids (`meta-llama/Llama-3.1-8B-Instruct`)
  * without a hard dependency on either.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { ModelDescriptor, ModelRole } from '../types';
 

@@ -1,3 +1,13 @@
+/**
+ * Spec tests for the sandboxing logic, including both filesystem and shell command risk classification. These tests ensure that the sandbox correctly identifies safe and unsafe paths, as well as classifying shell commands according to their potential risk.
+ *
+ * For the filesystem sandbox, we create a temporary directory to act as the project root and test that:
+ *   - Valid paths within the project root are resolved successfully.
+ *   - Paths outside the project root are rejected with an error.
+ *   - Always-forbidden paths (like /etc/passwd) are blocked even if they appear under the project root (e.g., via symlinks or on Windows).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

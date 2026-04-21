@@ -7,6 +7,8 @@ import { PALETTE } from './banners';
  * pulsing spinners, and status ticks. Every helper respects NO_COLOR,
  * TTY absence, and a global `FORGE_NO_ANIM=1` escape hatch. Non-TTY callers
  * get instant, un-decorated output.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const noAnim =

@@ -14,6 +14,8 @@ import { loadGlobalConfig } from '../config/loader';
  * Local-first doctrine still holds (Ollama is preferred), but users can opt
  * into the Claude API for reliability or when running on laptops without a
  * capable local runtime.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export class AnthropicProvider implements ModelProvider {
   readonly name = 'anthropic';

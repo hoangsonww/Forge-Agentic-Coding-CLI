@@ -1,6 +1,8 @@
 /**
  * Session / task fork — copy an existing task (and session) into a new id so
  * an alternative approach can be explored without losing the original.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

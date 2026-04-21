@@ -10,6 +10,8 @@
  * tuned for the shapes LLMs actually produce. Edge cases (nested emphasis,
  * reference links, HTML passthrough, setext headings, tables) are not
  * supported — we render them literally rather than mangling them.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import chalk from 'chalk';
 

@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { webSearch, SearchResult } from '../web/search';
 import { ForgeRuntimeError } from '../types/errors';
 
+/**
+ * Web search tool that queries the web and returns a list of results. This tool can be used to retrieve information from the web when the query is known but the URLs are not. It supports multiple providers (Tavily, Brave, DuckDuckGo) depending on configured API keys. Use with caution, as it makes network requests and may be subject to rate limits, CAPTCHAs, or other anti-bot measures on certain search engines.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   query: string;
   limit?: number;

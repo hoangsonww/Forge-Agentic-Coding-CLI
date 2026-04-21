@@ -1,3 +1,11 @@
+/**
+ * Conversation store tests, covering the core conversation file format and operations like create, append, list, rename, delete, and live watching.
+ *
+ * These tests verify that conversations can be created with metadata, user turns can be appended and have results attached, conversations can be listed with correct metadata, conversations can be renamed and deleted, and that the live watcher correctly reports new turns. The tests also cover compatibility with legacy conversation file formats.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

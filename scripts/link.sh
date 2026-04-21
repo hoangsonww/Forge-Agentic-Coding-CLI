@@ -9,6 +9,7 @@
 # After this, `forge --version` works from anywhere. Rebuild with
 # `npm run build` (or `npm run build:watch`) to pick up source changes —
 # the shim at bin/forge.js loads dist/ live, so no re-link needed.
+# @author Son Nguyen <hoangson091104@gmail.com>
 
 set -euo pipefail
 

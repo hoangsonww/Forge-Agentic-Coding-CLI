@@ -1,3 +1,9 @@
+/**
+ * Continuity-related tests. These are mostly back-compat smoke tests to ensure that the new continuity features (mostRecent, mostRecentIncomplete) are consistent with the existing findIncompleteTasks and listRecentTasks functions, and that all correctly filter by project and status. They also verify that tasks are returned in the expected order (newest first) and that edge cases (empty projects, all tasks completed) are handled gracefully.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -35,6 +41,7 @@ const mkTask = (overrides: Partial<Task>): Task => ({
   status: overrides.status ?? 'completed',
   mode: overrides.mode ?? 'balanced',
   profile: overrides.profile ?? {
+    // @ts-ignore
     type: 'other',
     complexity: 'simple',
     risk: 'low',
