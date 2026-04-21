@@ -1,3 +1,9 @@
+/**
+ * Orchestrator module — the main entry point for executing a user task. It takes the user's input, classifies it to determine the appropriate profile, creates a new Task, and then initiates the agentic loop to plan and execute the task. The orchestrator also handles emitting events for task creation and classification, which can be used for logging, monitoring, and driving UI updates.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Mode, Task } from '../types';
 import { newTaskId, newTraceId, newRunId } from '../logging/trace';
 import { findProjectRoot, loadGlobalConfig } from '../config/loader';
@@ -7,12 +13,6 @@ import { saveTask } from '../persistence/tasks';
 import { runAgenticLoop, LoopOptions } from './loop';
 import { emit } from '../persistence/events';
 import { PermissionFlags } from '../permissions/manager';
-
-/**
- * Orchestrator module — the main entry point for executing a user task. It takes the user's input, classifies it to determine the appropriate profile, creates a new Task, and then initiates the agentic loop to plan and execute the task. The orchestrator also handles emitting events for task creation and classification, which can be used for logging, monitoring, and driving UI updates.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 
 export interface OrchestratorInput {
   input: string;

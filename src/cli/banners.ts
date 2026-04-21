@@ -1,6 +1,3 @@
-import chalk from 'chalk';
-import { renderMarkdown } from './markdown';
-
 /**
  * Visual kit for Forge's interactive output: the boxed brand banner, bar
  * separators, status boxes, and a set of decorative ASCII glyphs used across
@@ -8,6 +5,9 @@ import { renderMarkdown } from './markdown';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import chalk from 'chalk';
+import { renderMarkdown } from './markdown';
 
 const PALETTE = {
   cyan: [94, 234, 212] as [number, number, number],

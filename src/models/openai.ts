@@ -1,3 +1,11 @@
+/**
+ * OpenAI-compatible provider. Works with api.openai.com out of the box and
+ * with any local OpenAI-compatible server (llama.cpp `server`, vLLM,
+ * LocalAI, Together, Azure OpenAI with a base-URL override).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { request } from 'undici';
 import {
   ModelProvider,
@@ -9,13 +17,6 @@ import {
 import { ForgeRuntimeError } from '../types/errors';
 import { classifyModel } from './local-catalog';
 
-/**
- * OpenAI-compatible provider. Works with api.openai.com out of the box and
- * with any local OpenAI-compatible server (llama.cpp `server`, vLLM,
- * LocalAI, Together, Azure OpenAI with a base-URL override).
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 export class OpenAIProvider implements ModelProvider {
   readonly name: string;
 

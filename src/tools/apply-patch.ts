@@ -1,8 +1,3 @@
-import * as fs from 'fs';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { resolveSafe } from '../sandbox/fs';
-
 /**
  * Minimal unified-diff applier.
  *
@@ -14,6 +9,12 @@ import { resolveSafe } from '../sandbox/fs';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { resolveSafe } from '../sandbox/fs';
+
 interface Args {
   patch: string;
 }

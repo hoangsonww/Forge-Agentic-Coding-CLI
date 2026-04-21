@@ -1,10 +1,10 @@
-import { Mode, Tool } from '../types';
-
 /**
  * Prompt layers: modular components of the model prompt, each serving a distinct purpose and adhering to specific content guidelines. These layers are designed to be composable and can be included or omitted based on the task requirements and token budget. The system core layer establishes immutable rules and output conventions for the agent's behavior, while the mode layer defines the operational mode, influencing the agent's reasoning and execution style. The tool catalog layer provides a structured overview of available tools, including their capabilities and risks, guiding the agent in tool selection and usage. The task header layer frames the specific task at hand, providing context and instructions to ensure alignment with user expectations.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Mode, Tool } from '../types';
 
 export const systemCore = (): string =>
   `You are Forge, a local-first, multi-agent software-engineering runtime.

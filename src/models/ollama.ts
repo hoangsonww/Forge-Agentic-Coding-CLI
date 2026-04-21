@@ -1,3 +1,9 @@
+/**
+ * Ollama provider — local-first model provider, querying a user-provided Ollama endpoint for available models and completions. The provider is designed to be resilient to Ollama being unavailable (e.g. not installed, not running), in which case it simply won't appear in the list of providers and the user can still use other providers like Anthropic if configured.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { request } from 'undici';
 import {
   ModelProvider,
@@ -9,12 +15,6 @@ import {
 import { ForgeRuntimeError } from '../types/errors';
 import { loadGlobalConfig } from '../config/loader';
 import { classifyModel } from './local-catalog';
-
-/**
- * Ollama provider — local-first model provider, querying a user-provided Ollama endpoint for available models and completions. The provider is designed to be resilient to Ollama being unavailable (e.g. not installed, not running), in which case it simply won't appear in the list of providers and the user can still use other providers like Anthropic if configured.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 
 export class OllamaProvider implements ModelProvider {
   readonly name = 'ollama';

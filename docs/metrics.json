@@ -1,9 +1,9 @@
 {
   "_note": "Auto-extracted project metrics. Regenerate with scripts/metrics.sh. Used by docs + landing charts so every number cited in docs is verifiable.",
-  "generatedAt": "2026-04-20",
+  "generatedAt": "2026-04-21",
   "loc": {
-    "total": 18863,
-    "tests": 2696,
+    "total": 20028,
+    "tests": 8711,
     "bySubsystem": {
       "cli": 5212,
       "core": 1661,
@@ -23,8 +23,8 @@
     }
   },
   "tests": {
-    "files": 38,
-    "count": 203,
+    "files": 97,
+    "count": 548,
     "passRate": 1.0
   },
   "capabilities": {
@@ -43,8 +43,8 @@
     "memoryLayerNames": ["hot", "warm", "cold", "learning"]
   },
   "ci": {
-    "ciJobs": 10,
-    "ciJobNames": ["format", "lint", "typecheck", "test", "coverage", "build", "docker-build", "audit", "pipeline-status"],
+    "ciJobs": 9,
+    "ciJobNames": ["format", "lint", "typecheck", "test", "coverage", "build", "docker", "audit", "pipeline-status"],
     "releaseStages": 6,
     "releaseStageNames": ["pre-release gate", "artifacts", "docker publish", "manifest + gh-release", "npm publish", "release status"]
   },

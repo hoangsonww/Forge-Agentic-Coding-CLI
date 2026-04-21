@@ -534,8 +534,8 @@ Measured with reproducible commands. No synthetic benchmarks.
 | `forge --help` cold-start | **238 ms** | `time node bin/forge.js --help` |
 | Provider probe timeout | **1.5 s** | `src/models/openai.ts#isAvailable` |
 | UI `app.js` uncompressed | **89 KB** (zero CDN fetches) | `wc -c src/ui/public/app.js` |
-| Full test suite | **~3.3 s** wall-clock | `npx vitest run` |
-| Tests | **249 / 43 files** · 100% passing | — |
+| Full test suite | **~5.5 s** wall-clock | `npx vitest run` |
+| Tests | **548 / 97 files** · 100% passing | — |
 | Container image | **~355 MB** multi-arch non-root | `docker images ghcr.io/hoangsonw/forge-agentic-coding-cli` |
 
 Executor turn budget per mode (hard runtime cap, from

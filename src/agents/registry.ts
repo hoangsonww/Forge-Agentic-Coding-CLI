@@ -1,11 +1,3 @@
-import { Agent } from './base';
-import { plannerAgent } from './planner';
-import { executorAgent } from './executor';
-import { reviewerAgent } from './reviewer';
-import { debuggerAgent } from './debugger';
-import { architectAgent } from './architect';
-import { memoryAgent } from './memory';
-
 /**
  * Agent registry — a simple in-memory registry for available agents. Provides
  * functions to register, retrieve, and list agents. Also includes an
@@ -13,6 +5,14 @@ import { memoryAgent } from './memory';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Agent } from './base';
+import { plannerAgent } from './planner';
+import { executorAgent } from './executor';
+import { reviewerAgent } from './reviewer';
+import { debuggerAgent } from './debugger';
+import { architectAgent } from './architect';
+import { memoryAgent } from './memory';
 
 const agents = new Map<string, Agent>();
 

@@ -1,7 +1,3 @@
-import chalk from 'chalk';
-import ora, { Ora } from 'ora';
-import { PALETTE } from './banners';
-
 /**
  * Interactive animation kit: banner reveal, typewriter output, progress bars,
  * pulsing spinners, and status ticks. Every helper respects NO_COLOR,
@@ -10,6 +6,10 @@ import { PALETTE } from './banners';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import chalk from 'chalk';
+import ora, { Ora } from 'ora';
+import { PALETTE } from './banners';
 
 const noAnim =
   !process.stdout.isTTY ||

@@ -1,9 +1,3 @@
-import chalk from 'chalk';
-import { spawn } from 'child_process';
-import { ForgeEvent, Severity } from '../types';
-import { loadGlobalConfig } from '../config/loader';
-import { redact } from '../security/redact';
-
 /**
  * Notification manager for Forge events. This module is responsible for handling notifications for various events that occur within the Forge system, such as model calls, errors, or other significant actions. It supports multiple channels for notifications, including CLI output and OS-level notifications, and allows users to configure their preferences for which channels to use and the verbosity of CLI notifications.
  *
@@ -11,6 +5,12 @@ import { redact } from '../security/redact';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import chalk from 'chalk';
+import { spawn } from 'child_process';
+import { ForgeEvent, Severity } from '../types';
+import { loadGlobalConfig } from '../config/loader';
+import { redact } from '../security/redact';
 
 type Channel = 'cli' | 'ui' | 'os';
 

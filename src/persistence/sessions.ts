@@ -1,8 +1,3 @@
-import * as path from 'path';
-import { ensureProjectDir } from '../config/paths';
-import { appendJsonl, readJsonl, streamJsonl } from './jsonl';
-import { SessionEntry } from '../types';
-
 /**
  * Session persistence module.
  *
@@ -10,6 +5,11 @@ import { SessionEntry } from '../types';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as path from 'path';
+import { ensureProjectDir } from '../config/paths';
+import { appendJsonl, readJsonl, streamJsonl } from './jsonl';
+import { SessionEntry } from '../types';
 
 const sessionFile = (projectRoot: string, sessionId: string): string => {
   const sub = ensureProjectDir(projectRoot);

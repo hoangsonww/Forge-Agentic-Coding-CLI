@@ -6,6 +6,7 @@
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import { getDb } from '../persistence/index-db';
 import { ModelResponse } from '../types';
 import { log } from '../logging/logger';

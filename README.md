@@ -11,7 +11,7 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Wiki Page](index.html) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
+**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Releases & versioning](RELEASES.md) · [Wiki Page](index.html) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
 
 </div>
 
@@ -50,7 +50,7 @@ Forge is a local-first, multi-agent, programmable software-engineering runtime. 
 |---|---|---|
 | ⚡ **`forge doctor` cold-start** | **173 ms** | `time node bin/forge.js doctor --no-banner` |
 | ⚡ **`forge --help` cold-start** | **238 ms** | `time node bin/forge.js --help` |
-| 📦 **UI shell · zero CDN** | **89 KB** uncompressed | `wc -c src/ui/public/app.js` |
+| 📦 **UI shell · zero CDN** | **90 KB** uncompressed | `wc -c src/ui/public/app.js` |
 | 🌐 **Provider probe timeout** | **1.5 s** | `src/models/openai.ts#isAvailable` |
 | 🔌 **Model providers** (auto-detected) | **6** | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic |
 | 🧠 **Model families** classified | **41** | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / … |
@@ -58,7 +58,7 @@ Forge is a local-first, multi-agent, programmable software-engineering runtime. 
 | 🛠 **Tools** available to agents | **18** | read · write · edit · grep · glob · run_command · git · web · … |
 | 💬 **CLI subcommands · slash commands** | **24 · 55** | `forge --help` · `/help` in REPL |
 | 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
-| ✅ **Tests** | **249 / 43 files** · 100% passing · ~3.3 s wall-clock | `npx vitest run` |
+| ✅ **Tests** | **548 / 97 files** · 100% passing · ~5.5 s wall-clock | `npx vitest run` |
 | 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
 | 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest` |
 
@@ -777,6 +777,9 @@ Workflows: [`.github/workflows/ci.yml`](.github/workflows/ci.yml),
 [`.github/workflows/release.yml`](.github/workflows/release.yml),
 [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml).
 
+Full versioning & release playbook (SemVer policy, channels, signing,
+hotfix flow, rollback, built-in updater): **[`RELEASES.md`](RELEASES.md)**.
+
 ---
 
 ## Architecture map
@@ -859,7 +862,7 @@ xychart-beta
 git clone https://github.com/hoangsonww/Forge-Agentic-Coding-CLI && cd forge
 npm install
 npm run build             # tsc + copy-assets
-npm test                  # 249 tests across 43 files; all must pass
+npm test                  # 548 tests across 97 files; all must pass
 ./bin/forge.js doctor
 ```
 

@@ -1,3 +1,9 @@
+/**
+ * Planner agent — converts user intent into a structured plan of action steps. This is the first step in the pipeline after receiving a task. The output is a Plan object that includes a goal and a list of steps, which can be of various types (e.g., analyze, edit_file, run_tests). The planner should produce a minimal plan that prioritizes reading and verification before writing, and it should reference concrete file paths when possible. If the planner fails to produce a valid plan, a fallback plan with generic steps will be used instead.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Plan, PlanStep, Task, Mode } from '../types';
 import { Agent, AgentResult } from './base';
 import { callModel } from '../models/router';
@@ -9,12 +15,6 @@ import { ForgeRuntimeError } from '../types/errors';
 import { loadGlobalInstructions, loadProjectInstructions } from '../config/loader';
 import { retrieve } from '../memory/retrieval';
 import { relevantPatterns } from '../memory/learning';
-
-/**
- * Planner agent — converts user intent into a structured plan of action steps. This is the first step in the pipeline after receiving a task. The output is a Plan object that includes a goal and a list of steps, which can be of various types (e.g., analyze, edit_file, run_tests). The planner should produce a minimal plan that prioritizes reading and verification before writing, and it should reference concrete file paths when possible. If the planner fails to produce a valid plan, a fallback plan with generic steps will be used instead.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 
 const planSchemaPrompt = `Produce a PLAN as strict JSON with the shape:
 

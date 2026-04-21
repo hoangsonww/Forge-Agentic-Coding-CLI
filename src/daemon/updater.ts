@@ -1,3 +1,9 @@
+/**
+ * Updater module — responsible for checking for new versions of the Forge CLI, caching the results to avoid excessive network requests, and applying updates when requested by the user. The module interacts with the npm registry to fetch the latest version information, compares it with the currently installed version, and manages a local cache file to store the last check time and version details. It also provides functionality to ignore specific versions and to apply updates by downloading the latest release artifact.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -6,12 +12,6 @@ import { paths, ensureForgeHome } from '../config/paths';
 import { loadGlobalConfig, updateGlobalConfig } from '../config/loader';
 import { log } from '../logging/logger';
 import { resolveLatest, downloadAndVerify } from '../release/download';
-
-/**
- * Updater module — responsible for checking for new versions of the Forge CLI, caching the results to avoid excessive network requests, and applying updates when requested by the user. The module interacts with the npm registry to fetch the latest version information, compares it with the currently installed version, and manages a local cache file to store the last check time and version details. It also provides functionality to ignore specific versions and to apply updates by downloading the latest release artifact.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 
 const CACHE_FILE = path.join(paths.logs, 'update-check.json');
 

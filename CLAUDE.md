@@ -61,7 +61,7 @@ Always run the following before claiming a change is done:
 npm run format && npm run lint && npm run build && npm test
 ```
 
-249 tests across 43 files must remain at **100% passing**.
+548 tests across 97 files must remain at **100% passing**.
 
 ## Repository map
 
@@ -80,8 +80,8 @@ src/
   scheduler/     DAG topo-sort + resource permits
   ui/            HTTP + WS dashboard + public/ shell
   mcp/           Model Context Protocol bridge
-test/unit/       37 files · test/integration/ 4 · test/e2e/ 1 · fixtures + helpers
-                  249 tests total, 100% passing
+test/unit/       92 files · test/integration/ 4 · test/e2e/ 1 · fixtures + helpers
+                  548 tests total, 100% passing
 docs/            ARCHITECTURE / INSTALL / SETUP
 .github/workflows/  ci.yml (9 jobs) · release.yml (6 stages) · nightly.yml
 docker/          Dockerfile (single multi-stage) + docker-compose.yml

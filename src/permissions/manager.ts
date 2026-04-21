@@ -1,3 +1,12 @@
+/**
+ * Permission manager — single source of truth for whether a tool invocation
+ * proceeds. Default-deny; high-risk actions ALWAYS ask even with
+ * --skip-permissions; trust calibration can auto-allow low-risk after N
+ * confirmations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import chalk from 'chalk';
 import prompts from 'prompts';
 import { PermissionRequest, PermissionDecision } from '../types';
@@ -7,15 +16,6 @@ import { shouldAlwaysAsk } from './risk';
 import { log } from '../logging/logger';
 import { loadGlobalConfig } from '../config/loader';
 import { currentHost } from '../core/interactive-host';
-
-/**
- * Permission manager — single source of truth for whether a tool invocation
- * proceeds. Default-deny; high-risk actions ALWAYS ask even with
- * --skip-permissions; trust calibration can auto-allow low-risk after N
- * confirmations.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 
 type SessionMemory = {
   // `tool` -> `scope` (once|session|...)

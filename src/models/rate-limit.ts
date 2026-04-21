@@ -5,6 +5,7 @@
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 export interface BucketConfig {
   capacity: number;
   refillPerSec: number;

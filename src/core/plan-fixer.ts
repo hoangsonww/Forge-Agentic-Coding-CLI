@@ -1,6 +1,3 @@
-import { Plan, PlanStep, TaskProfile } from '../types';
-import { newStepId } from '../logging/trace';
-
 /**
  * Auto-fixes common structural problems in a plan before it reaches the
  * approval gate:
@@ -11,6 +8,10 @@ import { newStepId } from '../logging/trace';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Plan, PlanStep, TaskProfile } from '../types';
+import { newStepId } from '../logging/trace';
+
 export interface FixerReport {
   fixed: boolean;
   notes: string[];

@@ -8,7 +8,7 @@ paths:
 
 - Runner: **vitest**. Run one file with
   `npx vitest run test/unit/<file>.test.ts`.
-- 249 tests across 43 files must remain 100% green. Never skip or `.only` a
+- 548 tests across 97 files must remain 100% green. Never skip or `.only` a
   test when committing.
 - **Never** make real network calls in unit tests. Mock with `vi.mock`. See
   `test/unit/executor-loop.test.ts` for the `callModel` stub pattern and

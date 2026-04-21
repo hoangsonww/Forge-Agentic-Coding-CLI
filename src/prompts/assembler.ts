@@ -1,15 +1,15 @@
-import * as crypto from 'crypto';
-import { AssembledPrompt, Mode, ModelMessage, PromptLayer, PromptSegment, Tool } from '../types';
-import { systemCore, modeLayer, toolCatalog, taskHeader } from './layers';
-import { fenceUntrusted } from '../security/injection';
-import { redactString } from '../security/redact';
-
 /**
  * Assembler: constructs a model prompt from various input layers, enforcing a token budget and producing a manifest for logging and caching. The output is a structured
  * prompt ready for model consumption, along with metadata for traceability.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as crypto from 'crypto';
+import { AssembledPrompt, Mode, ModelMessage, PromptLayer, PromptSegment, Tool } from '../types';
+import { systemCore, modeLayer, toolCatalog, taskHeader } from './layers';
+import { fenceUntrusted } from '../security/injection';
+import { redactString } from '../security/redact';
 
 const PROMPT_VERSION = '1.0';
 

@@ -1,9 +1,3 @@
-import { Agent, AgentResult } from './base';
-import { upsertNode, upsertEdge } from '../memory/graph';
-import { collectRelated } from '../memory/warm';
-import * as path from 'path';
-import { log } from '../logging/logger';
-
 /**
  * Memory agent — maintains the project's context graph. Invoked after
  * planning with a seed file (if any) to populate `imports` edges derived
@@ -11,6 +5,13 @@ import { log } from '../logging/logger';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Agent, AgentResult } from './base';
+import { upsertNode, upsertEdge } from '../memory/graph';
+import { collectRelated } from '../memory/warm';
+import * as path from 'path';
+import { log } from '../logging/logger';
+
 export const memoryAgent: Agent = {
   name: 'memory',
   description: 'Maintains the project context graph and long-term memory.',

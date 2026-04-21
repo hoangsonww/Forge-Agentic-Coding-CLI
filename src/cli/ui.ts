@@ -1,8 +1,3 @@
-import chalk from 'chalk';
-import ora, { Ora } from 'ora';
-import Table from 'cli-table3';
-import { banner, welcome, PALETTE } from './banners';
-
 /**
  * UI utilities for the CLI, including:
  *   • logo and welcome banner generation
@@ -12,6 +7,11 @@ import { banner, welcome, PALETTE } from './banners';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import chalk from 'chalk';
+import ora, { Ora } from 'ora';
+import Table from 'cli-table3';
+import { banner, welcome, PALETTE } from './banners';
 
 export const logo = (): string => banner();
 export const helloBanner = (version: string): string => welcome(version);

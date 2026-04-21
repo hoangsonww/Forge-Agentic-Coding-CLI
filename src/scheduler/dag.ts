@@ -1,11 +1,11 @@
-import { Plan, PlanStep } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-
 /**
  * DAG utilities for execution planning. Plans are represented as a list of steps with explicit dependencies, and these utilities allow for validating the plan and producing a topologically sorted execution order.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Plan, PlanStep } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
 
 export const topoSort = (plan: Plan): PlanStep[] => {
   const byId = new Map(plan.steps.map((s) => [s.id, s]));

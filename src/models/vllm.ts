@@ -1,5 +1,3 @@
-import { OpenAIProvider } from './openai';
-
 /**
  * vLLM via its OpenAI-compatible server. Default port is 8000.
  *
@@ -10,6 +8,9 @@ import { OpenAIProvider } from './openai';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { OpenAIProvider } from './openai';
+
 export class VllmProvider extends OpenAIProvider {
   constructor(endpoint: string = process.env.VLLM_ENDPOINT ?? 'http://127.0.0.1:8000/v1') {
     super(process.env.VLLM_API_KEY, endpoint, 'vllm');

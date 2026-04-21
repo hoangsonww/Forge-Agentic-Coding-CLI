@@ -1,5 +1,3 @@
-import { loadGlobalConfig } from '../config/loader';
-
 /**
  * In-process resource manager. Single-writer file locks, model GPU locks,
  * and per-task count limits. For a future multi-process daemon, this becomes
@@ -7,6 +5,8 @@ import { loadGlobalConfig } from '../config/loader';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { loadGlobalConfig } from '../config/loader';
 
 type LockType = 'read' | 'write' | 'exclusive';
 

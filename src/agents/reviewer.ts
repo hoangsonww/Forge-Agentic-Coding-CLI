@@ -1,13 +1,13 @@
-import { Agent, AgentResult } from './base';
-import { callModel } from '../models/router';
-import { assembleTaskPrompt } from '../prompts/assembler';
-import { log } from '../logging/logger';
-
 /**
  * Review agent — validates the outcome of an executed task against the original requirements. This is used after running a task to determine if the changes meet the acceptance criteria. The output includes an approval status, a list of issues (if any), and a summary of the review. The agent should be cautious in approving changes, especially if there are test failures or potential security issues.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Agent, AgentResult } from './base';
+import { callModel } from '../models/router';
+import { assembleTaskPrompt } from '../prompts/assembler';
+import { log } from '../logging/logger';
 
 export interface ReviewVerdict {
   approved: boolean;

@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { resolveSafe } from '../sandbox/fs';
-
 /**
  * Delete a file or directory inside the sandbox. For directories, set `recursive=true` to delete non-empty directories. Use with caution, as this is irreversible and can cause breakage if used improperly.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { resolveSafe } from '../sandbox/fs';
 
 interface Args {
   path: string;
