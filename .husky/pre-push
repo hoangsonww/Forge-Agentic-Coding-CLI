@@ -4,13 +4,8 @@
 echo "🚀 Running pre-push tests..."
 
 # Run backend tests
-echo "🧪 Running backend tests..."
-cd backend && npm run test
-cd ..
+echo "🧪 Running tests..."
+npm test
 
-# Run frontend tests
-echo "🧪 Running frontend tests..."
-cd frontend && npm run test
-cd ..
 
 echo "✅ Pre-push tests passed!"
