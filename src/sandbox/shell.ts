@@ -1,12 +1,12 @@
-import { spawn, SpawnOptions } from 'child_process';
-import { ForgeRuntimeError } from '../types/errors';
-import { Risk } from '../types';
-
 /**
  * Shell command execution with risk classification and blocklisting. This module provides utilities to classify the risk of shell commands based on regex patterns, determine if a command is blocklisted, and execute commands in a sandboxed environment with timeouts and output capture. The blocklist includes patterns for destructive operations (like `rm -rf /`), privilege escalation (`sudo`), and other high-risk commands. The risk classification allows the system to warn users about potentially dangerous commands without outright blocking them.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { spawn, SpawnOptions } from 'child_process';
+import { ForgeRuntimeError } from '../types/errors';
+import { Risk } from '../types';
 
 // Commands we actively BLOCK unless the user has explicitly unlocked them.
 const BLOCKLIST: RegExp[] = [

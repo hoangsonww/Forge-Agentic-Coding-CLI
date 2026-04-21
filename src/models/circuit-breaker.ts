@@ -6,6 +6,7 @@
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 export type BreakerState = 'closed' | 'open' | 'half_open';
 
 interface State {

@@ -134,7 +134,6 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
   const session = (entry: Parameters<typeof appendSessionEntry>[2]) =>
     appendSessionEntry(options.projectRoot, sessionId, entry);
 
-  // Acquire concurrency permit.
   const releaseTask = await concurrency.maxTasks.acquire();
   const startedAt = Date.now();
   event('TASK_STARTED', `Task started (${task.mode})`, { runId, sessionId });

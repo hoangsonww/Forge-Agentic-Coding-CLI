@@ -1,14 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { resolveSafe } from '../sandbox/fs';
-
 /**
  * Write a text file inside the sandbox. By default, this will overwrite existing files, but you can change the mode to `create_only` to only create new files (and fail if the file already exists) or `append` to append to existing files. Use with caution, as this can modify or delete important files if used improperly. Always double-check the file path and content before executing this tool, especially when using modes that can overwrite or append to existing files.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { resolveSafe } from '../sandbox/fs';
 
 interface Args {
   path: string;

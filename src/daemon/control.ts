@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import { spawn } from 'child_process';
-import * as path from 'path';
-import { paths, ensureForgeHome } from '../config/paths';
-
 /**
  * Daemon control module — provides functions to check the status of the Forge daemon, start it if it's not running, and stop it if it is. The daemon is responsible for handling long-running tasks and background processes that support the Forge CLI's functionality. This module interacts with the filesystem to manage the daemon's PID file and log output, and uses process signals to control the daemon's lifecycle.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import { spawn } from 'child_process';
+import * as path from 'path';
+import { paths, ensureForgeHome } from '../config/paths';
 
 export const daemonStatus = (): { running: boolean; pid?: number } => {
   try {

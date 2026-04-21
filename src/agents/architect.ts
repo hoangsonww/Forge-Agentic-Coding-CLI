@@ -1,10 +1,3 @@
-import { Agent, AgentResult } from './base';
-import { callModel } from '../models/router';
-import { assembleTaskPrompt } from '../prompts/assembler';
-import { loadGlobalInstructions, loadProjectInstructions } from '../config/loader';
-import { retrieve } from '../memory/retrieval';
-import { log } from '../logging/logger';
-
 /**
  * Architect agent — produces a system-level design document (not a plan).
  * Use this explicitly via `--mode architect` when the task is "how should we
@@ -13,6 +6,13 @@ import { log } from '../logging/logger';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Agent, AgentResult } from './base';
+import { callModel } from '../models/router';
+import { assembleTaskPrompt } from '../prompts/assembler';
+import { loadGlobalInstructions, loadProjectInstructions } from '../config/loader';
+import { retrieve } from '../memory/retrieval';
+import { log } from '../logging/logger';
 
 const architectSchema = `You are an Architect. You do NOT modify files — you only produce a design document.
 

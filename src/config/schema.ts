@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 /**
  * Schema definitions for global and project-specific configurations. These schemas define the structure, types, and default values for various configuration options, including:
  *   • Operational modes (fast, balanced, heavy, etc.)
@@ -17,6 +15,8 @@ import { z } from 'zod';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { z } from 'zod';
 
 export const modeEnum = z.enum([
   'fast',

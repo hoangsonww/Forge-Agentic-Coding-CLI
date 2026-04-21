@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { resolveSafe } from '../sandbox/fs';
-
 /**
  * Edit a file by replacing specific text. This is safer than write_file for small edits, as it ensures that only the intended text is changed. It fails if the target text isn't found or is ambiguous (unless `replaceAll` is set). Use `anchor` to specify how to match the target text (e.g. exact match vs. ignoring whitespace).
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { resolveSafe } from '../sandbox/fs';
 
 interface Args {
   path: string;

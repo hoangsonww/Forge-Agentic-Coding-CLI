@@ -1,7 +1,3 @@
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { runCommand } from '../sandbox/shell';
-
 /**
  * Git-related tools for inspecting status, viewing diffs, and managing branches. These are essential for any codebase using git, and can be used in combination with file editing tools to implement complex workflows like code review, refactoring, or release management.
  *
@@ -9,6 +5,10 @@ import { runCommand } from '../sandbox/shell';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { runCommand } from '../sandbox/shell';
 
 interface StatusArgs {
   porcelain?: boolean;

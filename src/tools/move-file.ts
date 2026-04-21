@@ -1,14 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { resolveSafe } from '../sandbox/fs';
-
 /**
  * Move (rename) a file or directory within the sandbox. This is a basic file operation that can be used for organizing files, implementing "save as" functionality, or moving generated files to their final location. Use `overwrite` to allow replacing existing files, and `createDirs` to automatically create parent directories if they don't exist.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { resolveSafe } from '../sandbox/fs';
 
 interface Args {
   from: string;

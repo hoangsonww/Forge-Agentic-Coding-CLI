@@ -160,8 +160,7 @@ ul li {
   align-items: stretch;
   gap: 10px;
   padding: 0 clamp(14px, 3vw, 28px);
-  max-width: 1240px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 56px;
 }
 
@@ -192,7 +191,7 @@ ul li {
   align-items: stretch;
   justify-content: space-between;
   gap: 4px;
-  padding: 0 clamp(8px, 1.5vw, 20px);
+  padding: 0 clamp(16px, 2vw, 28px) 0 clamp(8px, 1.5vw, 20px);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -314,6 +313,7 @@ ul li {
   .logo span.title{ display: none; }
   .nav-gh span    { display: none; }
   .nav-gh         { padding: 6px 8px; }
+  .nav-links      { padding: 0 12px 0 6px; }
   .nav-links a    { padding: 0 10px; font-size: 13px; }
 }
 

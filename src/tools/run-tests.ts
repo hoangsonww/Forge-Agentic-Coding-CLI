@@ -1,14 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Tool, ToolResult } from '../types';
-import { runCommand } from '../sandbox/shell';
-import { ForgeRuntimeError } from '../types/errors';
-
 /**
  * Run the project test suite. This tool attempts to auto-detect the test framework based on common configuration files (e.g., package.json for npm, pyproject.toml for pytest, go.mod for Go, Cargo.toml for Rust) and runs the appropriate test command. You can also specify the framework explicitly if auto-detection fails or if you want to override it. The output includes the detected framework, standard output, standard error, exit code, and whether the tests passed. Use with caution, as running tests can have side effects (e.g., modifying files, making network requests) and may take a long time to execute depending on the size of the test suite.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { Tool, ToolResult } from '../types';
+import { runCommand } from '../sandbox/shell';
+import { ForgeRuntimeError } from '../types/errors';
 
 interface Args {
   framework?: 'auto' | 'npm' | 'pnpm' | 'yarn' | 'pytest' | 'go' | 'cargo';

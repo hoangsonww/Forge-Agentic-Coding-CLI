@@ -1,3 +1,13 @@
+/**
+ *  When false, warn/error/info are NOT written to stderr/stdout — only to
+ *  the rotating file under ~/.forge/logs/forge.log. Used by the interactive
+ *  REPL so provider errors don't corrupt the rendered TUI frame. File
+ *  logging is unaffected, so the same info is still discoverable after the
+ *  session.
+ *
+ *  @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { paths } from '../config/paths';
@@ -9,15 +19,6 @@ const LEVEL_RANK: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, er
 
 let currentLevel: LogLevel = (process.env.FORGE_LOG_LEVEL as LogLevel) || 'info';
 
-/**
- *  When false, warn/error/info are NOT written to stderr/stdout — only to
- *  the rotating file under ~/.forge/logs/forge.log. Used by the interactive
- *  REPL so provider errors don't corrupt the rendered TUI frame. File
- *  logging is unaffected, so the same info is still discoverable after the
- *  session.
- *
- *  @author Son Nguyen <hoangson091104@gmail.com>
- */
 let consoleEnabled = !process.env.FORGE_LOG_QUIET;
 
 export const setLevel = (level: LogLevel): void => {

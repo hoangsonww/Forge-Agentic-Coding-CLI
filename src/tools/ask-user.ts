@@ -1,7 +1,3 @@
-import prompts from 'prompts';
-import { Tool, ToolResult } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-
 /**
  * Ask the user a question and return their answer. Use this for clarifications or decisions that require human judgment. Avoid overusing, as it interrupts flow and requires user attention.
  *
@@ -11,6 +7,10 @@ import { ForgeRuntimeError } from '../types/errors';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import prompts from 'prompts';
+import { Tool, ToolResult } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
 
 interface Args {
   question: string;

@@ -1,11 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Task, TaskStatus, TERMINAL_STATUSES } from '../types';
-import { ForgeRuntimeError } from '../types/errors';
-import { ensureProjectDir, projectSubdirs, projectId as computeProjectId } from '../config/paths';
-import { indexTask, upsertProject, deleteTaskFromIndex } from './index-db';
-import * as pathModule from 'path';
-
 /**
  * Task persistence module.
  *
@@ -13,6 +5,14 @@ import * as pathModule from 'path';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { Task, TaskStatus, TERMINAL_STATUSES } from '../types';
+import { ForgeRuntimeError } from '../types/errors';
+import { ensureProjectDir, projectSubdirs, projectId as computeProjectId } from '../config/paths';
+import { indexTask, upsertProject, deleteTaskFromIndex } from './index-db';
+import * as pathModule from 'path';
 
 const LEGAL_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   draft: ['planned', 'cancelled'],

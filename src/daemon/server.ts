@@ -1,11 +1,3 @@
-import * as fs from 'fs';
-import * as net from 'net';
-import { paths, ensureForgeHome } from '../config/paths';
-import { log } from '../logging/logger';
-import { checkForUpdate } from './updater';
-import { rotateIfNeeded } from '../logging/rotation';
-import { decay as decayLearning } from '../memory/learning';
-
 /**
  * Forge daemon — a lightweight background process that periodically checks
  * for updates and exposes a minimal IPC endpoint for future UI/daemon
@@ -13,6 +5,14 @@ import { decay as decayLearning } from '../memory/learning';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as net from 'net';
+import { paths, ensureForgeHome } from '../config/paths';
+import { log } from '../logging/logger';
+import { checkForUpdate } from './updater';
+import { rotateIfNeeded } from '../logging/rotation';
+import { decay as decayLearning } from '../memory/learning';
 
 const start = async (): Promise<void> => {
   ensureForgeHome();

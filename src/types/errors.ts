@@ -1,10 +1,10 @@
-import { ErrorClass, ForgeError } from './index';
-
 /**
  * Errors thrown by ForgeRuntime should be instances of this class. This allows us to standardize error handling across the system, including classification, retryability, and structured information for logging and debugging. When throwing errors within ForgeRuntime, use this class to ensure that all relevant information is captured and can be processed by error handlers, loggers, and monitoring tools effectively.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { ErrorClass, ForgeError } from './index';
 
 export class ForgeRuntimeError extends Error implements ForgeError {
   readonly class: ErrorClass;

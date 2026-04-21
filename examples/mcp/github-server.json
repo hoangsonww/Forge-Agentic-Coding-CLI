@@ -1,0 +1,15 @@
+{
+  "id": "github",
+  "name": "GitHub",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-github"],
+  "auth": "api_key",
+  "status": "disconnected",
+  "tools": [
+    "create_issue",
+    "search_repositories",
+    "get_file_contents",
+    "create_pull_request"
+  ]
+}

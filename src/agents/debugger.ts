@@ -1,14 +1,14 @@
-import { Agent, AgentResult } from './base';
-import { callModel } from '../models/router';
-import { assembleTaskPrompt } from '../prompts/assembler';
-import { log } from '../logging/logger';
-import { upsertLearning } from '../persistence/index-db';
-
 /**
  * Debugger agent — performs root-cause analysis on failures. Use this when you have a failure message and want to understand why it happened and how to fix it. The output includes the most likely root cause, a list of hypotheses, a suggested fix, and a confidence level.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { Agent, AgentResult } from './base';
+import { callModel } from '../models/router';
+import { assembleTaskPrompt } from '../prompts/assembler';
+import { log } from '../logging/logger';
+import { upsertLearning } from '../persistence/index-db';
 
 export interface DebugDiagnosis {
   rootCause: string;

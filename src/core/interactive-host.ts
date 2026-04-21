@@ -1,7 +1,3 @@
-import { AsyncLocalStorage } from 'async_hooks';
-import type { ForgeEvent, PermissionDecision, PermissionRequest, Plan } from '../types';
-import type { PermissionFlags } from '../permissions/manager';
-
 /**
  * InteractiveHost lets the core loop surface decisions to whatever interface
  * is driving it. The CLI binds a terminal-prompt host; the UI server binds
@@ -14,6 +10,11 @@ import type { PermissionFlags } from '../permissions/manager';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { AsyncLocalStorage } from 'async_hooks';
+import type { ForgeEvent, PermissionDecision, PermissionRequest, Plan } from '../types';
+import type { PermissionFlags } from '../permissions/manager';
+
 export interface InteractiveHost {
   /** Returns 'approve' (run the plan), 'cancel' (stop the task), 'edit' (open an editor — only CLI implements this). */
   confirmPlan(plan: Plan, taskId: string): Promise<'approve' | 'cancel' | 'edit'>;

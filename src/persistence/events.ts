@@ -1,8 +1,3 @@
-import * as path from 'path';
-import { ensureProjectDir } from '../config/paths';
-import { appendJsonl, streamJsonl } from './jsonl';
-import { ForgeEvent } from '../types';
-
 /**
  * Event persistence module.
  *
@@ -10,6 +5,11 @@ import { ForgeEvent } from '../types';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as path from 'path';
+import { ensureProjectDir } from '../config/paths';
+import { appendJsonl, streamJsonl } from './jsonl';
+import { ForgeEvent } from '../types';
 
 const eventFile = (projectRoot: string): string => {
   const sub = ensureProjectDir(projectRoot);

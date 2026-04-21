@@ -1,8 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import Database, { Database as DB } from 'better-sqlite3';
-import { paths } from '../config/paths';
-
 /**
  * Index database module.
  *
@@ -10,6 +5,11 @@ import { paths } from '../config/paths';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import Database, { Database as DB } from 'better-sqlite3';
+import { paths } from '../config/paths';
 
 let db: DB | null = null;
 

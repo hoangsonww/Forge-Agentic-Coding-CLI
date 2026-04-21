@@ -1,12 +1,12 @@
-import { listMcp, upsertMcp, deleteMcp, McpRow } from '../persistence/index-db';
-import { McpConnection } from '../types';
-
 /**
  * Registry for MCP connections. This is a simple key-value store that allows us to persist connection configurations across sessions. Each connection is
  * identified by a unique ID and includes details like transport type, endpoint, and authentication info. The registry provides functions to add, list, and remove connections, and it abstracts away the underlying storage mechanism (IndexedDB in this case) from the rest of the application.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { listMcp, upsertMcp, deleteMcp, McpRow } from '../persistence/index-db';
+import { McpConnection } from '../types';
 
 export const addConnection = (conn: McpConnection): void => {
   upsertMcp({

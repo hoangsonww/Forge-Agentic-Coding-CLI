@@ -1,5 +1,3 @@
-import * as crypto from 'crypto';
-
 /**
  * Trace and span ID generation for logging and telemetry.
  *
@@ -9,6 +7,8 @@ import * as crypto from 'crypto';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import * as crypto from 'crypto';
 
 export const newTraceId = (): string => crypto.randomBytes(8).toString('hex');
 export const newRunId = (): string => crypto.randomBytes(6).toString('hex');

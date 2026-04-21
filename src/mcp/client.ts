@@ -1,7 +1,3 @@
-import { spawn, ChildProcess } from 'child_process';
-import { ForgeRuntimeError } from '../types/errors';
-import { log } from '../logging/logger';
-
 /**
  * Minimal MCP stdio client. Implements the core JSON-RPC request/response
  * flow needed to: list tools, call tools, close cleanly. Deliberately does
@@ -10,6 +6,11 @@ import { log } from '../logging/logger';
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
+import { spawn, ChildProcess } from 'child_process';
+import { ForgeRuntimeError } from '../types/errors';
+import { log } from '../logging/logger';
+
 export interface McpRpcResponse {
   jsonrpc: '2.0';
   id: number | string;

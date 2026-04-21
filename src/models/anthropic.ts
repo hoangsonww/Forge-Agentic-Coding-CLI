@@ -1,3 +1,12 @@
+/**
+ * Anthropic provider — enterprise fallback when local models aren't present.
+ * Local-first doctrine still holds (Ollama is preferred), but users can opt
+ * into the Claude API for reliability or when running on laptops without a
+ * capable local runtime.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { request } from 'undici';
 import {
   ModelProvider,
@@ -9,14 +18,6 @@ import {
 import { ForgeRuntimeError } from '../types/errors';
 import { loadGlobalConfig } from '../config/loader';
 
-/**
- * Anthropic provider — enterprise fallback when local models aren't present.
- * Local-first doctrine still holds (Ollama is preferred), but users can opt
- * into the Claude API for reliability or when running on laptops without a
- * capable local runtime.
- *
- * @author Son Nguyen <hoangson091104@gmail.com>
- */
 export class AnthropicProvider implements ModelProvider {
   readonly name = 'anthropic';
 
