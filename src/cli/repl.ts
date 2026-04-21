@@ -62,6 +62,7 @@ import {
   watchConversationFile,
 } from '../core/conversation';
 import { ConversationWatcher } from '../persistence/conversation-store';
+import { checkForUpdate, currentVersion } from '../daemon/updater';
 
 // ---------- Types ----------
 
@@ -1007,6 +1008,33 @@ export const startRepl = async (
 
   process.stdout.write(hero(state, pkg.version ?? '0.1.0'));
   if (conversation.turns.length) printResumedSummary(state);
+
+  // Fire-and-forget update check on every REPL start. `shouldCheckNow` in the
+  // updater rate-limits actual network hits to `cfg.update.checkIntervalHours`
+  // (default 24h) so this is cheap (cache read) on repeat boots. Print a
+  // single-line notice when an update is available and the user hasn't
+  // opted out via `update.notify = false`.
+  void (async () => {
+    try {
+      const res = await checkForUpdate();
+      if (!res || !res.hasUpdate) return;
+      if (!loadGlobalConfig().update.notify) return;
+      const msg =
+        '  ' +
+        chalk.bgRgb(...PALETTE.violet).white(' update ') +
+        '  ' +
+        chalk.white(`Forge ${res.latestVersion} available`) +
+        chalk.dim(` (you're on ${currentVersion()}).`) +
+        chalk.dim(' Run ') +
+        chalk.bold('/update') +
+        chalk.dim(' to install · ') +
+        chalk.bold('/update ignore ' + res.latestVersion) +
+        chalk.dim(' to silence.\n');
+      process.stdout.write('\n' + msg + '\n');
+    } catch {
+      /* best-effort — never block the REPL */
+    }
+  })();
 
   const history = loadHistory();
 

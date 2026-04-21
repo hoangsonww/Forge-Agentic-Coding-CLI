@@ -3,7 +3,7 @@ import * as path from 'path';
 import { Task, TaskStatus, TERMINAL_STATUSES } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { ensureProjectDir, projectSubdirs, projectId as computeProjectId } from '../config/paths';
-import { indexTask, upsertProject } from './index-db';
+import { indexTask, upsertProject, deleteTaskFromIndex } from './index-db';
 import * as pathModule from 'path';
 
 /**
@@ -106,6 +106,29 @@ export const listLocalTasks = (projectRoot: string): Task[] => {
     })
     .filter((t): t is Task => t !== null)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+};
+
+export interface DeleteTaskResult {
+  taskFile: boolean;
+  indexRows: { task: number; sessions: number };
+}
+
+export const deleteTask = (projectRoot: string, taskId: string): DeleteTaskResult => {
+  const fp = taskFilePath(projectRoot, taskId);
+  let taskFile = false;
+  if (fs.existsSync(fp)) {
+    fs.rmSync(fp);
+    taskFile = true;
+  }
+  const indexRows = deleteTaskFromIndex(taskId);
+  if (!taskFile && indexRows.task === 0) {
+    throw new ForgeRuntimeError({
+      class: 'not_found',
+      message: `Task ${taskId} not found`,
+      retryable: false,
+    });
+  }
+  return { taskFile, indexRows };
 };
 
 export const transitionTask = (

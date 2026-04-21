@@ -1,5 +1,6 @@
 # Forge — Architecture
 
+> [!TIP]
 > The engineering map. Every diagram and file reference here reflects what
 > lives in `src/` today, so you can grep from any claim straight to the code.
 

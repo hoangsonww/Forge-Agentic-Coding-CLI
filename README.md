@@ -578,7 +578,7 @@ forge execute "<prompt>"       # auto-approve + execute
 forge resume [taskId]          # resume any prior task (any status)
 forge status                   # runtime state
 forge doctor                   # health check + role→model mapping
-forge task list|search         # task history (SQLite-indexed)
+forge task list|search|delete  # task history (SQLite-indexed); delete prompts (or -y)
 forge session list|replay <id> # session JSONL inspection
 forge model list               # probe all providers
 forge config get|set|path      # configuration
@@ -592,7 +592,7 @@ forge cost                     # USD spend ledger
 forge ui start                 # local dashboard at :7823
 forge bundle {pack|unpack}     # offline bundles
 forge container up|down        # compose wrapper
-forge update [--check|--force] # self-update
+forge update [--check|--force] # self-update (REPL also checks on start, cache-gated)
 forge migrate                  # DB migrations
 forge changelog                # local changelog view
 forge dev                      # dev helpers

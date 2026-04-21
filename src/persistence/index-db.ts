@@ -224,6 +224,18 @@ export const listTasks = (projectId?: string, limit = 50): TaskIndexRow[] => {
     .all(limit) as TaskIndexRow[];
 };
 
+export const getTask = (id: string): TaskIndexRow | null => {
+  const conn = ensureDb();
+  return (conn.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskIndexRow) ?? null;
+};
+
+export const deleteTaskFromIndex = (id: string): { task: number; sessions: number } => {
+  const conn = ensureDb();
+  const sessions = conn.prepare('DELETE FROM sessions WHERE task_id = ?').run(id).changes;
+  const task = conn.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes;
+  return { task, sessions };
+};
+
 // ----------- Permission grants -----------
 export interface PermissionRow {
   tool: string;
