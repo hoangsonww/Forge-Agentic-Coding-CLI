@@ -4,15 +4,10 @@
 echo "🔍 Running pre-commit checks..."
 
 # Lint staged files (frontend + backend)
-npx lint-staged
+npm run lint
 
-# Type-check backend and frontend (fast incremental)
-echo "🧪 Type-checking backend..."
-cd backend && npx tsc --noEmit
-cd ..
+echo "🧪 Type-checking..."
+npm run typecheck
 
-echo "🧪 Type-checking frontend..."
-cd frontend && npx tsc --noEmit
-cd ..
 
 echo "✅ Pre-commit checks passed!"
