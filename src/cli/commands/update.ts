@@ -1,3 +1,9 @@
+/**
+ * Forge update command. This command checks for updates to the Forge CLI and applies them if available. It supports options for checking only (without applying) and forcing a network check. The command also includes a subcommand to ignore specific versions, preventing update notifications for those versions in the future.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { checkForUpdate, currentVersion, ignoreVersion, applyUpdate } from '../../daemon/updater';

@@ -8,6 +8,8 @@
  *      (rm -rf /, sudo, fork bombs, curl|sh).
  *   3. `runCommand` executes a benign command under the real sandbox with
  *      a tight timeout and surfaces stdout/stderr/exitCode intact.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';

@@ -1,3 +1,10 @@
+/**
+ * Spec command: run the agentic loop against a spec file (spec-driven development).
+ * The spec file is a Markdown document that describes the feature to be developed, along with an optional list of sub-tasks to address in order. The command loads the spec, extracts the description and tasks, and then orchestrates a run of the agentic loop with the spec as input.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { loadSpec } from '../../core/spec';

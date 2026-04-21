@@ -3,6 +3,8 @@
  * web content, MCP responses) is wrapped in a visible fence AND scrubbed
  * for common injection triggers. We never merge untrusted content into the
  * system layer of the prompt — only into context, clearly tagged.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const INJECTION_PATTERNS = [

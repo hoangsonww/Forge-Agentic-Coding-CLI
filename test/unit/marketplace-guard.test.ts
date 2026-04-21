@@ -1,3 +1,9 @@
+/**
+ * This test suite ensures that the skills marketplace installation function properly guards against invalid URLs, such as those using the http:// protocol or non-URL strings. This is crucial for maintaining security and preventing potential vulnerabilities when users attempt to install skills from untrusted sources.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { installFromUrl } from '../../src/skills/marketplace';
 

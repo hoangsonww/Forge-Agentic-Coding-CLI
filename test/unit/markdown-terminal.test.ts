@@ -3,6 +3,8 @@
  *
  * We compare against ANSI-stripped output so the assertions stay legible
  * and don't break when chalk's colour bytes shift between versions.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect } from 'vitest';
 import { renderMarkdown } from '../../src/cli/markdown';

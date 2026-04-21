@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { runCommand } from '../sandbox/shell';
 
+/**
+ * Grep for a regex pattern across files. This tool uses ripgrep (rg) if available, which is much faster and more feature-rich than traditional grep. If ripgrep isn't available, it falls back to BSD grep. You can specify a path to search within, a glob pattern to filter files, and whether the search should be case-insensitive. The results include the file name, line number, and content of each match. Use with caution, as complex patterns or large directories can lead to long execution times (though we have a timeout in place to mitigate this).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   pattern: string;
   path?: string;

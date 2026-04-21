@@ -1,3 +1,9 @@
+/**
+ * Model management commands. Supports listing available models across providers. This command allows users to see which models they can use with Ollama, along with details like context window size and supported roles, helping them choose the right model for their needs.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { listProviders } from '../../models/provider';

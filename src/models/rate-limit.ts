@@ -2,6 +2,8 @@
  * Per-provider token-bucket rate limiter. Keeps the model router from
  * hammering a provider past its documented rate limit, especially in the
  * retry loop where backoff + retry can pile up fast.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export interface BucketConfig {
   capacity: number;

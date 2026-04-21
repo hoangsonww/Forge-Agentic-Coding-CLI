@@ -4,6 +4,15 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { resolveForgeHome } from './xdg';
 
+/**
+ * Path configuration and utilities for Forge. Centralizes all filesystem interactions to ensure consistency and maintainability. Key features include:
+ *   • Standardized directory structure under the Forge home directory (defaulting to ~/.forge or XDG-compliant location)
+ *   • Project-specific subdirectories for tasks, sessions, logs, memory, and metadata
+ *   Utility functions to ensure directories exist, compute project IDs based on absolute paths, and resolve project subdirectories
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export const FORGE_HOME = resolveForgeHome();
 void os; // keep import for other consumers that may rely on it transitively
 

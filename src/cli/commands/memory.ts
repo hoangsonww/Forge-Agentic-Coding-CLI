@@ -1,3 +1,9 @@
+/**
+ * Commands for managing memory (cold and learning) for agents and models to use as context when making decisions. This includes indexing the current project for code search, pruning old memory, and applying decay to learning patterns.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as path from 'path';
 import { bootstrap } from '../bootstrap';

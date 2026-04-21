@@ -1,3 +1,9 @@
+/**
+ * Resume a prior task. By default, shows an interactive picker of recent tasks in this project, but you can also specify a task id or just resume the most recent task with flags.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import prompts from 'prompts';
 import { bootstrap } from '../bootstrap';

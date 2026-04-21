@@ -1,3 +1,12 @@
+/**
+ * Task management commands.
+ * - list: shows recent tasks, optionally filtered by project.
+ * - search: search tasks by title or intent.
+ * - (future) delete: delete a task and all its sessions (with confirmation).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { listTasks, searchTasks, TaskIndexRow } from '../../persistence/index-db';
 import { tableOut, info } from '../ui';

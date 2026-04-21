@@ -1,3 +1,13 @@
+/**
+ * HotMemory is a simple in-memory store that tracks the "hotness" of entries based on a priority and a budget. It evicts the least hot entries when the budget is exceeded. This test suite verifies that the HotMemory class correctly tracks the budget, evicts entries based on priority, allows forgetting specific sources, and supports replacing content for existing sources.
+ *
+ * The tests cover:
+ *   Eviction of lowest priority entries when the budget is exceeded.
+ *   Removal of specific sources using the forget method.
+ *   Replacement of content for existing sources using the replace method.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 import { describe, it, expect } from 'vitest';
 import { HotMemory } from '../../src/memory/hot';
 

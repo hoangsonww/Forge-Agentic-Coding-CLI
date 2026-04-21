@@ -3,6 +3,16 @@ import ora, { Ora } from 'ora';
 import Table from 'cli-table3';
 import { banner, welcome, PALETTE } from './banners';
 
+/**
+ * UI utilities for the CLI, including:
+ *   • logo and welcome banner generation
+ *   • styled console output (info, warning, error, key-value pairs)
+ *   • table generation for structured data display
+ *   • spinners and progress indicators for long-running operations
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export const logo = (): string => banner();
 export const helloBanner = (version: string): string => welcome(version);
 

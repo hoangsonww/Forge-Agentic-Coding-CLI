@@ -7,6 +7,8 @@ import { log } from '../logging/logger';
  * flow needed to: list tools, call tools, close cleanly. Deliberately does
  * NOT implement the full protocol — we add features as real connections
  * demand them. OAuth/HTTP transports come in a follow-up.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export interface McpRpcResponse {
   jsonrpc: '2.0';

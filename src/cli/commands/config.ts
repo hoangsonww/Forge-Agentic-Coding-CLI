@@ -1,3 +1,9 @@
+/**
+ * Configuration command: read/write config keys and print config/data paths.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { ZodError } from 'zod';
 import { bootstrap } from '../bootstrap';

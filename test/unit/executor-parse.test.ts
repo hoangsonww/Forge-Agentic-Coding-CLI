@@ -1,3 +1,19 @@
+/**
+ * Executor output parsing and tool result digest tests. These are important to ensure that the agent can robustly handle the variety of outputs that a language model might produce, and that tool results are consistently represented for the model to consume in subsequent turns.
+ *
+ * The parsing tests cover:
+ *   -Bare JSON output.
+ *   JSON wrapped in markdown code fences.
+ *   Malformed JSON handling.
+ *   Filtering out actions without a 'tool' field.
+ *
+ * The digest tests cover:
+ *   Normalizing 'run_command' results to a consistent shape and truncating long output.
+ *   Surface error class and message when a tool execution fails, ensuring that the model receives useful information about what went wrong.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import {
   _parseExecutorOutputForTest as parse,

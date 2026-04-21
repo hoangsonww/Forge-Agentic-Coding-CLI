@@ -5,6 +5,8 @@
  * plain JS sandbox if we hand it `globalThis`. We exercise both the happy
  * path and the XSS attack surface that matters most: LLM output is
  * untrusted.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';

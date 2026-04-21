@@ -9,6 +9,14 @@ import * as breaker from './circuit-breaker';
 import * as cost from './cost';
 import { resolveLocalModel, isLocalProvider } from './adapter';
 
+/**
+ * Routing logic for model calls. This module encapsulates the decision-making process for which model provider and specific model to use for a given call, based on factors like the role of the call (e.g. planner vs executor), the mode (e.g. offline-safe), user preferences, and provider availability. The goal is to centralize this logic so that the rest of the system can simply call `callModel` with a role and mode, and get back a response without worrying about which provider is being used or handling fallbacks.
+ *
+ * The routing logic currently implements a local-first strategy, preferring local providers like Ollama when available, and falling back to Anthropic if not. It also takes into account the role of the call to select appropriate models (e.g. using a faster model for 'fast' roles). If the preferred provider is unavailable or fails, it will attempt to use a fallback provider if configured and available.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export interface RoutingDecision {
   provider: string;
   model: string;

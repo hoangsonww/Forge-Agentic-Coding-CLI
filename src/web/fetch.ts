@@ -1,5 +1,7 @@
 /**
  * URL fetch with size caps, content-type guard, and markdown-ish extraction.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { request } from 'undici';
 import { ForgeRuntimeError } from '../types/errors';

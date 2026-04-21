@@ -1,3 +1,9 @@
+/**
+ * We test the attachResultForTask API in isolation to verify it can write to any conversation regardless of source. This is important because the UI task orchestration logic is complex and we want to ensure that even if there are issues in the UI task management, the attachResultForTask API can still function correctly and persist results to conversations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { htmlToText, truncateText } from '../../src/web/sanitize';
 

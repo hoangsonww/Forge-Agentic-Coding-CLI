@@ -1,3 +1,9 @@
+/**
+ * Doctor command: run a series of checks to diagnose common installation issues and provide actionable feedback. This command is intended to help users quickly identify and resolve problems with their Forge installation, such as missing dependencies, misconfigurations, or connectivity issues with model providers. Each check runs a specific test (e.g., verifying the existence of the Forge home directory, checking database connectivity, validating configuration settings, testing provider availability, etc.) and reports the results in a clear and user-friendly format. If any checks fail, the command provides guidance on how to fix the issues before trying again.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as fs from 'fs';

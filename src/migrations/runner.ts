@@ -4,6 +4,8 @@
  * index-db.ts creates the base tables on first use. This runner layers
  * numbered migrations on top (DDL only — no runtime mutation). Each
  * migration is idempotent and tracked in schema_migrations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { getDb } from '../persistence/index-db';
 import { log } from '../logging/logger';

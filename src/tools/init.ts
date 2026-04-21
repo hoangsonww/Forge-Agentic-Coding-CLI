@@ -1,3 +1,9 @@
+/**
+ * Initializes and registers all default tools.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { registerTool } from './registry';
 import { readFileTool } from './read-file';
 import { writeFileTool } from './write-file';

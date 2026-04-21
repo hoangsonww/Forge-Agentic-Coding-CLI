@@ -1,3 +1,9 @@
+/**
+ * Initialize Forge in the current project. This sets up the config files and directories, and probes the model provider to ensure it's working.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import prompts from 'prompts';

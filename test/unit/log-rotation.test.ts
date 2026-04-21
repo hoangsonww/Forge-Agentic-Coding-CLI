@@ -1,3 +1,11 @@
+/**
+ * Log rotation tests. These are somewhat integration-y, but they test the actual file system behavior of the rotation logic. The tests cover:
+ *   - rotateIfNeeded correctly rotates the log file when it exceeds the specified byte limit, and maintains the expected number of backup files.
+ *   - rotateIfNeeded does not rotate when the log file is under the byte limit.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

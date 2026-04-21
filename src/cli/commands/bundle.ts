@@ -1,3 +1,9 @@
+/**
+ * Bundle command for creating and installing offline bundles of Forge. This is useful for air-gapped environments where direct access to the internet is not available. The `create` subcommand generates a tarball containing all necessary files for Forge, while the `install` subcommand extracts a given tarball to a specified location, allowing users to set up Forge without needing to download dependencies at install time.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';

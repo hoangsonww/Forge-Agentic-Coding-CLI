@@ -2,6 +2,8 @@
  * Log rotation. Caps `forge.log` at N bytes; when exceeded, renames to
  * `forge.log.1` and starts fresh. Keeps up to `keep` rotations. Cheap and
  * synchronous — runs once at startup and periodically from the daemon.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

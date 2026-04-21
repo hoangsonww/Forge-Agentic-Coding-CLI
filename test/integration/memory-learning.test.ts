@@ -6,6 +6,8 @@
  *
  * The store lives under FORGE_HOME (set by test/setup-env.ts to a tmp
  * dir), so these tests don't touch the developer's real state.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import {

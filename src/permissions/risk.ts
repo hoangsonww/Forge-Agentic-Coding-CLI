@@ -3,6 +3,8 @@ import { Risk, SideEffect, Tool, ToolSchema } from '../types';
 /**
  * Risk-scoring helpers. Called whenever we need a decision about whether a
  * tool invocation is routine or needs explicit approval.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export const riskRank = (r: Risk): number =>
   (({ low: 0, medium: 1, high: 2, critical: 3 }) as const)[r];

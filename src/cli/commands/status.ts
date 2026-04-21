@@ -1,3 +1,9 @@
+/**
+ * Status command - show runtime status, including daemon, provider availability, and recent tasks.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { banner, divider, section, kv, pill, tableOut, dim, PALETTE } from '../ui';

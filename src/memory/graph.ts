@@ -3,6 +3,8 @@
  * `imports/calls/modifies/relates_to` edges. Stored in SQLite alongside the
  * global index. Deliberately small — tuned for fast queries, not graph DB
  * parity.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { getDb } from '../persistence/index-db';
 import { projectId as computeProjectId } from '../config/paths';

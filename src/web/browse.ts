@@ -6,6 +6,8 @@
  *
  * Playwright is loaded lazily so users who don't need browsing don't pay for
  * it. If it's not installed, every browse call returns a helpful error.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { ForgeRuntimeError } from '../types/errors';
 import { log } from '../logging/logger';

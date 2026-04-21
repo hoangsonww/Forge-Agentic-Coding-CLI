@@ -3,6 +3,14 @@ import * as path from 'path';
 import Database, { Database as DB } from 'better-sqlite3';
 import { paths } from '../config/paths';
 
+/**
+ * Index database module.
+ *
+ * This module manages a global SQLite database that serves as an index for projects, tasks, permission grants, learning patterns, and MCP connections. It provides functions to initialize the database, perform migrations, and execute CRUD operations on the various entities. The database is stored in a location defined by the application's configuration paths.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 let db: DB | null = null;
 
 const ensureDb = (): DB => {

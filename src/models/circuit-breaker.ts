@@ -3,6 +3,8 @@
  * consecutive failures, waits `resetMs` before allowing a single probe, and
  * closes on a successful probe. Half-open state is tracked but the public
  * surface only distinguishes "can try" from "blocked".
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export type BreakerState = 'closed' | 'open' | 'half_open';
 

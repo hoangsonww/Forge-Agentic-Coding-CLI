@@ -22,6 +22,8 @@
  * The module has no knowledge of domain types — it deals in strings and
  * `Record<string, unknown>` events. Domain typing lives in
  * src/core/conversation.ts.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 import * as fs from 'fs';

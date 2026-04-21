@@ -1,3 +1,9 @@
+/**
+ * Run an agentic task from a natural-language prompt, with optional modes and permissions.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { Mode } from '../../types';
 import { orchestrateRun } from '../../core/orchestrator';

@@ -11,6 +11,8 @@ import type { PermissionFlags } from '../permissions/manager';
  *
  * A null host means "use the default CLI prompt" — keeps existing scripts
  * and direct `forge run` invocations unchanged.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 export interface InteractiveHost {
   /** Returns 'approve' (run the plan), 'cancel' (stop the task), 'edit' (open an editor — only CLI implements this). */

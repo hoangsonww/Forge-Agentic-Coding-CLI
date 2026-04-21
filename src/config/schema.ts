@@ -1,5 +1,23 @@
 import { z } from 'zod';
 
+/**
+ * Schema definitions for global and project-specific configurations. These schemas define the structure, types, and default values for various configuration options, including:
+ *   • Operational modes (fast, balanced, heavy, etc.)
+ *   • LLM providers and their specific settings
+ *   • Update checking preferences
+ *   • Permissions and trust settings
+ *   • Concurrency limits
+ *   • Notification preferences
+ *   • Completion requirements
+ *   • Task limits
+ *   • Memory management settings
+ *   • Web access settings
+ *
+ * The schemas are used to validate and parse configuration files, ensuring that the application operates with consistent and expected settings.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export const modeEnum = z.enum([
   'fast',
   'balanced',

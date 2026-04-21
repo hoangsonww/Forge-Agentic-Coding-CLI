@@ -1,3 +1,13 @@
+/**
+ * Mode policy tests ensure that the correct parameters are set for each mode, and that the policies align with the intended use cases. The tests cover:
+ *   Fast mode: verifies that it has a low turn budget, no validation retries, and allows mutations.
+ *   Heavy mode: checks that it has a higher turn budget and more validation retries than balanced.
+ *   Audit and Plan modes: confirms that they do not allow mutations.
+ *   Unknown mode: ensures that it falls back to balanced defaults rather than throwing an error.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { modePolicy } from '../../src/core/mode-policy';
 

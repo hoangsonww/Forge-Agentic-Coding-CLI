@@ -1,3 +1,15 @@
+/**
+ * Plan fixer tests - ensures that the plan fixer correctly adds missing steps and deduplicates step ids based on the task profile.
+ *
+ * These tests verify that the plan fixer:
+ *   - Adds a review step if it's missing and required by the profile.
+ *   - Adds a run_tests step if it's required by the profile and missing from the plan.
+ *   - Skips adding verification steps for trivial tasks that don't require them.
+ *   - Deduplicates step ids when there are duplicates in the original plan.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { fixPlan } from '../../src/core/plan-fixer';
 import { Plan, TaskProfile } from '../../src/types';

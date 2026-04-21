@@ -10,6 +10,8 @@ import { log } from '../logging/logger';
  * Use this explicitly via `--mode architect` when the task is "how should we
  * structure X". No file edits; the output is prose/diagram text the user
  * can decide to feed back in as an approved plan seed.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const architectSchema = `You are an Architect. You do NOT modify files — you only produce a design document.

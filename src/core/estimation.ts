@@ -5,6 +5,8 @@
  * runtime. Pure heuristics based on the plan structure; the value is in
  * warning the user before they approve a 30-step plan that will take 10
  * minutes and hit production DBs.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { Plan } from '../types';
 

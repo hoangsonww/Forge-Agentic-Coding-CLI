@@ -5,7 +5,10 @@
  *   • Task-index TTL sweep + size accounting.
  *   • Broadcaster/watcher cleanup on shutdown.
  *   • Concurrent writers across simulated surfaces.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -15,7 +18,6 @@ import {
   createConversation,
   isValidConversationId,
   loadConversation,
-  newTurnId,
   watchConversationFile,
 } from '../../src/core/conversation';
 import {

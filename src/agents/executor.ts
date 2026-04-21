@@ -11,6 +11,12 @@ import { newRunId } from '../logging/trace';
 import { modePolicy } from '../core/mode-policy';
 import { runValidation } from '../core/validation';
 
+/**
+ * Executor agent — executes a single plan step via iterative tool use. This is the core of the system's ability to carry out complex, multi-step plans that require reasoning and adaptation. The agent receives a step description and a catalog of tools, and can call tools in a loop until it determines the step is complete. The output includes a summary of what was done, the results of each tool call, and any files changed.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export interface ExecutorStepOutput {
   step: PlanStep;
   toolResults: Array<{ tool: string; args: unknown; result: ToolResult<unknown> }>;

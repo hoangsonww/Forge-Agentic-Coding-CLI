@@ -1,3 +1,13 @@
+/**
+ * Injection detection and fencing tests. These are basic sanity checks to ensure the functions are working as intended. The actual patterns and logic may need to be expanded based on real-world use cases and threat models.
+ *
+ * The tests cover:
+ *   - scanForInjection correctly flags classic injection patterns and redacts them.
+ *   - scanForInjection does not flag innocuous text.
+ *   - fenceUntrusted wraps content in a clearly delimited block with the expected markers.
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { scanForInjection, fenceUntrusted } from '../../src/security/injection';
 

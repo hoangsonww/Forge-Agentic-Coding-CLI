@@ -4,6 +4,8 @@
  * deterministic=true). Keeps a small LRU in-process + an optional SQLite
  * mirror so repeated runs benefit from prior output without hitting the
  * model again.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as crypto from 'crypto';
 import { ModelCallOptions, ModelMessage, ModelResponse } from '../types';

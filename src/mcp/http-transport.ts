@@ -3,6 +3,8 @@
  * (request body: framed messages; response body: server-sent events). Good
  * enough for connectors that expose MCP-over-HTTP. For long-running tools
  * we establish a separate streaming channel per `tools/call`.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { request } from 'undici';
 import { ForgeRuntimeError } from '../types/errors';

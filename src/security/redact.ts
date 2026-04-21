@@ -3,6 +3,8 @@
  * notifications) and before every model prompt. See planning doc "Final
  * Integrated Control & Reliability Layer" §11 — this is mandatory across all
  * execution paths.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 const REDACTED = '****REDACTED****';

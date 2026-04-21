@@ -5,6 +5,8 @@
  * imports/requires/use statements in common syntaxes. Not a tree-sitter
  * replacement; it's there to pull in adjacent files when you're working on
  * one specific file.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

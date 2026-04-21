@@ -1,3 +1,9 @@
+/**
+ * Provider registry tests. These are mostly to ensure that all providers are registered and that the registry is idempotent.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { listProviders } from '../../src/models/provider';
 import { initProviders } from '../../src/models/registry';

@@ -16,6 +16,8 @@
  *
  * Multi-turn context lives in state.turns and is woven into the planner's
  * `description` field so the agent sees the conversation so far.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as os from 'os';

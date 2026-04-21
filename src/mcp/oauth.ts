@@ -9,6 +9,8 @@
  *   5. Persist tokens via the keychain module.
  *
  * Token refresh on near-expiry is handled by `ensureAccessToken`.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as http from 'http';
 import * as crypto from 'crypto';

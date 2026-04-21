@@ -6,6 +6,14 @@ import { debuggerAgent } from './debugger';
 import { architectAgent } from './architect';
 import { memoryAgent } from './memory';
 
+/**
+ * Agent registry — a simple in-memory registry for available agents. Provides
+ * functions to register, retrieve, and list agents. Also includes an
+ * initialization function to register built-in agents.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 const agents = new Map<string, Agent>();
 
 export const registerAgent = (agent: Agent): void => {

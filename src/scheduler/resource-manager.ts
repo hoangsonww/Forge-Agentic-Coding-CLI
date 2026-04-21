@@ -4,6 +4,8 @@ import { loadGlobalConfig } from '../config/loader';
  * In-process resource manager. Single-writer file locks, model GPU locks,
  * and per-task count limits. For a future multi-process daemon, this becomes
  * an IPC service; the API stays identical.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 type LockType = 'read' | 'write' | 'exclusive';

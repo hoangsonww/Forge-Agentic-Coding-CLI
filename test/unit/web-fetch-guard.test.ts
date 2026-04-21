@@ -1,3 +1,13 @@
+/**
+ * We test the webFetch guards in isolation to ensure that they correctly reject disallowed URLs. This is important for security, as allowing access to local resources or internal networks could lead to vulnerabilities. By testing these guards directly, we can verify that they function as intended and provide a layer of protection against potential misuse of the webFetch API.
+ *
+ * The tests cover:
+ *   - Rejection of file:// URLs to prevent access to local files.
+ *   - Rejection of localhost and loopback addresses to prevent access to local services.
+ *   - Rejection of RFC1918 private IP ranges to prevent access to internal network resources.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
 import { describe, it, expect } from 'vitest';
 import { webFetch } from '../../src/web/fetch';
 import { ForgeRuntimeError } from '../../src/types/errors';

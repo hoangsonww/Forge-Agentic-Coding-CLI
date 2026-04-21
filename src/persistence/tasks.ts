@@ -6,6 +6,14 @@ import { ensureProjectDir, projectSubdirs, projectId as computeProjectId } from 
 import { indexTask, upsertProject } from './index-db';
 import * as pathModule from 'path';
 
+/**
+ * Task persistence module.
+ *
+ * This module provides functionality for saving, loading, listing, and transitioning tasks within a project. Each task is stored as a JSON file in a project-specific tasks directory. The `saveTask` function allows creating or updating a task, while the `loadTask` function retrieves a task by its ID. The `listLocalTasks` function returns all tasks for a project, sorted by their last update time. The `transitionTask` function handles state transitions for tasks, ensuring that only legal transitions are allowed based on the defined state machine.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 const LEGAL_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   draft: ['planned', 'cancelled'],
   planned: ['approved', 'cancelled', 'blocked'],

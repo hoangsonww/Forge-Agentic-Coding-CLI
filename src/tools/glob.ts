@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { runCommand } from '../sandbox/shell';
 
+/**
+ * Glob files matching a pattern. This is useful for finding files when you don't know the exact path, or for inspecting the structure of the project. It supports basic glob patterns like `*`, `**`, and `?`. Use with caution, as complex patterns or large directories can lead to long execution times (though we have a timeout in place to mitigate this).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   pattern: string;
   path?: string;

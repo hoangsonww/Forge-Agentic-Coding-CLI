@@ -1,3 +1,9 @@
+/**
+ * Cost ledger commands. Supports showing cumulative totals and listing recent model calls with cost details.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { totals, recent } from '../../models/cost';

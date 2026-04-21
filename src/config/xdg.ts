@@ -5,6 +5,8 @@
  *
  * Precedence:
  *   FORGE_HOME > XDG_DATA_HOME/forge > ~/.forge
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as os from 'os';
 import * as path from 'path';

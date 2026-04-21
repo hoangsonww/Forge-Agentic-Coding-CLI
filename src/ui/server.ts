@@ -4,6 +4,8 @@
  * runs in-process so every CLI capability is reachable without shelling
  * out; this keeps UI-driven tasks under the same permission and sandbox
  * rules as CLI-driven tasks.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as http from 'http';
 import * as fs from 'fs';

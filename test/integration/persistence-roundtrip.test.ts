@@ -4,11 +4,15 @@
  * Exercises the real saveTask / loadTask / transitionTask code path
  * (including the SQLite index write) against an isolated tmp project
  * root so we don't touch the developer's ~/.forge.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+// @ts-ignore
 import { draftTask, plannedTask, completedTask, failedTask } from '../fixtures';
 import { listLocalTasks, loadTask, saveTask, transitionTask } from '../../src/persistence/tasks';
 import { ensureProjectDir, projectId as computeProjectId } from '../../src/config/paths';

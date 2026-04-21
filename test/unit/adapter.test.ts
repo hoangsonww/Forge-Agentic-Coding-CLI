@@ -1,3 +1,16 @@
+/**
+ * Adapter tests. These are mostly focused on the resolveLocalModel function, which is the core of the adapter's "local provider" logic. The tests verify that:
+ *   - Local providers are correctly identified by name.
+ *   - When resolving a model for a local provider, if the configured model is installed, it is returned unchanged.
+ *   - If the configured model is missing, the best-fit installed model is substituted based on role and token count.
+ *   - The substitution is cached so that subsequent calls with the same missing model do not trigger re-discovery.
+ *   - For hosted providers, the configured model is always returned unchanged (no substitution).
+ *   - If discovery fails (e.g. listModels throws), resolveLocalModel falls back to returning the configured model.
+ *   - If listModels returns an empty list (user has no models), resolveLocalModel also falls back to the configured model.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   resolveLocalModel,

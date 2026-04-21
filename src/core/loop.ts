@@ -23,6 +23,18 @@ import { installSignalHandlers, shouldAbort, getAbortReason } from './signals';
 import { formatTouchedFiles } from '../tools/format';
 import { currentHost } from './interactive-host';
 
+/**
+ * Loop — the main orchestration function for executing a task. This function implements the core agentic loop, which consists of the following stages:
+ * 1. Planning: The planner agent generates a structured plan based on the task description.
+ * 2. Approval: The generated plan is presented for approval. The user can approve, cancel, or edit the plan.
+ * 3. Execution: If approved, the loop executes each step in the plan sequentially, handling retries and errors according to configured limits.
+ * 4. Verification: After execution, the outcome is reviewed (either by an agent or human) to determine success and gather feedback.
+ *
+ * The loop also handles logging, event emission, session recording, and learning from outcomes. It enforces limits on retries, runtime, and steps to prevent runaway executions. Errors are categorized and can trigger different recovery strategies.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 export interface LoopOptions {
   projectRoot: string;
   mode: Mode;

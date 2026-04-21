@@ -15,6 +15,8 @@
  * Fuzzy ranking is intentionally small and hand-tuned: exact name → prefix →
  * substring → subsequence, with boosts for matching at the start of the
  * command and within word boundaries.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
 import { Mode } from '../types';

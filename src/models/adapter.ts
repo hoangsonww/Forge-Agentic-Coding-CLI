@@ -9,6 +9,8 @@
  * Results are cached per process so we don't hammer `/api/tags` on every
  * single model call; the cache is invalidated by provider restart (which
  * bumps `provider.isAvailable()` probes anyway).
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { ModelProvider, ModelRole } from '../types';
 import { classifyModel, pickModelForRole } from './local-catalog';

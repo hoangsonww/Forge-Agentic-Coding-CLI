@@ -30,6 +30,21 @@ import { log, setLevel } from '../logging/logger';
 import { applyBrandedHelp } from './help';
 import * as pkg from '../../package.json';
 
+/**
+ * Forge CLI entry point. This file is responsible for:
+ * - defining the command structure and options using commander
+ * - handling the top-level `forge` invocation (splash screen + REPL or help)
+ * - setting up global options like --debug
+ * - delegating to the appropriate command handlers for subcommands
+ *
+ * Each subcommand is defined in its own file under ./commands for modularity.
+ * The command handlers should focus on argument parsing, user interaction, and
+ * calling into the core logic of the application (agents, runtime, etc.) rather
+ * than dealing with CLI concerns.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 const program = new Command();
 
 program

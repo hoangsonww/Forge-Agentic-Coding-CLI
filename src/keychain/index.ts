@@ -9,6 +9,8 @@
  *   - Value is a UTF-8 string (we encrypt it before writing regardless)
  *   - Fallback: AES-256-GCM at `~/.forge/mcp/tokens/<service-account>.enc`
  *     keyed off a machine-local key saved with user-only permissions.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';

@@ -1,3 +1,12 @@
+/**
+ * State machine tests for task lifecycle transitions. These ensure that the defined legal transitions between task states are correctly enforced by the isLegalTransition function. The tests cover:
+ *   - Valid transitions like draft → planned and running → verifying.
+ *   - Resetting completed, failed, and cancelled tasks back to draft for operator intervention.
+ *   - Rejection of illegal transitions that skip lifecycle stages or move backwards inappropriately.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { isLegalTransition } from '../../src/persistence/tasks';
 

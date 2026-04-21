@@ -3,6 +3,12 @@ import * as path from 'path';
 import { paths, projectConfigDir, ensureForgeHome } from './paths';
 import { globalConfigSchema, projectConfigSchema, GlobalConfig, ProjectConfig } from './schema';
 
+/**
+ * Load and save configuration for Forge. Global config is stored in the user's home directory under `.forge/config.json`. Project config is stored in a `.forge` subdirectory of the project root. Both configs are JSON files that are validated against Zod schemas. The loader functions handle missing or malformed config files gracefully by falling back to defaults and warning the user via stderr. The global config is cached in memory for efficiency, with an option to force reload from disk.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 let cachedGlobal: GlobalConfig | null = null;
 
 export const loadGlobalConfig = (force = false): GlobalConfig => {

@@ -5,6 +5,8 @@
  * us 95% of the signal for LLM context at a fraction of the size. For JS-
  * rendered pages we rely on the Playwright-backed `web.browse` tool that
  * already returns rendered text.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { scanForInjection } from '../security/injection';
 

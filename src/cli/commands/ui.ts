@@ -1,3 +1,9 @@
+/**
+ * UI command for local dashboard.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { startUiServer } from '../../ui/server';

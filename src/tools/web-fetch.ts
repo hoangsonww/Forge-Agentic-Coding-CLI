@@ -2,6 +2,12 @@ import { Tool, ToolResult } from '../types';
 import { webFetch, FetchResult } from '../web/fetch';
 import { ForgeRuntimeError } from '../types/errors';
 
+/**
+ * Web fetching tool that downloads a webpage and returns cleaned text and title. This tool is useful for retrieving information from the web when the URL is known. It can be used to extract content for summarization, question answering, or as part of a larger workflow that involves web data. Use with caution, as it makes network requests and may be subject to rate limits, CAPTCHAs, or other anti-bot measures on certain websites.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 interface Args {
   url: string;
   maxBytes?: number;

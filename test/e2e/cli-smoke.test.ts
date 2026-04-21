@@ -11,6 +11,8 @@
  * If `dist/` hasn't been built, we skip the whole suite rather than
  * fail — CI always builds first; `npm test` locally works after
  * `npm run build`.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'node:child_process';

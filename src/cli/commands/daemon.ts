@@ -1,3 +1,9 @@
+/**
+ * Daemon management commands. Supports starting, stopping, and checking the status of the background daemon process. The daemon is responsible for handling long-running tasks and maintaining state across CLI invocations. This command abstracts away the details of managing the daemon process, providing a simple interface for users to control it as needed.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import { bootstrap } from '../bootstrap';
 import { startDaemon, stopDaemon, daemonStatus } from '../../daemon/control';

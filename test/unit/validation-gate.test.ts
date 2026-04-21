@@ -1,3 +1,13 @@
+/**
+ * Validation gate tests. These are mostly focused on the validator detection logic, since the execution is just a thin wrapper around execa and we don't want to have tests that depend on global tools like tsc or eslint. The main points are to ensure that:
+ *   The presence of a typecheck script in package.json is correctly detected and preferred.
+ *   The presence of a lint script is also detected and included.
+ *   The fallback to tsc --noEmit when a tsconfig.json is present but no scripts are defined works as expected.
+ *   No validators are returned when nothing is configured.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

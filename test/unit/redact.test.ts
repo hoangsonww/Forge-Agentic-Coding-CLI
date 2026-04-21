@@ -1,3 +1,14 @@
+/**
+ * Redact tests for redactString, redact(object), and redactEnv functions.
+ *
+ * These tests verify that sensitive information is properly redacted from strings, objects, and environment variable maps. The tests cover:
+ *   redactString correctly identifies and redacts AWS keys, GitHub tokens, OpenAI keys, Anthropic keys, and env-like key=value pairs for sensitive keys.
+ *   redact(object) recursively redacts sensitive values in nested objects while preserving non-sensitive data.
+ *   redactEnv only redacts values of sensitive environment variables while leaving innocuous ones intact.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { redactString, redact, redactEnv } from '../../src/security/redact';
 

@@ -1,3 +1,9 @@
+/**
+ * Container lifecycle management using Docker Compose or Podman Compose. The command provides subcommands to start (`up`), stop (`down`), view logs (`logs`), rebuild images (`rebuild`), and open a shell inside the core container (`shell`). It automatically detects whether Docker or Podman is available and uses the appropriate tool. The compose file is searched for in both the global installation directory and the current working directory, allowing flexibility in how users set up their environment. This command simplifies container management for Forge users, abstracting away the underlying containerization tool and providing a consistent interface for common operations.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';

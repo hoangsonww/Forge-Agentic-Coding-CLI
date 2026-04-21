@@ -1,3 +1,17 @@
+/**
+ * Tests for the conversation module, which manages the conversation files on disk and provides an API for creating conversations, appending turns, attaching results, and listing/renaming/deleting conversations. These are pure unit tests that interact with the filesystem directly, without going through any UI or CLI layers. The goal is to verify the core logic of conversation management in isolation, including:
+ *   Creating a conversation with specific metadata and ensuring it persists correctly.
+ *   Appending user turns and attaching results, then verifying the loaded conversation reflects these changes.
+ *   Compatibility with legacy conversation file formats (e.g. from older REPL sessions).
+ *   Listing conversations and ensuring metadata like source, title, and turn count are accurate.
+ *   Renaming and deleting conversations and verifying the filesystem state changes accordingly.
+ *   Composing a description for the planner that includes prior completed turns.
+ *   Watching a conversation file for live updates and ensuring subscribers are notified of new turns.
+ *   Handling concurrent writes to the same conversation file without losing data.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';

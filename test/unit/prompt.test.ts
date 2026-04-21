@@ -1,3 +1,13 @@
+/**
+ * Prompt assembly tests. These are not meant to be exhaustive, but rather to ensure that the core features of the assembler are working as expected. The assembler is a critical component of the system, and we want to ensure that it is producing consistent and correct outputs. The tests cover:
+ *   Hash consistency: identical inputs should produce the same hash, while different inputs should produce different hashes.
+ *   Layer ordering: system layers should always come before user input layers.
+ *   Context fencing: untrusted context blocks should be properly fenced off in the prompt.
+ *   Manifest accuracy: the manifest should accurately reflect all layers included in the prompt.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { describe, it, expect } from 'vitest';
 import { assemblePrompt } from '../../src/prompts/assembler';
 

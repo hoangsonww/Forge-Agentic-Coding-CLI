@@ -1,3 +1,9 @@
+/**
+ * Skills management commands: listing local skills, scaffolding new skill files, and installing from the registry or URL.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
+ */
+
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';

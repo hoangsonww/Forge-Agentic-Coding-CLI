@@ -5,6 +5,8 @@
  * We deliberately avoid shipping a heavy embedding model in v1. FTS5 provides
  * competitive recall for code search; an embedding-based retriever can be
  * swapped in behind the same interface.
+ *
+ * @author Son Nguyen <hoangson091104@gmail.com>
  */
 import * as fs from 'fs';
 import * as path from 'path';
