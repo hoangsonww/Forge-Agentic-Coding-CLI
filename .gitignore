@@ -26,11 +26,28 @@ forge-debug-*.log
 tmp/
 
 # Agentic coding tooling
-#   Commit shared config (.claude/, .codex/, .cursor/, .agents/) so every
-#   contributor's coding agent sees the same rules, skills, and
-#   permissions. Ignore only per-user overrides and transient state.
+#   Commit shared config (.claude/, .codex/, .cursor/, .agents/,
+#   .flywheel/, .beads/) so every contributor's coding agent sees the
+#   same rules, skills, plans, and task graph. Ignore only per-user
+#   overrides, transient state, and rebuildable indexes.
 .claude/settings.local.json
 .claude/.local/
 .codex/settings.local.toml
 .codex/.local/
 .cursor/.local/
+
+# Beads — commit beads.jsonl (source of truth), ignore the local SQLite
+# index (rebuilt from JSONL on each agent startup) and epic archives
+# (keep local unless explicitly promoted).
+.beads/beads.db
+.beads/beads.db-journal
+.beads/beads.db-wal
+.beads/beads.db-shm
+.beads/archive/
+.beads/.local/
+
+# Flywheel private scratch (e.g. unredacted session transcripts used
+# as CASS-style mining inputs). Commit the canonical plans and
+# proposals, not the raw agent logs.
+.flywheel/.local/
+.flywheel/sessions/

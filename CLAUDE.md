@@ -24,6 +24,18 @@ coding agents) working on the Forge repository.
 > Use `/verify` before claiming any change done. Delegate reviews to
 > the `code-reviewer` subagent so full diffs don't pollute the main
 > context.
+>
+> **Agentic Coding Flywheel.** For any non-trivial change, work in
+> plan space → bead space → code space (see [FLYWHEEL.md](FLYWHEEL.md)).
+> Skills: `/flywheel` (overview), `/plan`, `/plan-synthesize`,
+> `/plan-to-beads`, `/polish-beads` (4–6×), `/fresh-eyes`,
+> `/dedupe-beads`, `/idea-wizard`, `/deep-review`, `/reality-check`,
+> `/landing`, `/de-slopify`. Subagents: `bead-polisher`,
+> `plan-synthesizer`, `skill-refiner`. Task graph lives in
+> `.beads/beads.jsonl`; plans in `.flywheel/plans/`.
+>
+> When confused after a compaction: "Reread AGENTS.md, CLAUDE.md, and
+> FLYWHEEL.md so they're still fresh in your mind."
 
 ---
 

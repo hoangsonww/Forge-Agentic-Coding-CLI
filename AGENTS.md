@@ -25,6 +25,27 @@ but also reads [CLAUDE.md](CLAUDE.md).
 > `.agents/skills/verify/SKILL.md` first, then mirror the change into
 > `.claude/skills/verify/SKILL.md` and `.codex/skills/verify/SKILL.md`
 > if they diverge.
+>
+> **Agentic Coding Flywheel.** Forge follows a plan-heavy, bead-driven
+> workflow for any non-trivial change. See [FLYWHEEL.md](FLYWHEEL.md)
+> for the full methodology. In brief:
+>
+> - **Plan space** → `.flywheel/plans/` (iterated markdown plans)
+> - **Bead space** → `.beads/beads.jsonl` (self-contained work units)
+> - **Code space** → `src/` + `test/` (implementation)
+>
+> Skills: `/plan`, `/plan-synthesize`, `/plan-to-beads`,
+> `/polish-beads` (run 4–6×), `/fresh-eyes`, `/dedupe-beads`,
+> `/idea-wizard`, `/deep-review`, `/reality-check`, `/landing`,
+> `/de-slopify`. Subagents: `bead-polisher`, `plan-synthesizer`,
+> `skill-refiner` (Claude); `forge_bead_polisher`,
+> `forge_plan_synthesizer` (Codex). The 8 canonical operators live in
+> `.flywheel/operators/`.
+>
+> **Post-compaction ritual.** When an agent gets confused, send: "Reread
+> AGENTS.md, CLAUDE.md, and FLYWHEEL.md so they're still fresh in your
+> mind." This is the single most common intervention in the
+> methodology.
 
 > Conform to the OpenAI `AGENTS.md` convention: this file is a flat
 > Markdown cheat-sheet that answers the questions "where am I, what
