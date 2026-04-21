@@ -1,0 +1,39 @@
+{
+  "version": "1",
+  "defaultMode": "balanced",
+  "defaultAgent": "general",
+  "provider": "ollama",
+  "models": {
+    "fast": "phi3:mini",
+    "balanced": "llama3:8b",
+    "heavy": "llama3:70b",
+    "code": "deepseek-coder:6.7b",
+    "planner": "qwen2.5:7b"
+  },
+  "ollama": {
+    "endpoint": "http://127.0.0.1:11434"
+  },
+  "update": {
+    "autoCheck": true,
+    "notify": true,
+    "checkIntervalHours": 24,
+    "channel": "stable",
+    "ignoredVersions": []
+  },
+  "permissions": {
+    "trust": {
+      "autoAllowAfter": 999999
+    }
+  },
+  "concurrency": {
+    "maxTasks": 2,
+    "maxGpuTasks": 1,
+    "maxFileWrites": 4
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["cli"],
+    "verbosity": "verbose",
+    "osNotifications": false
+  }
+}

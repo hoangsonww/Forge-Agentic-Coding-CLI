@@ -1,0 +1,19 @@
+{
+  "id": "fs-local",
+  "name": "Filesystem (local)",
+  "transport": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/Users/you/projects"
+  ],
+  "auth": "none",
+  "status": "disconnected",
+  "tools": [
+    "read_file",
+    "write_file",
+    "list_directory",
+    "search_files"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "pg-local",
+  "name": "Postgres (local dev)",
+  "transport": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-postgres",
+    "postgres://localhost:5432/dev"
+  ],
+  "auth": "none",
+  "status": "disconnected",
+  "tools": ["query", "list_tables", "describe_table"]
+}

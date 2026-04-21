@@ -1,0 +1,40 @@
+{
+  "version": "1",
+  "defaultMode": "execute",
+  "defaultAgent": "general",
+  "provider": "anthropic",
+  "models": {
+    "fast": "phi3:mini",
+    "balanced": "llama3:8b",
+    "heavy": "llama3:70b",
+    "code": "deepseek-coder:6.7b",
+    "planner": "qwen2.5:7b"
+  },
+  "anthropic": {
+    "model": "claude-sonnet-4-6",
+    "endpoint": "https://api.anthropic.com"
+  },
+  "update": {
+    "autoCheck": false,
+    "notify": false,
+    "checkIntervalHours": 168,
+    "channel": "stable",
+    "ignoredVersions": []
+  },
+  "permissions": {
+    "trust": {
+      "autoAllowAfter": 0
+    }
+  },
+  "concurrency": {
+    "maxTasks": 1,
+    "maxGpuTasks": 0,
+    "maxFileWrites": 4
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["cli"],
+    "verbosity": "minimal",
+    "osNotifications": false
+  }
+}
