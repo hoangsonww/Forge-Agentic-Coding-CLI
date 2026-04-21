@@ -1,8 +1,11 @@
-# Forge — Architecture
+# Forge — Architecture Document
 
 > [!TIP]
 > The engineering map. Every diagram and file reference here reflects what
 > lives in `src/` today, so you can grep from any claim straight to the code.
+
+> [!NOTE]
+> Visit the NPM package of Forge for more information: [`@forge/agentic-coding`](https://www.npmjs.com/package/@hoangsonw/forge).
 
 ## Table of contents
 
@@ -23,6 +26,9 @@
 ---
 
 ## 1. Layered overview
+
+Forge is organized into layers with clear dependencies. The core orchestrator and
+loop are at the center, with agents, tools, and I/O surfaces radiating out.
 
 ```mermaid
 flowchart TB
@@ -148,6 +154,9 @@ Source: `src/core/loop.ts:91` (entry: `runAgenticLoop`).
 ---
 
 ## 3. Task state machine
+
+Forge unifies interactive sessions and background jobs under a single task model. Tasks transition through states in a DAG, with illegal moves throwing
+`state_invalid`. Terminal states can only be re-entered via `forge resume`, which resets them to `draft` so the loop starts cleanly.
 
 ```mermaid
 stateDiagram-v2
@@ -289,6 +298,10 @@ Retention defaults live in `GlobalConfig.memory` (`src/config/schema.ts`).
 
 ## 6. Model routing & provider registry
 
+Forge abstracts providers behind a common interface. The router picks the best
+provider for each request based on configured preferences, availability, and
+model catalogue metadata (e.g. context window, supported features).
+
 ```mermaid
 flowchart LR
   classDef local fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
@@ -335,6 +348,9 @@ actually there, caches per process, warns once.
 ---
 
 ## 7. Permission + sandbox model
+
+Forge classifies every tool invocation by risk level and side effect, then applies a policy based on the current session flags and user preferences. The most
+risky operations (e.g. shell commands with critical risk) are hard-blocked regardless of user preferences.
 
 ```mermaid
 flowchart TB
@@ -406,6 +422,8 @@ Event schema: `session-created`, `turn-user`, `turn-result`, `meta-updated`.
 
 ## 9. UI topology
 
+Forge's dashboard is a single-page app served by a Node HTTP server. It uses WebSockets for real-time updates on tasks and conversations, and REST endpoints for actions like cancelling tasks or fetching details.
+
 ```mermaid
 flowchart LR
   classDef b fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
@@ -438,6 +456,8 @@ flowchart LR
 
 ## 10. CI/CD pipeline
 
+Forge enforces code quality and release safety with a multi-stage pipeline on GitHub Actions. Every push runs the full suite; releases add gated steps for building, signing, and publishing artifacts.
+
 ```mermaid
 flowchart LR
   classDef pass fill:#14532d,stroke:#10b981,color:#d1fae5,rx:4,ry:4
@@ -467,6 +487,8 @@ Source: `.github/workflows/{ci,release,nightly}.yml`.
 ---
 
 ## 11. Deployment topologies
+
+Forge can be installed globally via npm, run as a container with volume mounts for state, or orchestrated with Docker Compose alongside Ollama for a fully containerized local setup.
 
 ```mermaid
 flowchart LR

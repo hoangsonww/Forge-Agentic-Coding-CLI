@@ -11,7 +11,7 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Wiki Page](index.html) · [License](LICENSE)**
+**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Wiki Page](index.html) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
 
 </div>
 
