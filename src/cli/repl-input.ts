@@ -85,6 +85,12 @@ export class LineEditor {
   private resolveDone?: () => void;
   private readonly hooks: LineEditorHooks;
 
+  // Number of rows currently painted ABOVE the prompt row for the slash-
+  // command dropdown. Tracked precisely so per-keystroke redraws can rewind
+  // exactly that many rows, clear from there to end-of-screen, and repaint
+  // — no guessing, no save/restore cursor escapes, no drift.
+  private dropdownRowsAbove = 0;
+
   // Kill ring — last text removed by Ctrl+U / Ctrl+K / Ctrl+W / Alt+Backspace.
   // Retrieved via Ctrl+Y (yank). Single-slot for simplicity; good enough.
   private killRing = '';
@@ -491,16 +497,25 @@ export class LineEditor {
   private async submit(): Promise<void> {
     const raw = this.buf;
     let picked: Suggestion | undefined;
-    // If the input starts with a slash and there are suggestions, apply the
-    // highest-ranked match when the literal input doesn't exactly equal any
-    // command.
+    // Slash-command dispatch at submit. Two cases the user might want:
+    //   1. They navigated the dropdown with ↑/↓ and pressed Enter — honor
+    //      that selection even if the literal buffer would exactly-match a
+    //      different command.
+    //   2. They just typed a full command and pressed Enter with no
+    //      navigation — fall through to the literal text (no rewrite).
+    // The earlier version always picked `lastSuggestions[0]` and ignored
+    // `this.sel`, so arrow-key selection never applied.
     if (raw.startsWith('/') && this.lastSuggestions.length) {
-      const first = this.lastSuggestions[0];
       const head = raw.slice(1).split(/\s+/, 1)[0] ?? '';
       const exact = this.lastSuggestions.find((s) => s.value.slice(1) === head);
-      if (!exact) {
-        // rewrite buf so display + handler see the normalised command
-        picked = first;
+      // User-navigated selection beats top-of-list. If they didn't move
+      // the cursor (`this.sel === 0`) and the buffer already exactly-matches
+      // a command, leave the buffer alone — they typed what they meant.
+      const userNavigated = this.sel > 0;
+      if (userNavigated) {
+        picked = this.lastSuggestions[this.sel];
+      } else if (!exact) {
+        picked = this.lastSuggestions[0];
       }
     }
     this.eraseBelowAndPromptRow();
@@ -526,6 +541,21 @@ export class LineEditor {
         chalk.red(`\nEditor submit error: ${e instanceof Error ? e.message : String(e)}\n`),
       );
     } finally {
+      // Sub-prompts fired during the task (chooseNumbered for plan approval
+      // / permission decisions, the ask_user tool) grab stdin and restore it
+      // to a sensible-for-them state on exit — which is NOT our state.
+      // Specifically, chooseNumbered calls `stdin.pause()` + `setRawMode(false)`
+      // at the end. If we just re-render without reacquiring stdin, the REPL
+      // silently dies: no keypress events flow, no other event-loop work is
+      // pending, Node exits. Reacquire here so the editor is always ready
+      // for the next turn.
+      try {
+        if (process.stdin.isTTY) process.stdin.setRawMode(true);
+        process.stdin.resume();
+      } catch {
+        // best-effort; if TTY semantics changed under us, render will still
+        // paint and the user can at least see state.
+      }
       this.blocked = false;
     }
     if (!this.done) this.render(true);
@@ -689,49 +719,62 @@ export class LineEditor {
   }
 
   private render(initial = false): void {
-    // Refresh suggestions for current buffer
     this.lastSuggestions = this.hooks.suggestions(this.buf);
     if (this.sel >= this.lastSuggestions.length) this.sel = 0;
 
-    if (!initial) this.eraseBelowAndPromptRow();
-    else {
-      // First render: just sit at current cursor position, don't erase above
-      process.stdout.write(esc.clearScreenDown);
-    }
-
+    // Layout (top → bottom, painted once per render):
+    //
+    //   <status line>       ← only on initial / resume / post-submit
+    //   <dropdown row 1>    ─┐
+    //   <dropdown row 2>     ├ painted only when buf starts with '/'; tracked
+    //   …                    │ in this.dropdownRowsAbove so the next render
+    //   <dropdown row N>    ─┘ can rewind precisely.
+    //   <prompt> <input>    ← cursor lives here
+    //
+    // Key invariant: the prompt row is always the LAST row of the editor's
+    // painted region. Nothing is painted below it. Per-keystroke, we rewind
+    // `dropdownRowsAbove` rows from the prompt row, clear from there to end
+    // of screen, and repaint dropdown + prompt. The status line is NEVER
+    // part of the per-keystroke redraw — it stays stable up-scroll.
+    //
+    // Why this avoids the previous "row stacking" bug: we never use
+    // `\x1b[s`/`\x1b[u` (save/restore cursor, spotty on macOS Terminal /
+    // some tmux configs), and we never do cursor-up math based on rows we
+    // painted *below* the prompt — there are none.
     const prompt = this.hooks.prompt();
     const promptWidth = visibleWidth(prompt);
-    // Render newlines inside the input as a visible ↵ glyph so a multi-line
-    // compose (Alt+Enter) stays on the same visual row. The raw buffer keeps
-    // the \n for submission; only the display is munged.
     const NL_GLYPH = chalk.dim('↵ ');
     const renderBuf = this.buf.replace(/\n/g, NL_GLYPH);
     const ghost = this.ghostSuffix();
-
     const inputSegment = renderBuf + (ghost ? chalk.dim(ghost) : '');
-    process.stdout.write(prompt + inputSegment);
-
-    // Cursor column = promptWidth + visible chars before cursor. Each \n
-    // before the cursor becomes 2 visible chars (the ↵ glyph + space).
     const newlinesBefore = (this.buf.slice(0, this.cursor).match(/\n/g) ?? []).length;
     const cursorCol = promptWidth + this.cursor + newlinesBefore;
+    const dropdownRows = this.renderDropdown();
 
-    // Render dropdown + status line below
-    const belowLines: string[] = [];
-    const drop = this.renderDropdown();
-    if (drop.length) belowLines.push(...drop, '');
-    else belowLines.push('');
-    belowLines.push(this.hooks.statusLine());
-
-    let belowCount = 0;
-    for (const line of belowLines) {
-      process.stdout.write('\n' + line);
-      belowCount++;
+    if (initial) {
+      // First paint / resume / post-submit: status line, then dropdown (if
+      // any), then prompt row. All newlines flow downward — no cursor-up
+      // gymnastics.
+      process.stdout.write(esc.clearScreenDown);
+      process.stdout.write(this.hooks.statusLine() + '\n');
+      for (const line of dropdownRows) process.stdout.write(line + '\n');
+      process.stdout.write(prompt + inputSegment);
+      process.stdout.write(esc.cursorTo(cursorCol));
+      this.dropdownRowsAbove = dropdownRows.length;
+      return;
     }
 
-    // Move cursor up back to input row, then to correct column
-    if (belowCount > 0) process.stdout.write(esc.cursorUp(belowCount));
+    // Per-keystroke: rewind to the top of (dropdown ∪ prompt) region, clear
+    // to end of screen, repaint dropdown + prompt.
+    process.stdout.write('\r');
+    if (this.dropdownRowsAbove > 0) {
+      process.stdout.write(esc.cursorUp(this.dropdownRowsAbove));
+    }
+    process.stdout.write(esc.clearScreenDown);
+    for (const line of dropdownRows) process.stdout.write(line + '\n');
+    process.stdout.write(prompt + inputSegment);
     process.stdout.write(esc.cursorTo(cursorCol));
+    this.dropdownRowsAbove = dropdownRows.length;
   }
 
   private renderDropdown(): string[] {
@@ -769,9 +812,7 @@ export class LineEditor {
       const descText = fit(sg.description ?? '', descBudget);
       const labelColored = isSel ? chalk.bold.cyan(labelText) : chalk.cyan(labelText);
       const descColored = chalk.dim(descText);
-      // Row body, by construction visible width == innerW.
       const row = ` ${arrow} ${labelColored} ${descColored}`;
-      // Safety assertion in case label or desc contained stray wide chars
       const surplus = visibleWidth(row) - innerW;
       const safeRow = surplus > 0 ? row.slice(0, row.length - surplus) : row;
       lines.push(pad + chalk.dim('│') + safeRow + chalk.dim('│'));
@@ -787,8 +828,14 @@ export class LineEditor {
   }
 
   private eraseBelowAndPromptRow(): void {
-    // Move to col 0 of input row, wipe it + everything below
+    // Clear the editor's painted region — dropdown rows above us + the
+    // prompt row we're on. Status line (even further above) is left intact
+    // so it stays visible while we echo the submitted line.
     process.stdout.write(esc.cursorCol0);
+    if (this.dropdownRowsAbove > 0) {
+      process.stdout.write(esc.cursorUp(this.dropdownRowsAbove));
+    }
     process.stdout.write(esc.clearScreenDown);
+    this.dropdownRowsAbove = 0;
   }
 }

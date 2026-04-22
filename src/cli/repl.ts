@@ -46,6 +46,7 @@ import {
 } from './repl-commands';
 import { listProviders } from '../models/provider';
 import { renderMarkdown } from './markdown';
+import { startProgress } from './progress';
 import {
   Conversation,
   ConversationTurn,
@@ -62,7 +63,7 @@ import {
   watchConversationFile,
 } from '../core/conversation';
 import { ConversationWatcher } from '../persistence/conversation-store';
-import { checkForUpdate, currentVersion } from '../daemon/updater';
+import { checkForUpdate, currentVersion, readCache } from '../daemon/updater';
 
 // ---------- Types ----------
 
@@ -98,18 +99,54 @@ const turnsOf = (state: ReplState): ConversationTurn[] => state.conversation.tur
 const HISTORY_FILE = path.join(FORGE_HOME, 'history');
 const HISTORY_MAX = 1000;
 
-const loadHistory = (): string[] => {
+const loadHistory = (projectRoot?: string): string[] => {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  // 1) Flat per-FORGE_HOME history file. The canonical source: every submit
+  //    appends to this, lets arrow-up recall across REPL invocations even if
+  //    there's no conversation context.
   try {
-    if (!fs.existsSync(HISTORY_FILE)) return [];
-    const raw = fs.readFileSync(HISTORY_FILE, 'utf8');
-    return raw
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(-HISTORY_MAX);
+    if (fs.existsSync(HISTORY_FILE)) {
+      const raw = fs.readFileSync(HISTORY_FILE, 'utf8');
+      for (const line of raw.split('\n')) {
+        const s = line.trim();
+        if (!s || seen.has(s)) continue;
+        seen.add(s);
+        merged.push(s);
+      }
+    }
   } catch {
-    return [];
+    /* best-effort */
   }
+
+  // 2) Prior conversation turns for THIS project. Without this, a freshly
+  //    provisioned FORGE_HOME (e.g. `rm -rf /tmp/forge-repl`) or a machine
+  //    where the flat history was lost would leave arrow-up empty even
+  //    though the user has perfectly good inputs in conversation history.
+  //    Read-only, oldest-first, deduped against the flat file.
+  if (projectRoot) {
+    try {
+      const convos = listConversations(projectRoot);
+      // Sort by createdAt ascending so older inputs appear earlier in the
+      // final history (newer-at-tail matches the flat-file convention).
+      const ordered = [...convos].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      for (const meta of ordered) {
+        const conv = loadConversation(projectRoot, meta.id);
+        if (!conv) continue;
+        for (const t of conv.turns) {
+          const s = (t.input ?? '').trim();
+          if (!s || seen.has(s)) continue;
+          seen.add(s);
+          merged.push(s);
+        }
+      }
+    } catch {
+      /* best-effort — if the project subdir is weird, don't fail REPL boot */
+    }
+  }
+
+  return merged.slice(-HISTORY_MAX);
 };
 
 const appendHistory = (line: string): void => {
@@ -812,6 +849,7 @@ const runTaskTurn = async (
 
   const composed = composeDescription(effectiveInput, state.conversation.turns.slice(0, -1));
   process.stdout.write('\n');
+  const progress = startProgress({ initial: 'classifying request' });
   try {
     const out = await orchestrateRun({
       input: effectiveInput,
@@ -853,7 +891,11 @@ const runTaskTurn = async (
           `(${((r.durationMs ?? 0) / 1000).toFixed(1)}s · ${r.filesChanged?.length ?? 0} files)`,
         )}${costBit}`,
       );
-      if (r.summary) {
+      // When the progress rail already streamed (+ markdown-rendered) the
+      // answer live, repeating the summary here dumps the same text to the
+      // terminal twice. Skip it in that case — files/cost/duration line is
+      // enough context.
+      if (r.summary && !progress.didStream()) {
         process.stdout.write('\n' + renderMarkdown(r.summary, { indent: 2 }) + '\n');
       }
       if (r.filesChanged?.length) {
@@ -868,7 +910,13 @@ const runTaskTurn = async (
     } else {
       err(`turn ${turnsOf(state).length} failed`);
       if (r.summary) {
-        process.stdout.write('\n' + renderMarkdown(r.summary, { indent: 2 }) + '\n');
+        // Error summaries contain identifiers like `step_001`, `tool_error`,
+        // `not_found`, file paths — running them through the markdown
+        // renderer would strip underscores (interpreted as italic markers)
+        // and mangle paths with `*` in them. Print plain + dim-wrapped
+        // instead. Indented to match the success-path style.
+        const lines = r.summary.split('\n').map((l) => '  ' + chalk.dim(l));
+        process.stdout.write('\n' + lines.join('\n') + '\n');
       }
     }
   } catch (e) {
@@ -893,6 +941,7 @@ const runTaskTurn = async (
     }
     err(`Turn crashed: ${e instanceof Error ? e.message : String(e)}`);
   } finally {
+    progress.stop();
     state.running = false;
     state.abort = undefined;
   }
@@ -1009,34 +1058,34 @@ export const startRepl = async (
   process.stdout.write(hero(state, pkg.version ?? '0.1.0'));
   if (conversation.turns.length) printResumedSummary(state);
 
-  // Fire-and-forget update check on every REPL start. `shouldCheckNow` in the
-  // updater rate-limits actual network hits to `cfg.update.checkIntervalHours`
-  // (default 24h) so this is cheap (cache read) on repeat boots. Print a
-  // single-line notice when an update is available and the user hasn't
-  // opted out via `update.notify = false`.
-  void (async () => {
-    try {
-      const res = await checkForUpdate();
-      if (!res || !res.hasUpdate) return;
-      if (!loadGlobalConfig().update.notify) return;
-      const msg =
-        '  ' +
-        chalk.bgRgb(...PALETTE.violet).white(' update ') +
-        '  ' +
-        chalk.white(`Forge ${res.latestVersion} available`) +
-        chalk.dim(` (you're on ${currentVersion()}).`) +
-        chalk.dim(' Run ') +
-        chalk.bold('/update') +
-        chalk.dim(' to install · ') +
-        chalk.bold('/update ignore ' + res.latestVersion) +
-        chalk.dim(' to silence.\n');
-      process.stdout.write('\n' + msg + '\n');
-    } catch {
-      /* best-effort — never block the REPL */
-    }
-  })();
+  // Update check — strictly SYNC, printed before the editor starts. Reads
+  // the on-disk cache (sub-ms). A fire-and-forget refresh is scheduled so
+  // the cache is fresh for NEXT boot, but it's run *after* the editor has
+  // closed (see the end of startRepl) so there is zero possibility of a
+  // stray stdout write landing behind the line editor's back and desync-ing
+  // its cursor tracking. An earlier version fired the refresh here with a
+  // direct stdout.write on resolution — and every keystroke after that point
+  // repainted on a fresh row.
+  const cached = readCache();
+  if (cached?.hasUpdate && loadGlobalConfig().update.notify) {
+    const msg =
+      '  ' +
+      chalk.bgRgb(...PALETTE.violet).white(' update ') +
+      '  ' +
+      chalk.white(`Forge ${cached.latestVersion} available`) +
+      chalk.dim(` (you're on ${currentVersion()}).`) +
+      chalk.dim(' Run ') +
+      chalk.bold('/update') +
+      chalk.dim(' to install · ') +
+      chalk.bold('/update ignore ' + cached.latestVersion) +
+      chalk.dim(' to silence.');
+    process.stdout.write('\n' + msg + '\n');
+  }
 
-  const history = loadHistory();
+  // Seed from both the flat history file AND prior conversation turns for
+  // this project so arrow-up recalls inputs across sessions, not just the
+  // current one.
+  const history = loadHistory(projectRoot);
 
   let editor: LineEditor | null = null;
   let lastSigint = 0;
@@ -1138,6 +1187,11 @@ export const startRepl = async (
   // Restore logger console output for subsequent CLI invocations in the
   // same process (unusual, but safe to do).
   setConsoleOutput(true);
+
+  // Cache-only update refresh now that the editor is gone. Never writes to
+  // stdout; result is picked up by the NEXT REPL boot's synchronous cache
+  // read above. Best-effort — swallows network errors.
+  void checkForUpdate().catch(() => {});
 
   if (!closed) process.stdout.write('\n');
   process.stdout.write(dim(`  session ${state.conversation.meta.id} saved.`) + '\n');

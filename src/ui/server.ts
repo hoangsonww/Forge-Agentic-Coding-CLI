@@ -212,6 +212,7 @@ const router = async (
         autoApprove?: boolean;
         flags?: Record<string, boolean>;
         title?: string;
+        description?: string;
       }>(req);
       if (!body.prompt?.trim()) return sendJson(res, 400, { error: 'prompt required' });
       const reply = startUiTask({
@@ -221,6 +222,11 @@ const router = async (
         autoApprove: body.autoApprove,
         flags: body.flags as Parameters<typeof startUiTask>[0]['flags'],
         title: body.title,
+        // Composed multi-turn context from the UI's chat follow-up path.
+        // The orchestrator / conversation fast-path uses this so follow-up
+        // questions like "what did we just talk about?" resolve against
+        // actual prior turns rather than model hallucination.
+        description: body.description,
       });
       return sendJson(res, 202, reply);
     } catch (e) {

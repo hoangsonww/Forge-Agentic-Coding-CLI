@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import prompts from 'prompts';
+import { chooseNumbered } from '../cli/choose';
 import { Task, TaskResult, Mode, Plan } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { saveTask, transitionTask } from '../persistence/tasks';
@@ -10,6 +10,7 @@ import { newRunId, newSessionId } from '../logging/trace';
 import { plannerAgent } from '../agents/planner';
 import { runStep } from '../agents/executor';
 import { reviewOutcome } from '../agents/reviewer';
+import { narrateAnalysis } from '../agents/narrator';
 import { diagnose } from '../agents/debugger';
 import { topoSort, validatePlan } from '../scheduler/dag';
 import { concurrency } from '../scheduler/resource-manager';
@@ -61,18 +62,16 @@ const confirmPlan = async (
   const host = currentHost();
   if (host) return host.confirmPlan(plan, taskId);
   printPlanSummary(plan);
-  const resp = await prompts({
-    type: 'select',
-    name: 'value',
+  const value = await chooseNumbered<'approve' | 'cancel' | 'edit'>({
     message: 'Approve plan?',
-    choices: [
-      { title: chalk.green('Approve'), value: 'approve' },
-      { title: 'Cancel', value: 'cancel' },
-      { title: 'Edit (opens $EDITOR)', value: 'edit' },
-    ],
     initial: 0,
+    choices: [
+      { title: 'Approve', value: 'approve', color: 'green' },
+      { title: 'Cancel', value: 'cancel', color: 'red' },
+      { title: 'Edit', value: 'edit', hint: '(opens $EDITOR)' },
+    ],
   });
-  return (resp?.value as 'approve' | 'cancel' | 'edit') ?? 'cancel';
+  return value ?? 'cancel';
 };
 
 const editPlanInEditor = async (plan: Plan): Promise<Plan> => {
@@ -93,6 +92,60 @@ const editPlanInEditor = async (plan: Plan): Promise<Plan> => {
     log.warn('plan edit failed; keeping original', { err: String(err) });
     return plan;
   }
+};
+
+/**
+ * Translate a thrown error into a message shaped for end-user display.
+ *
+ * The failure paths in the loop surface ForgeRuntimeError with a `class`
+ * (e.g. `not_found`, `permission_denied`, `retry_exhausted`, `timeout`,
+ * `user_input`) and sometimes a `recoveryHint`. The raw message is often
+ * adequate — "oldText not present in src/x.ts", "File src/y.ts: ENOENT" —
+ * but it's still a runtime-error shape, not a sentence the user writes
+ * down in a bug report. This adds a single-line prefix keyed off `class`
+ * and appends the hint when present.
+ */
+const humaniseFailure = (err: unknown): string => {
+  const raw =
+    err instanceof ForgeRuntimeError
+      ? err.message
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  const cls = err instanceof ForgeRuntimeError ? err.class : null;
+  const hint = err instanceof ForgeRuntimeError ? err.recoveryHint : undefined;
+  const prefixFor = (c: string | null): string => {
+    switch (c) {
+      case 'not_found':
+        return 'Not found';
+      case 'permission_denied':
+        return 'Permission denied';
+      case 'timeout':
+        return 'Timed out';
+      case 'retry_exhausted':
+        return 'Retries exhausted';
+      case 'plan_invalid':
+        return 'Planner produced an invalid plan';
+      case 'state_invalid':
+        return 'Invalid task state transition';
+      case 'resource_exhausted':
+        return 'Resource limit hit';
+      case 'user_input':
+        return 'Invalid input';
+      case 'tool_error':
+        return 'Tool failed';
+      case 'model_error':
+        return 'Model call failed';
+      case 'sandbox_violation':
+        return 'Sandbox policy rejected the action';
+      default:
+        return 'Task failed';
+    }
+  };
+  const head = prefixFor(cls);
+  const body = raw && raw !== head ? `: ${raw}` : '';
+  const tail = hint ? `\nHint: ${hint}` : '';
+  return `${head}${body}${tail}`;
 };
 
 export interface LoopResult {
@@ -147,6 +200,20 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
   let current = task;
   const filesChanged = new Set<string>();
   const errors: ForgeRuntimeError[] = [];
+  // Step summaries are the model's own prose for each plan step. For
+  // analysis tasks these ARE the deliverable (the answer the user wanted);
+  // for change tasks they describe what was done and are useful alongside
+  // the reviewer's verdict. We aggregate them so the final TaskResult.summary
+  // shows the actual work rather than just the reviewer's one-line verdict.
+  const stepSummaries: Array<{ stepId: string; summary: string }> = [];
+  // Retained across the executor loop so the narrator (for analysis tasks)
+  // can see what tools returned — file contents, grep hits, etc. — and
+  // synthesize the real answer the user asked for.
+  const allToolResults: Array<{
+    tool: string;
+    args: unknown;
+    result: import('../types').ToolResult<unknown>;
+  }> = [];
 
   try {
     // ---------- PLAN ----------
@@ -266,6 +333,7 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
             runId,
           });
           for (const toolRes of out.toolResults) {
+            allToolResults.push(toolRes);
             session({
               type: 'tool_call',
               content: { tool: toolRes.tool, args: toolRes.args },
@@ -301,17 +369,37 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
               errorClass: lastFailure?.result.error?.class,
               timestamp: Date.now(),
             });
+            // Respect the underlying tool's retryable flag. A `not_found`
+            // read or similar terminal error won't become findable on
+            // retry — retrying just burns model calls. Preserve true when
+            // the tool actually marked itself retryable (transient network,
+            // rate-limit, etc.) so those still get their three attempts.
+            const retryable = lastFailure?.result.error?.retryable ?? false;
             throw new ForgeRuntimeError({
-              class: 'tool_error',
+              class: lastFailure?.result.error?.class ?? 'tool_error',
               message: lastFailure?.result.error?.message ?? `Step ${step.id} did not complete`,
-              retryable: true,
+              retryable,
               recoveryHint: lastFailure?.result.error?.recoveryHint,
             });
           }
           loopDetector.record({ stepId: step.id, success: true, timestamp: Date.now() });
           stepOk = true;
+          if (out.summary && out.summary.trim().length > 0) {
+            stepSummaries.push({ stepId: step.id, summary: out.summary.trim() });
+          }
           event('TASK_STEP_COMPLETED', `✔ ${step.id}`, { summary: out.summary });
         } catch (err) {
+          // Non-retryable errors fail fast — no point burning additional
+          // attempts on something the tool told us won't succeed.
+          if (err instanceof ForgeRuntimeError && err.retryable === false) {
+            event(
+              'TASK_STEP_FAILED',
+              `${step.id} failed (${err.class}): ${err.message}`,
+              { err: String(err) },
+              'error',
+            );
+            throw err;
+          }
           event(
             'RETRY_ATTEMPTED',
             `retry ${attempts}/${maxRetries} on ${step.id}`,
@@ -382,16 +470,28 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
     // ---------- VERIFY ----------
     current = transitionTask(options.projectRoot, current.id, 'verifying');
     event('TASK_VERIFYING', 'Review pass');
-    const verdict = await reviewOutcome(
-      {
-        taskTitle: current.title,
-        changesSummary: `Executed ${ordered.length} steps. Files: ${[...filesChanged].join(', ') || '(none)'}`,
-        filesChanged: [...filesChanged],
-      },
-      options.mode,
-    );
+    // The profile can mark a task as not-requiring-review (typically
+    // analysis/explain/summarize, which produce no diff). Respect that and
+    // skip the reviewer entirely — otherwise we'd burn a model call to get
+    // a guaranteed "no changes" rejection.
+    const skipReview = current.profile?.requiresReview === false;
+    const verdict = skipReview
+      ? {
+          approved: true,
+          issues: [],
+          summary: 'informational task complete (no review required — no code changes expected)',
+        }
+      : await reviewOutcome(
+          {
+            taskTitle: current.title,
+            changesSummary: `Executed ${ordered.length} steps. Files: ${[...filesChanged].join(', ') || '(none)'}`,
+            filesChanged: [...filesChanged],
+            intent: current.profile?.intent,
+          },
+          options.mode,
+        );
     session({ type: 'event', content: { review: verdict }, timestamp: new Date().toISOString() });
-    if (!verdict.approved && cfg.completion.requireReview) {
+    if (!verdict.approved && cfg.completion.requireReview && !skipReview) {
       throw new ForgeRuntimeError({
         class: 'state_invalid',
         message: `Review did not approve: ${verdict.summary}`,
@@ -399,9 +499,49 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
       });
     }
 
+    // For analysis / informational tasks the executor's jsonMode responses
+    // give us worthless step summaries like "file read successfully" — the
+    // real deliverable is prose that actually answers the user. Run a single
+    // non-JSON narrator pass (which streams live via the router's event bus)
+    // over the tool outputs the executor gathered, and use that as the
+    // user-facing summary.
+    const isAnalysis = current.profile?.intent === 'analysis';
+    let narratorText = '';
+    if (isAnalysis && allToolResults.length > 0) {
+      event('TASK_STEP_STARTED', '→ narrator: writing the answer');
+      try {
+        narratorText = await narrateAnalysis({
+          taskTitle: current.title,
+          taskDescription: current.description ?? current.title,
+          toolResults: allToolResults,
+          mode: options.mode,
+          taskId: current.id,
+          projectId: current.projectId,
+        });
+      } catch (err) {
+        log.warn('narrator pass failed', { err: String(err) });
+      }
+    }
+
+    // Prefer the narrator's answer for analysis tasks; otherwise use step
+    // summaries (meaningful for code-change tasks). The reviewer verdict is
+    // appended as a quiet footer for change tasks where a review ran.
+    const stepBlock = stepSummaries
+      .map((s) => s.summary)
+      .filter((s) => s.length > 0)
+      .join('\n\n');
+    let finalSummary: string;
+    if (narratorText) {
+      finalSummary = narratorText;
+    } else if (stepBlock) {
+      finalSummary =
+        skipReview || !verdict.summary ? stepBlock : `${stepBlock}\n\n_${verdict.summary}_`;
+    } else {
+      finalSummary = verdict.summary || 'Task completed.';
+    }
     const finalResult: TaskResult = {
       success: true,
-      summary: verdict.summary || 'Task completed.',
+      summary: finalSummary,
       filesChanged: [...filesChanged],
       durationMs: Date.now() - started,
     };
@@ -421,9 +561,13 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
     return { task: current, result: finalResult };
   } catch (err) {
     log.error('agentic loop failed', { err: String(err) });
+    // Shape the user-facing summary based on the error class so the REPL
+    // box / run box shows something actionable instead of a raw runtime
+    // error. Falls back to the bare message for unexpected error types.
+    const summary = humaniseFailure(err);
     const res: TaskResult = {
       success: false,
-      summary: err instanceof Error ? err.message : String(err),
+      summary,
       filesChanged: [...filesChanged],
       durationMs: Date.now() - started,
       errors: errors.map((e) => e.toJSON()),

@@ -34,4 +34,17 @@ describe('ask_user tool (non-interactive)', () => {
     expect(r.success).toBe(false);
     expect(r.error?.class).toBe('user_input');
   });
+
+  it('rejects an empty question with a non-retryable user_input error', async () => {
+    const r = await askUserTool.execute({ question: '', nonInteractiveDefault: 'y' }, ctx);
+    expect(r.success).toBe(false);
+    expect(r.error?.class).toBe('user_input');
+    expect(r.error?.retryable).toBe(false);
+  });
+
+  it('rejects too-short questions so the executor switches tools', async () => {
+    const r = await askUserTool.execute({ question: '??', nonInteractiveDefault: 'y' }, ctx);
+    expect(r.success).toBe(false);
+    expect(r.error?.class).toBe('user_input');
+  });
 });

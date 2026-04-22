@@ -25,6 +25,7 @@ import { orchestrateRun } from '../core/orchestrator';
 import { Mode } from '../types';
 import { log } from '../logging/logger';
 import { redact } from '../security/redact';
+import { eventBus, ModelDeltaEvent } from '../persistence/events';
 
 type PromptType = 'plan_approval' | 'permission' | 'user_input';
 
@@ -72,6 +73,43 @@ const broadcast = (taskId: string, payload: Record<string, unknown>): void => {
     }
   }
 };
+
+// Streaming deltas are high-frequency and should bypass the ring buffer —
+// late subscribers don't need per-token replay (they get `task.result`
+// eventually). We fire-and-forget to active sockets.
+const broadcastDelta = (taskId: string, payload: Record<string, unknown>): void => {
+  const task = active.get(taskId);
+  if (!task) return;
+  const wire = JSON.stringify({ taskId, kind: 'model.delta', ...payload });
+  for (const ws of task.subscribers) {
+    try {
+      ws.send(wire);
+    } catch {
+      // socket teardown races are routine during streaming; ignore
+    }
+  }
+};
+
+// Bridge in-process events/deltas onto the per-task WebSocket channel.
+// One subscription per module, cleaned up only at process exit. Ignore events
+// that didn't originate from a task this runner knows about so we don't leak
+// events from stray CLI invocations into the UI.
+eventBus.on('event', (e: ForgeEvent) => {
+  if (!e.taskId || !active.has(e.taskId)) return;
+  // Shape matches the `kind: 'event'` handler in src/ui/public/app.js — keep
+  // those two in sync.
+  broadcast(e.taskId, { kind: 'event', event: e });
+});
+eventBus.on('delta', (d: ModelDeltaEvent) => {
+  if (!d.taskId || !active.has(d.taskId)) return;
+  broadcastDelta(d.taskId, {
+    text: d.text,
+    done: Boolean(d.done),
+    model: d.model,
+    provider: d.provider,
+    role: d.role,
+  });
+});
 
 const makeHost = (taskId: string): InteractiveHost => ({
   name: 'ui',

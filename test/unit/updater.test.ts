@@ -128,6 +128,20 @@ describe('updater — checkForUpdate', () => {
     expect(res!.latestVersion).toBe(res!.currentVersion);
   });
 
+  it('hits the real package on the npm registry (not an unrelated @forge/cli)', async () => {
+    // Regression guard: an earlier version hardcoded `@forge/cli`, an
+    // unrelated package at 12.18.0, so `forge` told users to update to a
+    // wildly wrong version. The URL must be derived from package.json#name.
+    mockRequest.mockResolvedValueOnce(npmBody('latest', '99.0.0'));
+    await checkForUpdate({ force: true });
+    const url = String(mockRequest.mock.calls[0][0]);
+    expect(url).toContain('registry.npmjs.org');
+    expect(url).toContain('@hoangsonw');
+    // %2F is the correct npm-registry encoding for the scope separator.
+    expect(url).toContain('%2Fforge');
+    expect(url).not.toContain('@forge/cli');
+  });
+
   it('honours the beta channel dist-tag', async () => {
     const cfg = loadGlobalConfig();
     saveGlobalConfig({ ...cfg, update: { ...cfg.update, channel: 'beta' } });

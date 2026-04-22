@@ -23,10 +23,40 @@ interface RenderOptions {
   indent?: number;
 }
 
+/**
+ * Normalise fenced code blocks that arrived flattened on a single line.
+ *
+ * Small local models occasionally emit code blocks like:
+ *
+ *   ```javascript const numbers = [1,2,3]; numbers.forEach(x=>x); ```
+ *
+ * CommonMark requires ``` + language tag alone on a line, so the block
+ * parser rejects this and falls through to inline-code rendering — which
+ * in turn treats consecutive backticks as empty code spans, producing
+ * ugly `` `` javascript … `` `` output in the terminal.
+ *
+ * This pre-pass rewrites any inline fence (opening + body + closing all on
+ * the same physical line) into canonical multi-line form so the block
+ * parser picks it up as a real fenced block. Leaves well-formed blocks
+ * (already multi-line) untouched.
+ */
+const normaliseInlineFences = (input: string): string => {
+  // Matches the whole inline block: opening fence with optional language,
+  // then anything (non-greedy) up to the closing fence, ALL on one physical
+  // line (no literal newline in the match).
+  // eslint-disable-next-line no-useless-escape -- escape kept for readability
+  const re = /```([\w-]*)[ \t]+([^\n]*?)[ \t]*```/g;
+  return input.replace(re, (_match, lang: string, body: string) => {
+    // Preserve the body as-is so spaces inside string literals survive.
+    const trimmed = body.replace(/\s+$/, '');
+    return `\n\`\`\`${lang}\n${trimmed}\n\`\`\`\n`;
+  });
+};
+
 /** Render CommonMark-ish text to ANSI-coloured output. */
 export const renderMarkdown = (input: string, opts: RenderOptions = {}): string => {
   if (!input) return '';
-  const rendered = renderBlocks(input);
+  const rendered = renderBlocks(normaliseInlineFences(input));
   if (opts.oneLine) {
     return stripAnsi(rendered).replace(/\s+/g, ' ').trim();
   }

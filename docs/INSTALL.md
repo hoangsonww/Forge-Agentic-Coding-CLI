@@ -5,6 +5,7 @@
 
 ## Table of contents
 
+- [0. System requirements](#0-system-requirements)
 - [1. Choose your install path](#1-choose-your-install-path)
 - [2. npm (global)](#2-npm-global)
 - [3. Docker](#3-docker)
@@ -15,6 +16,25 @@
 - [8. First-run checklist](#8-first-run-checklist)
 - [9. Uninstall](#9-uninstall)
 - [10. Troubleshooting](#10-troubleshooting)
+
+---
+
+## 0. System requirements
+
+Forge runs anywhere Node 20+ runs. The Docker path has no host-side Node requirement at all.
+
+| | Minimum | Notes |
+|---|---|---|
+| **Node.js** | **≥ 20** (22 tested in CI) | Enforced via `package.json#engines`. Skip if you use Docker. |
+| **OS** | macOS · Linux · Windows (native or WSL) | `better-sqlite3` ships prebuilds for darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64 — no toolchain needed on `npm install`. |
+| **Disk** | ~150 MB `node_modules`; state under `~/.forge` grows with history | Override via `FORGE_HOME`. |
+| **RAM** | Forge: ~100 MB resident. Your local model: whatever the model needs. | `forge doctor` cold-starts in ~170 ms. |
+| **Docker** (alt path) | ≥ 25 | Multi-arch image `ghcr.io/hoangsonw/forge-agentic-coding-cli:latest`. Amd64 + arm64. |
+| **At least one model source** | Local runtime or hosted key | See [§7](#7-model-runtimes-you-can-point-forge-at). `forge doctor` probes all of them. |
+
+**Runtime npm dependencies** (13 total, **zero optional**): `@modelcontextprotocol/sdk`, `better-sqlite3`, `chalk`, `cli-table3`, `commander`, `dotenv`, `ora`, `prompts`, `semver`, `undici`, `ws`, `yaml`, `zod`. No Python, Rust, or Go required — `better-sqlite3` is the only native module and ships prebuilt binaries.
+
+**Recommended** (not required): `ripgrep` (fast path for the `grep` tool), `git` (for `git_diff`/`git_status` tools and project-root detection), `$EDITOR` (used when you pick "Edit" on a plan approval).
 
 ---
 
@@ -276,6 +296,53 @@ Mistral/Mixtral/Nemo/Small/Large, Nemotron, Command-R/R+, Granite +
 Granite-Code, CodeLlama, Codestral, StarCoder, Yi, Solar, Zephyr,
 MiniCPM, LLaVA, TinyLlama, SmolLM, Aya, and more. Unknown models still
 get a routable role rather than being refused.
+
+### Picking a model that fits the work
+
+Forge's agentic loop is multi-turn tool use with strict JSON output. That's
+easy for frontier hosted models and hard for small local ones. These are
+the tiers we've observed in practice — pull the right size for what you
+intend to do, and set a hosted fallback for when you hit the ceiling.
+
+| Task type | Local floor we trust | Example pulls | Notes |
+|---|---|---|---|
+| Chat / concept Q&A | 3B instruct | `phi3:mini`, `gemma3:2b`, `qwen2.5:3b` | Uses the conversation fast-path; no tool use required. |
+| Summarize / explain code | 7B instruct | `qwen2.5:7b`, `llama3.1:8b` | Narrator pass runs non-JSON and streams cleanly. |
+| Single-file edits / small features | **7B+ code specialist** | `deepseek-coder:6.7b`, `qwen2.5-coder:7b` | Multi-step tool use; general 7B models often pick the wrong tool here. |
+| Multi-file refactors / new features | 14B+ code specialist | `qwen2.5-coder:14b`, `deepseek-coder:33b` | Or route through a hosted frontier model. |
+| Architecture-level changes | hosted only, realistically | Claude Opus/Sonnet, GPT-4-class | Context windows + plan quality matter. |
+
+**Expected failure modes below the floor** (the rail guards flag these
+rather than silently corrupting files):
+
+- Wrong tool selection — e.g. `run_command` to write file contents.
+  Executor prompt maps step types explicitly; unrecoverable calls surface
+  loudly instead of looping.
+- Escalating to `ask_user` on tool errors instead of retrying or switching
+  tools. `ask_user` rejects empty/too-short questions as non-retryable.
+- Splitting "create empty file, then edit to fill" across two steps.
+  `edit_file` now handles empty-oldText on an empty file as a full-body
+  write, so this legitimate pattern succeeds.
+- Malformed JSON that breaks the executor's `{actions, summary, done}`
+  contract. The run fails cleanly; no partial state is written.
+
+**Configuring per-role models:**
+
+```bash
+forge config set models.planner qwen2.5:7b
+forge config set models.code    deepseek-coder:6.7b
+forge config set models.fast    phi3:mini
+
+# Hosted fallback — router engages automatically on local failure / breaker open.
+export ANTHROPIC_API_KEY=sk-…
+# or:
+export OPENAI_API_KEY=sk-…
+```
+
+First use of a local model triggers a visible `warming <model>` phase
+before the first call — cold-loading a 7B into RAM/VRAM can take up to a
+minute on slower machines. Subsequent calls are fast while Ollama keeps
+it resident (5 min default).
 
 ### Runtime selection flow
 

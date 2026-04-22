@@ -139,13 +139,34 @@ export const section = (title: string, glyph = '◆'): string => {
   return `\n${chalk.rgb(...PALETTE.cyan)(glyph)}  ${chalk.bold(title)}\n`;
 };
 
+// Inner width between │'s: 46 cols. Title rows reserve `   ` (3) + `✔  ` (3)
+// + `  ` (2) of chrome = 8, leaving 38 for the title. Body rows reserve
+// `   ` (3) + `  ` (2) = 5, leaving 41 for the body.
+const BOX_TITLE_PAD = 38;
+const BOX_BODY_PAD = 41;
+
+// Strip ANSI SGR escapes so padding math matches *display* width, not raw
+// byte length. Callers routinely pre-style strings with chalk (e.g. doctor
+// passes `chalk.dim('try: forge run …')` to success()) and those invisible
+// `\x1b[…m` bytes would otherwise count toward .padEnd and push the trailing
+// │ out of alignment.
+// eslint-disable-next-line no-control-regex -- CSI SGR pattern; controls are the whole point
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+const padVisible = (s: string, width: number): string => {
+  const visibleLen = s.replace(ANSI_RE, '').length;
+  const deficit = width - visibleLen;
+  return deficit > 0 ? s + ' '.repeat(deficit) : s;
+};
+
 /** Big celebratory success frame. */
 export const success = (title: string, body?: string[]): string => {
   const lines = [
     chalk.green('   ╭──────────────────────────────────────────────╮'),
-    chalk.green('   │   ') + chalk.bold.green('✔  ' + title.padEnd(40)) + chalk.green('  │'),
+    chalk.green('   │   ') +
+      chalk.bold.green('✔  ' + padVisible(title, BOX_TITLE_PAD)) +
+      chalk.green('  │'),
     ...(body ?? []).map(
-      (b) => chalk.green('   │   ') + chalk.dim(b.padEnd(40)) + chalk.green('  │'),
+      (b) => chalk.green('   │   ') + chalk.dim(padVisible(b, BOX_BODY_PAD)) + chalk.green('  │'),
     ),
     chalk.green('   ╰──────────────────────────────────────────────╯'),
   ];
@@ -156,8 +177,12 @@ export const success = (title: string, body?: string[]): string => {
 export const failure = (title: string, body?: string[]): string => {
   const lines = [
     chalk.red('   ╭──────────────────────────────────────────────╮'),
-    chalk.red('   │   ') + chalk.bold.red('✖  ' + title.padEnd(40)) + chalk.red('  │'),
-    ...(body ?? []).map((b) => chalk.red('   │   ') + chalk.dim(b.padEnd(40)) + chalk.red('  │')),
+    chalk.red('   │   ') +
+      chalk.bold.red('✖  ' + padVisible(title, BOX_TITLE_PAD)) +
+      chalk.red('  │'),
+    ...(body ?? []).map(
+      (b) => chalk.red('   │   ') + chalk.dim(padVisible(b, BOX_BODY_PAD)) + chalk.red('  │'),
+    ),
     chalk.red('   ╰──────────────────────────────────────────────╯'),
   ];
   return lines.join('\n');
@@ -167,9 +192,11 @@ export const failure = (title: string, body?: string[]): string => {
 export const attention = (title: string, body?: string[]): string => {
   const lines = [
     chalk.yellow('   ╭──────────────────────────────────────────────╮'),
-    chalk.yellow('   │   ') + chalk.bold.yellow('⚠  ' + title.padEnd(40)) + chalk.yellow('  │'),
+    chalk.yellow('   │   ') +
+      chalk.bold.yellow('⚠  ' + padVisible(title, BOX_TITLE_PAD)) +
+      chalk.yellow('  │'),
     ...(body ?? []).map(
-      (b) => chalk.yellow('   │   ') + chalk.dim(b.padEnd(40)) + chalk.yellow('  │'),
+      (b) => chalk.yellow('   │   ') + chalk.dim(padVisible(b, BOX_BODY_PAD)) + chalk.yellow('  │'),
     ),
     chalk.yellow('   ╰──────────────────────────────────────────────╯'),
   ];
@@ -228,24 +255,30 @@ export const tag = (severity: 'info' | 'warning' | 'error' | 'critical'): string
 /** Completion summary, used by `run` at the end of a task.
  *  The `title` may contain markdown produced by the reviewer/model —
  *  render it through the terminal markdown renderer so headings, code,
- *  and bold render instead of showing literal asterisks/backticks. */
+ *  and bold render instead of showing literal asterisks/backticks.
+ *
+ *  When `skipTitle` is true, the caller has already streamed the answer to
+ *  the terminal live (see progress.ts) and we don't want to repeat it. In
+ *  that case we emit just the divider + metadata. */
 export const completionSummary = (
   title: string,
   filesChanged: string[],
   durationMs: number,
   cost?: number,
+  skipTitle = false,
 ): string => {
   // Single-line summaries get inline markdown; multi-line ones get the
   // full block renderer so lists / headings / code blocks breathe.
   const isMultiline = title.includes('\n');
-  const rendered = isMultiline
-    ? renderMarkdown(title, { indent: 2 })
-    : `  ${sparkles()} ${renderMarkdown(title, { oneLine: false })}`;
+  const rendered = skipTitle
+    ? ''
+    : isMultiline
+      ? renderMarkdown(title, { indent: 2 })
+      : `  ${sparkles()} ${renderMarkdown(title, { oneLine: false })}`;
   const lines = [
     divider('done'),
     '',
-    rendered,
-    '',
+    ...(rendered ? [rendered, ''] : []),
     kv('duration', chalk.rgb(...PALETTE.cyan)(`${(durationMs / 1000).toFixed(1)}s`)),
     kv(
       'files changed',

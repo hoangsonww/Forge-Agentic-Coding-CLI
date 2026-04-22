@@ -36,4 +36,14 @@ describe('task state machine', () => {
   it('illegal transitions are rejected', () => {
     expect(isLegalTransition('draft', 'running')).toBe(false);
   });
+
+  it('draft → completed / failed allowed for the conversation fast-path', () => {
+    // The conversation fast-path skips planning/execution entirely and
+    // records a terminal result directly from draft.
+    expect(isLegalTransition('draft', 'completed')).toBe(true);
+    expect(isLegalTransition('draft', 'failed')).toBe(true);
+    // Mid-lifecycle states are still not reachable from draft.
+    expect(isLegalTransition('draft', 'verifying')).toBe(false);
+    expect(isLegalTransition('draft', 'approved')).toBe(false);
+  });
 });

@@ -20,7 +20,8 @@ interface Args {
 export const moveFileTool: Tool<Args, { from: string; to: string }> = {
   schema: {
     name: 'move_file',
-    description: 'Move (rename) a file or directory within the sandbox.',
+    description:
+      'Move (rename) a file or directory within the sandbox. Missing parent directories at the destination are created automatically; pass createDirs:false to disable.',
     sideEffect: 'write',
     risk: 'medium',
     permissionDefault: 'ask',
@@ -56,7 +57,9 @@ export const moveFileTool: Tool<Args, { from: string; to: string }> = {
           retryable: false,
         });
       }
-      if (args.createDirs) fs.mkdirSync(path.dirname(dst), { recursive: true });
+      // Match write_file semantics: mkdir-p is the default. Opt out with
+      // `createDirs: false` if you want a missing destination parent to fail.
+      if (args.createDirs !== false) fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.renameSync(src, dst);
       return {
         success: true,

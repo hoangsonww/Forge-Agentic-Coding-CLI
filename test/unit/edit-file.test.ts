@@ -76,4 +76,35 @@ describe('edit_file tool', () => {
     expect(r.success).toBe(false);
     expect(r.error?.class).toBe('not_found');
   });
+
+  it('treats empty oldText on an empty file as a full-body write (planner pattern)', async () => {
+    fs.writeFileSync(path.join(tmp, 'empty.js'), '');
+    const body =
+      '/** @param {number} n */\nexport const fib = (n) => (n < 2 ? n : fib(n - 1) + fib(n - 2));\n';
+    const r = await editFileTool.execute(
+      { path: 'empty.js', oldText: '', newText: body },
+      { ...ctx, projectRoot: tmp },
+    );
+    expect(r.success).toBe(true);
+    expect(fs.readFileSync(path.join(tmp, 'empty.js'), 'utf8')).toBe(body);
+  });
+
+  it('treats empty oldText on a missing file as a create', async () => {
+    const r = await editFileTool.execute(
+      { path: 'new.js', oldText: '', newText: 'export const x = 1;\n' },
+      { ...ctx, projectRoot: tmp },
+    );
+    expect(r.success).toBe(true);
+    expect(fs.readFileSync(path.join(tmp, 'new.js'), 'utf8')).toBe('export const x = 1;\n');
+  });
+
+  it('still rejects empty oldText on a non-empty file (ambiguous)', async () => {
+    fs.writeFileSync(path.join(tmp, 'has-content.txt'), 'pre-existing');
+    const r = await editFileTool.execute(
+      { path: 'has-content.txt', oldText: '', newText: 'anything' },
+      { ...ctx, projectRoot: tmp },
+    );
+    expect(r.success).toBe(false);
+    expect(r.error?.class).toBe('user_input');
+  });
 });

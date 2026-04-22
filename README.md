@@ -11,7 +11,7 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Releases & versioning](RELEASES.md) · [Wiki Page](index.html) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
+**[Install](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/INSTALL.md) · [Dev setup](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/SETUP.md) · [Architecture](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/ARCHITECTURE.md) · [Releases & versioning](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/RELEASES.md) · [Wiki Page](https://hoangsonww.github.io/Forge-Agentic-Coding-CLI/) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
 
 </div>
 
@@ -235,9 +235,22 @@ docker compose -f docker/docker-compose.yml up -d
 # open http://127.0.0.1:7823
 ```
 
-**Requirements:** Node ≥ 20 *and/or* Docker ≥ 25. At least one LLM source
-(local runtime or API key). See [`docs/INSTALL.md`](docs/INSTALL.md) for
-per-OS notes.
+### System requirements
+
+| | Minimum | Notes |
+|---|---|---|
+| **Node.js** | **≥ 20** (22 tested) | Enforced via `package.json#engines`. Not needed if you use Docker. |
+| **OS** | macOS · Linux · Windows (WSL recommended) | `better-sqlite3` ships prebuilds for darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64 — no compile step. |
+| **Disk** | ~150 MB for `node_modules`; state under `~/.forge` grows with history | Override via `FORGE_HOME`. |
+| **RAM** | Forge ~100 MB; your local model consumes its own RAM/VRAM | `forge doctor` cold-starts in ~170 ms. |
+| **Docker** (alt path) | ≥ 25 | Multi-arch (amd64, arm64) image on GHCR. Zero host Node needed. |
+| **At least one model source** | Ollama · LM Studio · vLLM · llama.cpp · Anthropic · OpenAI-compatible | `forge doctor` tells you which are reachable. |
+
+**Runtime npm dependencies** (13, zero optional): `@modelcontextprotocol/sdk`, `better-sqlite3` (native, prebuilt), `chalk`, `cli-table3`, `commander`, `dotenv`, `ora`, `prompts`, `semver`, `undici`, `ws`, `yaml`, `zod`. No Python, Rust, or Go toolchain.
+
+**Recommended** (not required): `ripgrep` (fast `grep` tool path), `git` (diff/status tools + project-root detection), `$EDITOR` (used when you pick "Edit" on a plan).
+
+See [`docs/INSTALL.md`](docs/INSTALL.md) for per-OS notes and [`docs/SETUP.md`](docs/SETUP.md) for contributor setup.
 
 ---
 
@@ -495,6 +508,42 @@ warns once, never refuses to route.
 
 Unknown models are accepted too — Forge rates them as generic executors
 rather than refusing to route.
+
+### Model size & capability notes
+
+The agentic loop is cheap for the runtime but expensive for the *model*.
+Every step is a multi-turn tool-use conversation that returns strict JSON.
+Small models struggle with this in recognisable ways — please pick the
+right tool for the job.
+
+| Work you want to do | Safe local floor | What fails below the floor |
+|---|---|---|
+| Pure chat ("explain closures") | any 3B instruct (phi-3:mini, gemma-3:2b) | fine — conversation fast-path bypasses tool use entirely |
+| Summarize a file, explain a snippet | 7B instruct (qwen2.5:7b, llama3.1:8b) | summary is a line of "I read the file" instead of content |
+| Single-file edits / small features | **7B+ code specialist** (deepseek-coder:6.7b, qwen2.5-coder:7b) | picks wrong tool (run_command to write files), splits "create empty + edit" patterns, escalates to ask_user on tool errors |
+| Multi-file refactors, new features | 14B+ code specialist or a hosted frontier model | plan quality drops; step IDs get inconsistent; validation retries exhausted |
+| Architecture-level changes | hosted (Claude Opus/Sonnet, GPT-4 class) realistically | budgets blow out; changes go off-plan |
+
+Forge ships with defences so a small model fails *loudly* instead of
+silently corrupting files: the executor prompt spells out step-type →
+tool mappings, `ask_user` rejects empty/too-short questions as
+non-retryable, `edit_file` handles "create empty then fill" gracefully,
+parent directories auto-create, provider warm-up is explicit, and the
+router streams prose without `jsonMode` for narrator/conversation
+paths. The result is that a small model will often tell you it can't
+finish a task; it will rarely write the wrong code into a file.
+
+If in doubt: configure a code specialist for the `code` role, keep
+something lighter for `fast`, and set `ANTHROPIC_API_KEY` or
+`OPENAI_API_KEY` as a fallback — the router uses the hosted provider
+automatically when the local one fails or trips its circuit breaker.
+
+```bash
+forge config set models.code    deepseek-coder:6.7b
+forge config set models.planner qwen2.5:7b
+forge config set models.fast    phi3:mini
+export ANTHROPIC_API_KEY=sk-…   # optional fallback
+```
 
 ---
 

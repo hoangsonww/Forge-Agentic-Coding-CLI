@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { resolveSafe } from '../sandbox/fs';
+import { withFileLock, writeAtomic } from '../sandbox/file-lock';
 
 interface Args {
   path: string;
@@ -53,40 +54,61 @@ export const editFileTool: Tool<Args, Output> = {
     const start = Date.now();
     try {
       const real = resolveSafe(args.path, { projectRoot: ctx.projectRoot }, 'write');
-      const original = fs.existsSync(real) ? fs.readFileSync(real, 'utf8') : '';
-      const needle = args.oldText;
-      if (!needle) {
-        throw new ForgeRuntimeError({
-          class: 'user_input',
-          message: 'edit_file requires non-empty oldText',
-          retryable: false,
-        });
-      }
-      const occurrences = countOccurrences(original, needle);
-      if (occurrences === 0) {
-        throw new ForgeRuntimeError({
-          class: 'not_found',
-          message: `oldText not present in ${args.path}`,
-          retryable: false,
-          recoveryHint: 'Use read_file first to verify the exact snippet.',
-        });
-      }
-      if (occurrences > 1 && !args.replaceAll) {
-        throw new ForgeRuntimeError({
-          class: 'conflict',
-          message: `oldText matches ${occurrences} occurrences; pass replaceAll=true or narrow the anchor.`,
-          retryable: false,
-        });
-      }
-      const updated = args.replaceAll
-        ? original.split(needle).join(args.newText)
-        : original.replace(needle, args.newText);
-      fs.writeFileSync(real, updated, 'utf8');
-      return {
-        success: true,
-        output: { replacements: occurrences, bytesWritten: Buffer.byteLength(updated) },
-        durationMs: Date.now() - start,
-      };
+      // Entire read-modify-write runs under the per-path mutex so two
+      // concurrent edit_file (or write_file) calls against the same path
+      // serialize instead of racing. The re-read MUST happen inside the
+      // lock — reading before the lock could give us content that the
+      // previous holder has since replaced, and we'd then overwrite their
+      // change.
+      return await withFileLock(real, async () => {
+        const original = fs.existsSync(real) ? fs.readFileSync(real, 'utf8') : '';
+        const needle = args.oldText;
+        if (!needle) {
+          // Planner pattern: create_file (empty) → edit_file (add content).
+          // When the target is empty/missing and oldText is empty, the intent
+          // is "just write this as the file body". Honor it. On a file that
+          // already has content, empty oldText is ambiguous — keep the error.
+          if (original.length === 0) {
+            writeAtomic(real, args.newText);
+            return {
+              success: true,
+              output: { replacements: 1, bytesWritten: Buffer.byteLength(args.newText) },
+              durationMs: Date.now() - start,
+            };
+          }
+          throw new ForgeRuntimeError({
+            class: 'user_input',
+            message: 'edit_file requires non-empty oldText when the file already has content',
+            retryable: false,
+            recoveryHint: 'Use write_file to overwrite, or pass an exact oldText snippet.',
+          });
+        }
+        const occurrences = countOccurrences(original, needle);
+        if (occurrences === 0) {
+          throw new ForgeRuntimeError({
+            class: 'not_found',
+            message: `oldText not present in ${args.path}`,
+            retryable: false,
+            recoveryHint: 'Use read_file first to verify the exact snippet.',
+          });
+        }
+        if (occurrences > 1 && !args.replaceAll) {
+          throw new ForgeRuntimeError({
+            class: 'conflict',
+            message: `oldText matches ${occurrences} occurrences; pass replaceAll=true or narrow the anchor.`,
+            retryable: false,
+          });
+        }
+        const updated = args.replaceAll
+          ? original.split(needle).join(args.newText)
+          : original.replace(needle, args.newText);
+        writeAtomic(real, updated);
+        return {
+          success: true,
+          output: { replacements: occurrences, bytesWritten: Buffer.byteLength(updated) },
+          durationMs: Date.now() - start,
+        };
+      });
     } catch (err) {
       return {
         success: false,

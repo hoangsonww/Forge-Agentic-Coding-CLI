@@ -5,7 +5,7 @@
  */
 
 import { Mode, TaskProfile } from '../types';
-import { heuristicClassify } from './heuristics';
+import { heuristicClassify, looksConversational } from './heuristics';
 import { callModel } from '../models/router';
 import { log } from '../logging/logger';
 
@@ -24,6 +24,7 @@ const DEFAULT_AGENTS_BY_TYPE: Record<string, string[]> = {
   setup: ['executor'],
   test: ['executor', 'reviewer'],
   optimization: ['planner', 'executor', 'reviewer'],
+  conversation: [],
   other: ['planner', 'executor'],
 };
 
@@ -39,6 +40,26 @@ explanation (string, <=160 chars).
 Do not include prose. Only JSON.`;
 
 export const classify = async (params: ClassifyParams): Promise<TaskProfile> => {
+  // Fast-path: clearly-conversational questions ("what is X?", "why does Y
+  // work this way?") skip the plan/approve/execute pipeline entirely. The
+  // heuristic is deliberately conservative — false-negatives just mean the
+  // user waits through planning, false-positives would answer from general
+  // knowledge when they wanted code analysis.
+  if (looksConversational(params.input)) {
+    return {
+      intent: 'conversation',
+      secondary: [],
+      complexity: 'trivial',
+      scope: 'single-file',
+      risk: 'low',
+      requiresPlan: false,
+      requiresTests: false,
+      requiresReview: false,
+      agents: DEFAULT_AGENTS_BY_TYPE.conversation,
+      skills: [],
+      explanation: 'heuristic: conversational question (no repo refs, no imperatives)',
+    };
+  }
   const heuristic = heuristicClassify(params.input, params.filesReferenced?.length ?? 0);
   let enriched = heuristic;
 
@@ -73,7 +94,11 @@ export const classify = async (params: ClassifyParams): Promise<TaskProfile> => 
   const requiresPlan = enriched.complexity !== 'trivial' || params.mode === 'plan';
   const requiresTests =
     enriched.type === 'bugfix' || enriched.type === 'feature' || enriched.type === 'refactor';
-  const requiresReview = enriched.complexity !== 'trivial';
+  // Analysis / explain / summarize tasks produce no file changes by design —
+  // the deliverable is the answer printed to the user. Gating completion on
+  // a reviewer that expects a diff here guarantees a false "Review did not
+  // approve: no file changes" rejection. Skip review for analysis intents.
+  const requiresReview = enriched.complexity !== 'trivial' && enriched.type !== 'analysis';
 
   return {
     intent: enriched.type,

@@ -42,9 +42,21 @@ Each turn, output STRICT JSON:
 Protocol:
 - Choose tools from the catalog only. Each action's args must match the tool's input schema.
 - You will receive the result of every tool call before your next turn. Read errors carefully.
-- If a tool fails, either retry with different args, switch tools, or set "done": true with a summary explaining what is blocked and why.
+- If a tool fails, EITHER retry with different args OR switch to a different tool OR set "done": true with a summary explaining the blockage. DO NOT call ask_user to recover from tool errors — ask_user is ONLY for when the ORIGINAL user request is genuinely ambiguous.
 - Set "done": true with an empty actions array once the step is satisfied.
-- Never include prose outside JSON. No code fences outside a single JSON object.`;
+- Never include prose outside JSON. No code fences outside a single JSON object.
+
+Step-type → tool mapping (the plan step's \`type\` field tells you which tool to use):
+- type="create_file" → ONE call to write_file with the FULL intended file body in \`content\`. Do NOT create the file empty and edit it afterwards. Infer the body from the step description, prior context, and the overall task.
+- type="edit_file" → edit_file with exact oldText/newText snippets. If the target file is empty or does not exist yet, use write_file (or edit_file with oldText="") to write the whole body.
+- type="delete_file" → delete_file.
+- type="apply_patch" → apply_patch with a unified-diff \`patch\`.
+- type="run_command" → run_command with a single shell command. Never use run_command to write file contents — use write_file instead.
+- type="run_tests" → run_tests with no args (framework auto-detects). Only pass framework/target if the auto-detection was wrong.
+- type="analyze" / "retrieve_context" → read_file, grep, list_dir, glob. No mutations.
+- type="review" / "debug" → summarise what you found and set done:true. No mutations unless the step clearly demands them.
+
+When writing or editing code, produce the complete, compilable body — do not emit placeholders like "// TODO implement" unless the step explicitly says to scaffold.`;
 
 const TRUNCATE = 2_000;
 

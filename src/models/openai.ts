@@ -13,6 +13,7 @@ import {
   ModelMessage,
   ModelCallOptions,
   ModelResponse,
+  ModelStreamChunk,
 } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { classifyModel } from './local-catalog';
@@ -146,6 +147,114 @@ export class OpenAIProvider implements ModelProvider {
         cause: err,
       });
     }
+  }
+
+  /**
+   * Stream chat completions using SSE. Every OpenAI-compatible server —
+   * api.openai.com, LM Studio, vLLM, llama.cpp `server`, LocalAI, Together —
+   * emits `data: {...}\n\n` frames with a `[DONE]` sentinel. Parses
+   * `choices[0].delta.content` as the incremental text and `usage` on the
+   * terminal frame (when the server bothers to send it).
+   */
+  async *stream(
+    model: string,
+    messages: ModelMessage[],
+    options: ModelCallOptions = {},
+  ): AsyncGenerator<ModelStreamChunk, void, void> {
+    const started = Date.now();
+    const body = {
+      model,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      temperature: options.deterministic ? 0 : (options.temperature ?? 0.3),
+      max_tokens: options.maxTokens ?? 2048,
+      stop: options.stop,
+      stream: true,
+      stream_options: { include_usage: true },
+      response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+    };
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      accept: 'text/event-stream',
+    };
+    if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
+    let res;
+    try {
+      res = await request(`${this.endpoint}/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        bodyTimeout: options.timeoutMs ?? 600_000,
+        headersTimeout: options.timeoutMs ?? 180_000,
+      });
+    } catch (err) {
+      throw new ForgeRuntimeError({
+        class: 'model_error',
+        message: `${this.name} stream request failed: ${String(err)}`,
+        retryable: true,
+        cause: err,
+      });
+    }
+    if (res.statusCode !== 200) {
+      const text = await res.body.text();
+      throw new ForgeRuntimeError({
+        class: 'model_error',
+        message: `${this.name} ${res.statusCode}: ${text.slice(0, 500)}`,
+        retryable: res.statusCode === 429 || res.statusCode >= 500,
+      });
+    }
+
+    let buffer = '';
+    let inputTokens: number | undefined;
+    let outputTokens: number | undefined;
+    let finishReason: 'stop' | 'length' | 'tool_call' = 'stop';
+
+    for await (const chunk of res.body as AsyncIterable<Buffer>) {
+      buffer += chunk.toString('utf8');
+      // SSE frames are separated by a blank line (\n\n).
+      let sep = buffer.indexOf('\n\n');
+      while (sep !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        sep = buffer.indexOf('\n\n');
+        for (const rawLine of frame.split('\n')) {
+          const line = rawLine.trim();
+          if (!line || !line.startsWith('data:')) continue;
+          const data = line.slice(5).trim();
+          if (!data || data === '[DONE]') continue;
+          let obj: {
+            choices?: Array<{
+              delta?: { content?: string };
+              finish_reason?: string | null;
+            }>;
+            usage?: { prompt_tokens?: number; completion_tokens?: number };
+          };
+          try {
+            obj = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          const delta = obj.choices?.[0]?.delta?.content ?? '';
+          if (delta) yield { delta, done: false };
+          const fr = obj.choices?.[0]?.finish_reason;
+          if (fr)
+            finishReason = fr === 'length' ? 'length' : fr === 'tool_calls' ? 'tool_call' : 'stop';
+          if (obj.usage) {
+            inputTokens = obj.usage.prompt_tokens;
+            outputTokens = obj.usage.completion_tokens;
+          }
+        }
+      }
+    }
+    yield {
+      delta: '',
+      done: true,
+      model,
+      provider: this.name,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - started,
+      finishReason,
+    };
   }
 }
 

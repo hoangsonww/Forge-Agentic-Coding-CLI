@@ -795,6 +795,42 @@ textarea {
 .log-line.warning { color: var(--warn); }
 .log-line.error { color: var(--err); }
 .log-line.critical { color: var(--err); font-weight: 700; }
+.log-line-stream {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+.log-line-stream .stream-text {
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.log-line-stream.log-line-done {
+  border-left-color: var(--border);
+}
+
+/* ---- Conversation follow-up input ---- */
+.fu-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 48px;
+  max-height: 260px;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: 13.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.fu-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.fu-input::placeholder {
+  color: var(--dim);
+}
 
 /* ---- Plan viewer ---- */
 .plan-viewer { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; }

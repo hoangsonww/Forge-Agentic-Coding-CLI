@@ -41,7 +41,9 @@ Rules:
 - Keep the plan minimal — no busywork steps.
 - Prefer reading before writing. Always include verification (tests or review) before completion.
 - If user approval may be needed for a destructive step, mark risk accordingly.
-- Reference concrete file paths where known. If unknown, include a retrieve_context step first.`;
+- Reference concrete file paths where known. If unknown, include a retrieve_context step first.
+- When creating a new file with content, emit ONE step of type create_file with the full body (do not split into "create empty" + "edit to fill" — edit_file cannot target an empty file).
+- Prefer edit_file for surgical modifications of existing content (pass a unique oldText snippet); use write_file only when rewriting the entire body.`;
 
 const buildFallbackPlan = (task: Task): Plan => {
   const steps: PlanStep[] = [

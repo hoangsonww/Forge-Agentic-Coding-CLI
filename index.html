@@ -138,11 +138,12 @@
       <a href="#cli"><span class="n">10</span>CLI reference</a>
       <a href="#fs"><span class="n">11</span>Filesystem</a>
       <a href="#skills"><span class="n">12</span>Skills &amp; MCP</a>
-      <a href="#install"><span class="n">13</span>Install</a>
-      <a href="#container"><span class="n">14</span>Containers</a>
-      <a href="#cicd"><span class="n">15</span>CI/CD</a>
-      <a href="#numbers"><span class="n">16</span>Runtime metrics</a>
-      <a href="#agents"><span class="n">17</span>Agent files</a>
+      <a href="#requirements"><span class="n">13</span>System requirements</a>
+      <a href="#install"><span class="n">14</span>Install</a>
+      <a href="#container"><span class="n">15</span>Containers</a>
+      <a href="#cicd"><span class="n">16</span>CI/CD</a>
+      <a href="#numbers"><span class="n">17</span>Runtime metrics</a>
+      <a href="#agents"><span class="n">18</span>Agent files</a>
     </div>
   </div>
 </section>
@@ -182,9 +183,13 @@
         <img src="images/repl.png" alt="Forge REPL Interface" style="display: block; width: 100%; flex: 1; object-fit: cover; object-position: top;">
       </div>
       <div class="code-win" style="margin: 0; display: flex; flex-direction: column;">
-        <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">Forge Web Dashboard</span></div>
-        <img src="images/ui.png" alt="Forge Web Dashboard" style="display: block; width: 100%; flex: 1; object-fit: cover; object-position: left top;">
+        <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">Forge CLI</span></div>
+        <img src="images/cli.png" alt="Forge CLI" style="display: block; width: 100%; flex: 1; object-fit: cover; object-position: top;">
       </div>
+    </div>
+    <div class="code-win" style="margin: 0 0 32px; display: flex; flex-direction: column;">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">Forge Web Dashboard</span></div>
+      <img src="images/ui.png" alt="Forge Web Dashboard" style="display: block; width: 100%; height: auto; object-fit: cover; object-position: left top;">
     </div>
     <div class="grid grid-3">
       <div class="card"><div class="num">/ 01</div><h3>Local-first</h3><p>Auto-detects Ollama, LM Studio, vLLM, llama.cpp. Hosted Anthropic / OpenAI / Azure / Groq / LocalAI / Together / Fireworks are opt-in.</p><div class="tags"><span>ollama</span><span>lmstudio</span><span>vllm</span><span>llama.cpp</span></div></div>
@@ -450,6 +455,50 @@ flowchart LR
         </tbody>
       </table>
     </div>
+
+    <h3 class="subhead" style="margin-top:28px">Model size &amp; capability tiers</h3>
+    <p style="max-width:780px;opacity:0.85">
+      The agentic loop is multi-turn tool use with strict JSON output. Small
+      local models can drive it, but not every kind of work is realistic at
+      every size. Pick by the work you intend to do, and set a hosted
+      fallback for when you hit the ceiling — the router degrades gracefully
+      via its circuit breaker.
+    </p>
+    <div class="table-wrap">
+      <table class="mx">
+        <thead>
+          <tr><th>Work</th><th>Local floor we trust</th><th>Example pulls</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Chat / concept Q&amp;A</td><td>3B instruct</td><td><code>phi3:mini</code> · <code>gemma3:2b</code> · <code>qwen2.5:3b</code></td></tr>
+          <tr><td>Summarize / explain code</td><td>7B instruct</td><td><code>qwen2.5:7b</code> · <code>llama3.1:8b</code></td></tr>
+          <tr><td>Single-file edits / small features</td><td><strong>7B+ code specialist</strong></td><td><code>deepseek-coder:6.7b</code> · <code>qwen2.5-coder:7b</code></td></tr>
+          <tr><td>Multi-file refactors / new features</td><td>14B+ code specialist</td><td><code>qwen2.5-coder:14b</code> · <code>deepseek-coder:33b</code></td></tr>
+          <tr><td>Architecture-level changes</td><td>hosted only, realistically</td><td>Claude Opus/Sonnet · GPT-4-class</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead" style="margin-top:28px">Observed small-model failure modes &amp; runtime guards</h3>
+    <p style="max-width:780px;opacity:0.85">
+      Below the tier floor, models fail in recognisable ways. Forge catches
+      each so a small model fails <em>loudly</em> instead of corrupting
+      state.
+    </p>
+    <div class="table-wrap">
+      <table class="mx">
+        <thead><tr><th>Failure mode</th><th>Runtime guard</th></tr></thead>
+        <tbody>
+          <tr><td>Picks <code>run_command</code> to write file contents</td><td>Executor prompt spells out <code>step.type → tool</code> mapping and forbids <code>run_command</code> for file writes.</td></tr>
+          <tr><td>Escalates to <code>ask_user</code> on any tool error, stalling the step</td><td><code>ask_user</code> rejects empty / too-short questions as non-retryable; model has to switch tools.</td></tr>
+          <tr><td>Splits "create empty file → edit to fill"</td><td><code>edit_file</code> with <code>oldText=""</code> on an empty/missing file writes the full body.</td></tr>
+          <tr><td><code>write_file</code> <code>ENOENT</code> because parent dir doesn't exist</td><td><code>createDirs</code> defaults to <code>true</code> (mkdir-p).</td></tr>
+          <tr><td>Cold-load timeout interpreted as model failure</td><td>Headers-timeout floor 300 s; proactive <code>warm()</code> with <code>/api/ps</code> preflight.</td></tr>
+          <tr><td>Reviewer rejects analysis tasks for "no file changes"</td><td>Classifier sets <code>requiresReview=false</code> for <code>intent=analysis</code>; narrator pass writes the real answer.</td></tr>
+          <tr><td>Two concurrent edits race on the same file</td><td>Per-process path-mutex + atomic temp+rename.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
@@ -652,12 +701,89 @@ When writing commit messages, use Conventional Commits:
 </section>
 
 <!-- ============================================================
-     13 · INSTALL
+     13 · SYSTEM REQUIREMENTS
+     ============================================================ -->
+<section id="requirements">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">13 · System requirements</span>
+      <h2>Node 20+. <em>Or just Docker.</em></h2>
+    </div>
+    <p style="max-width:780px;opacity:0.85">
+      Forge runs on any platform Node 20 runs on, or anywhere Docker runs. There is no host-side Python, Rust, or Go requirement. <code>better-sqlite3</code> is the only native module and ships prebuilts for every supported triple — no toolchain needed on <code>npm install</code>.
+    </p>
+    <div class="grid grid-3" style="margin-top:18px">
+      <div class="card">
+        <div class="num">/ host</div>
+        <h3>Host toolchain</h3>
+        <p>
+          <strong>Node.js ≥ 20</strong> (22 tested).<br>
+          <strong>OS:</strong> macOS · Linux · Windows (native or WSL).<br>
+          <strong>Architectures:</strong> x64 · arm64.<br>
+          <strong>Docker ≥ 25</strong> (only if you prefer the container path).
+        </p>
+        <div class="tags"><span>node 20+</span><span>darwin</span><span>linux</span><span>win32</span><span>arm64</span></div>
+      </div>
+      <div class="card">
+        <div class="num">/ footprint</div>
+        <h3>Disk &amp; RAM</h3>
+        <p>
+          <strong>Disk:</strong> ~150 MB <code>node_modules</code>; state under <code>~/.forge</code> grows with session history (override with <code>FORGE_HOME</code>).<br>
+          <strong>RAM:</strong> ~100 MB for Forge itself. Your local model uses its own RAM/VRAM on top.<br>
+          <strong>Cold start:</strong> <code>forge doctor</code> ~170 ms.
+        </p>
+        <div class="tags"><span>~150 MB</span><span>~100 MB RAM</span></div>
+      </div>
+      <div class="card">
+        <div class="num">/ model</div>
+        <h3>Model source (pick ≥ 1)</h3>
+        <p>
+          <strong>Local:</strong> Ollama · LM Studio · vLLM · llama.cpp — auto-detected on standard ports.<br>
+          <strong>Hosted:</strong> <code>ANTHROPIC_API_KEY</code> · <code>OPENAI_API_KEY</code> (+ <code>OPENAI_BASE_URL</code> for any OpenAI-compatible server).<br>
+          <code>forge doctor</code> probes all of them and tells you which are reachable.
+        </p>
+        <div class="tags"><span>local-first</span><span>hosted fallback</span></div>
+      </div>
+    </div>
+
+    <h3 class="subhead" style="margin-top:32px">Runtime npm dependencies</h3>
+    <p style="max-width:780px;opacity:0.85">
+      13 runtime packages, <strong>zero optional dependencies</strong>. Listed below so you can audit them before <code>npm install</code>.
+    </p>
+    <div class="code-win" style="margin-top:12px">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">package.json · dependencies</span><span class="lang">13 total</span></div>
+<pre>@modelcontextprotocol/sdk  <span class="com"># MCP bridge (stdio / http_stream / websocket)</span>
+better-sqlite3             <span class="com"># local index DB · FTS5 cold memory · native, prebuilt</span>
+chalk                      <span class="com"># ANSI color</span>
+cli-table3                 <span class="com"># tables in `forge doctor`, `task list`</span>
+commander                  <span class="com"># CLI argv parsing</span>
+dotenv                     <span class="com"># .env loading</span>
+ora                        <span class="com"># progress spinner</span>
+prompts                    <span class="com"># non-TTY fallback for the numbered-select helper</span>
+semver                     <span class="com"># update-check version comparison</span>
+undici                     <span class="com"># HTTP client · Ollama / Anthropic / OpenAI streams</span>
+ws                         <span class="com"># UI dashboard WebSocket</span>
+yaml                       <span class="com"># skill-file frontmatter</span>
+zod                        <span class="com"># runtime validation of plans &amp; tool args</span>
+</pre>
+    </div>
+
+    <h3 class="subhead" style="margin-top:26px">Recommended <small style="opacity:0.7">(not required)</small></h3>
+    <p style="max-width:780px;opacity:0.85">
+      <code>ripgrep</code> — fast path for the <code>grep</code> tool; falls back to a Node glob walker.<br>
+      <code>git</code> — enables <code>git_diff</code> / <code>git_status</code> tools and project-root detection.<br>
+      <code>$EDITOR</code> — used when you pick "Edit" on a plan approval; falls back to <code>vi</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================
+     14 · INSTALL
      ============================================================ -->
 <section id="install" class="alt">
   <div class="container">
     <div class="section-head">
-      <span class="tag">13 · Install</span>
+      <span class="tag">14 · Install</span>
       <h2>Three paths. <em>Pick one.</em></h2>
     </div>
     <div class="grid grid-3">
@@ -704,7 +830,7 @@ When writing commit messages, use Conventional Commits:
 <section id="container">
   <div class="container">
     <div class="section-head">
-      <span class="tag">14 · Container posture</span>
+      <span class="tag">15 · Container posture</span>
       <h2>Single image. <em>CLI + UI + daemon.</em></h2>
     </div>
     <div class="mermaid-wrap">
@@ -743,7 +869,7 @@ flowchart LR
 <section id="cicd" class="alt">
   <div class="container">
     <div class="section-head">
-      <span class="tag">15 · CI/CD</span>
+      <span class="tag">16 · CI/CD</span>
       <h2>9 jobs per PR. <em>6 release stages.</em></h2>
     </div>
     <h3 class="subhead">CI · every PR + push</h3>
@@ -819,7 +945,7 @@ flowchart LR
 <section id="numbers">
   <div class="container">
     <div class="section-head">
-      <span class="tag">16 · Runtime metrics</span>
+      <span class="tag">17 · Runtime metrics</span>
       <h2>What it <em>actually</em> costs to run.</h2>
       <p>All measured locally — reproducers in the table at the bottom. No synthetic benchmarks, no comparisons against straw-man tools.</p>
     </div>
@@ -895,7 +1021,7 @@ flowchart LR
 <section id="agents" class="alt">
   <div class="container">
     <div class="section-head">
-      <span class="tag">17 · Agent-facing files</span>
+      <span class="tag">18 · Agent-facing files</span>
       <h2>Works with <em>every</em> coding agent.</h2>
       <p>Context files so agents don't re-learn the repo every turn.</p>
     </div>

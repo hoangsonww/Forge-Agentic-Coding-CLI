@@ -11,10 +11,32 @@ import { runCommand } from '../sandbox/shell';
 import { ForgeRuntimeError } from '../types/errors';
 
 interface Args {
-  framework?: 'auto' | 'npm' | 'pnpm' | 'yarn' | 'pytest' | 'go' | 'cargo';
+  framework?: 'auto' | 'npm' | 'pnpm' | 'yarn' | 'pytest' | 'go' | 'cargo' | 'node';
   target?: string;
   timeoutMs?: number;
 }
+
+// Node 20+ ships `node --test` as a first-class runner for *.test.{js,mjs,cjs,ts}
+// files. We probe for such files in conventional locations when there's no
+// other framework configured, so a project can use node:test without needing
+// package.json / Jest / Mocha.
+const hasNodeTestFiles = (root: string): boolean => {
+  const dirs = ['test', 'tests', '__tests__', 'src'];
+  for (const d of dirs) {
+    const full = path.join(root, d);
+    try {
+      const st = fs.statSync(full);
+      if (!st.isDirectory()) continue;
+      // Shallow scan only — deep recursion could be expensive on large repos,
+      // and conventional test layouts keep tests one level deep.
+      const entries = fs.readdirSync(full);
+      if (entries.some((f) => /\.test\.(?:m?js|cjs|ts)$/.test(f))) return true;
+    } catch {
+      // missing or unreadable — not an error
+    }
+  }
+  return false;
+};
 
 interface Output {
   framework: string;
@@ -41,6 +63,10 @@ const detectFramework = (root: string): string => {
   }
   if (fs.existsSync(path.join(root, 'go.mod'))) return 'go';
   if (fs.existsSync(path.join(root, 'Cargo.toml'))) return 'cargo';
+  // Fallback: if we see *.test.{js,mjs,cjs,ts} files in a conventional
+  // location, assume `node --test` (built into Node 20+). Lets toy repos
+  // run tests without a full toolchain setup.
+  if (hasNodeTestFiles(root)) return 'node';
   return 'none';
 };
 
@@ -58,6 +84,11 @@ const commandFor = (framework: string, target?: string): string | null => {
       return `go test ${target ?? './...'}`;
     case 'cargo':
       return `cargo test${target ? ` ${target}` : ''}`;
+    case 'node':
+      // Node's built-in runner picks up *.test.* files under the target
+      // dir(s). We pass dirs explicitly (empty arg tree = current dir) so
+      // no globbing subtleties across shells. Target overrides.
+      return `node --test ${target ?? ''}`.trim();
     default:
       return null;
   }

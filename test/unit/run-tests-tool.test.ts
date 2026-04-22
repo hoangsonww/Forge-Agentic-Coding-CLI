@@ -118,6 +118,42 @@ describe('run_tests tool', () => {
     expect(mockRunCommand).not.toHaveBeenCalled();
   });
 
+  it('falls back to `node --test` when *.test.js files exist without a package.json', async () => {
+    const root = mkdir();
+    fs.mkdirSync(path.join(root, 'test'));
+    fs.writeFileSync(path.join(root, 'test', 'fib.test.js'), "import test from 'node:test';\n");
+    mockRunCommand.mockResolvedValueOnce({
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      signal: null,
+      timedOut: false,
+    });
+    const r = await runTestsTool.execute({}, ctxFor(root));
+    expect(r.success).toBe(true);
+    expect(r.output?.framework).toBe('node');
+    expect(mockRunCommand.mock.calls[0][0]).toBe('node --test');
+  });
+
+  it('prefers npm over node:test when both are present', async () => {
+    const root = mkdir();
+    fs.writeFileSync(
+      path.join(root, 'package.json'),
+      JSON.stringify({ scripts: { test: 'vitest' } }),
+    );
+    fs.mkdirSync(path.join(root, 'test'));
+    fs.writeFileSync(path.join(root, 'test', 'x.test.js'), '');
+    mockRunCommand.mockResolvedValueOnce({
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      signal: null,
+      timedOut: false,
+    });
+    const r = await runTestsTool.execute({}, ctxFor(root));
+    expect(r.output?.framework).toBe('npm');
+  });
+
   it('reports failure when exit code is non-zero', async () => {
     const root = mkdir();
     fs.writeFileSync(

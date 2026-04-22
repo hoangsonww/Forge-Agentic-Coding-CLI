@@ -935,7 +935,7 @@ const openTask = (taskId) => {
   currentView = 'task';
   document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active'));
   app.innerHTML = page(`
-    ${pageHeader('Task · ' + taskId, 'Live stream from the interactive host.', `
+    ${pageHeader('Conversation · ' + taskId, 'Live stream from the interactive host. Type below to send a follow-up.', `
       <button class="btn btn-ghost" data-action="back">← Active</button>
       <button class="btn btn-danger" data-action="cancel">Cancel</button>
     `)}
@@ -949,11 +949,59 @@ const openTask = (taskId) => {
         <div id="task-stream" class="log-stream"></div>
       </div></div>
     </section>
+    <section class="section" id="followup-section">
+      <div class="section-head">
+        <h2>Follow-up</h2>
+        <span class="section-meta" id="followup-status">ready</span>
+      </div>
+      <div class="section-body"><div style="padding:12px 18px;display:flex;flex-direction:column;gap:10px">
+        <textarea id="followup-input" class="fu-input" rows="2"
+          placeholder="Ask a follow-up, or start a new task in the same conversation… (Enter to send · Shift+Enter for newline)"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)">
+              <input type="checkbox" id="followup-auto" checked> auto-approve
+            </label>
+            <span style="font-size:11.5px;color:var(--dim)" id="followup-turns">0 prior turns</span>
+          </div>
+          <button class="btn btn-primary" id="followup-send">Send →</button>
+        </div>
+      </div></div>
+    </section>
   `);
 
   const stream = document.getElementById('task-stream');
   const planSec = document.getElementById('task-plan');
   let currentPlanPromptId = null;
+
+  // Conversation state: each task under this view contributes one turn.
+  // We compose them on submit into a `description` that mirrors what
+  // `composeDescription` in the REPL does server-side — the orchestrator
+  // treats it as ground truth for follow-ups like "what did we talk
+  // about?". `activeTaskId` tracks which task's WS we're currently
+  // subscribed to (swaps on each follow-up).
+  const convoTurns = [];
+  let activeTaskId = taskId;
+  const composeDescription = (newInput) => {
+    const prior = convoTurns.filter((t) => t.summary);
+    if (!prior.length) return newInput;
+    const lines = [
+      '## Current request',
+      newInput,
+      '',
+      '## Conversation so far (earliest → latest)',
+    ];
+    prior.slice(-8).forEach((t, i) => {
+      lines.push(`${i + 1}. user: ${t.input.replace(/\s+/g, ' ').slice(0, 240)}`);
+      lines.push(`   assistant: ${t.success === false ? 'FAILED' : 'OK'} — ${(t.summary || '').replace(/\s+/g, ' ').slice(0, 240)}`);
+    });
+    lines.push('', '## Notes', '- "Current request" is the user\'s latest message; prior turns are context only.');
+    return lines.join('\n');
+  };
+  const updateTurnCount = () => {
+    const el = document.getElementById('followup-turns');
+    if (el) el.textContent = `${convoTurns.filter((t) => t.summary).length} prior turn${convoTurns.filter((t) => t.summary).length === 1 ? '' : 's'}`;
+  };
 
   const push = (line) => {
     const el = document.createElement('div');
@@ -961,6 +1009,33 @@ const openTask = (taskId) => {
     el.innerHTML = line.html;
     stream.insertBefore(el, stream.firstChild);
     while (stream.childElementCount > 300) stream.lastChild?.remove();
+  };
+
+  // Streaming model output is rendered into a single rolling node so tokens
+  // append smoothly instead of pushing dozens of one-char log lines. A new
+  // node is created whenever a `done` frame closes the prior stream or when a
+  // new provider/model shows up.
+  let deltaEl = null;
+  let deltaKey = '';
+  const appendDelta = (msg) => {
+    const key = `${msg.provider || ''}/${msg.model || ''}/${msg.role || ''}`;
+    if (msg.done) {
+      if (deltaEl) deltaEl.classList.add('log-line-done');
+      deltaEl = null;
+      deltaKey = '';
+      return;
+    }
+    if (!msg.text) return;
+    if (!deltaEl || deltaKey !== key) {
+      deltaEl = document.createElement('div');
+      deltaEl.className = 'log-line log-line-stream';
+      deltaEl.innerHTML = `<span class="log-type">${esc(msg.model || 'model')}</span> · <span class="stream-text"></span>`;
+      stream.insertBefore(deltaEl, stream.firstChild);
+      while (stream.childElementCount > 300) stream.lastChild?.remove();
+      deltaKey = key;
+    }
+    const span = deltaEl.querySelector('.stream-text');
+    if (span) span.append(msg.text);
   };
 
   const renderPlan = (plan) => {
@@ -1003,48 +1078,121 @@ const openTask = (taskId) => {
 
   app.querySelector('[data-action="back"]').addEventListener('click', () => setView('active'));
   app.querySelector('[data-action="cancel"]').addEventListener('click', async () => {
-    try { await apiPost(`/api/tasks/${taskId}/cancel`); toast('cancel requested', 'warn'); }
+    try { await apiPost(`/api/tasks/${activeTaskId}/cancel`); toast('cancel requested', 'warn'); }
     catch (e) { toast(String(e), 'err'); }
   });
 
-  if (taskConnections.has(taskId)) { try { taskConnections.get(taskId).close(); } catch {} }
-  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/tasks/${taskId}`;
-  const ws = new WebSocket(url);
-  taskConnections.set(taskId, ws);
-
   const meta = document.getElementById('task-meta');
-  ws.onopen = () => { meta.textContent = 'live'; };
-  ws.onclose = () => { meta.textContent = 'disconnected'; };
-  ws.onmessage = (e) => {
-    let msg;
-    try { msg = JSON.parse(e.data); } catch { return; }
-    if (msg.kind === 'event') {
-      const ev = msg.event;
-      push({
-        cls: `log-line ${ev.severity ?? 'info'}`,
-        html: `<time>${esc(fmtDate(ev.timestamp))}</time><span class="log-type">${esc(ev.type)}</span> · ${esc(ev.message)}`,
-      });
-    } else if (msg.kind === 'prompt') {
-      if (msg.promptType === 'plan_approval') {
-        currentPlanPromptId = msg.promptId;
-        renderPlan(msg.plan);
-      } else if (msg.promptType === 'permission') {
-        openPermissionModal(msg);
-      } else if (msg.promptType === 'user_input') {
-        openUserInputModal(msg);
+
+  // Attach a WebSocket to a given taskId; swaps the listener when a
+  // follow-up turn spawns a new task. Returns the socket so we can close
+  // it when swapping again.
+  const attachWs = (id) => {
+    if (taskConnections.has(id)) { try { taskConnections.get(id).close(); } catch {} }
+    const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/tasks/${id}`;
+    const ws = new WebSocket(url);
+    taskConnections.set(id, ws);
+    ws.onopen = () => { meta.textContent = 'live · ' + id.slice(0, 8); };
+    ws.onclose = () => { meta.textContent = 'disconnected'; };
+    ws.onmessage = (e) => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      if (msg.kind === 'event') {
+        const ev = msg.event;
+        push({
+          cls: `log-line ${ev.severity ?? 'info'}`,
+          html: `<time>${esc(fmtDate(ev.timestamp))}</time><span class="log-type">${esc(ev.type)}</span> · ${esc(ev.message)}`,
+        });
+      } else if (msg.kind === 'prompt') {
+        if (msg.promptType === 'plan_approval') {
+          currentPlanPromptId = msg.promptId;
+          renderPlan(msg.plan);
+        } else if (msg.promptType === 'permission') {
+          openPermissionModal(msg);
+        } else if (msg.promptType === 'user_input') {
+          openUserInputModal(msg);
+        }
+      } else if (msg.kind === 'task.started') {
+        push({ cls: 'log-line', html: `<span class="log-type">STARTED</span> · ${esc(msg.prompt.slice(0, 120))}` });
+      } else if (msg.kind === 'task.result') {
+        const ok = msg.result?.success;
+        const summary = msg.result?.summary ?? '';
+        push({ cls: `log-line ${ok ? '' : 'error'}`, html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span> · ${esc(summary)}` });
+        toast(ok ? 'Task complete' : 'Task failed', ok ? 'ok' : 'err');
+        // Record the summary against the most recently-sent turn so future
+        // follow-ups can thread it into the composed description.
+        const pending = convoTurns[convoTurns.length - 1];
+        if (pending && pending.taskId === id && !pending.summary) {
+          pending.summary = summary;
+          pending.success = ok;
+          updateTurnCount();
+        }
+        // Re-enable the follow-up input once the task finishes.
+        const sendBtn = document.getElementById('followup-send');
+        const statusEl = document.getElementById('followup-status');
+        if (sendBtn) sendBtn.disabled = false;
+        if (statusEl) statusEl.textContent = 'ready';
+      } else if (msg.kind === 'task.error') {
+        push({ cls: 'log-line error', html: `<span class="log-type">ERROR</span> · ${esc(msg.error)}` });
+        const sendBtn = document.getElementById('followup-send');
+        const statusEl = document.getElementById('followup-status');
+        if (sendBtn) sendBtn.disabled = false;
+        if (statusEl) statusEl.textContent = 'ready';
+      } else if (msg.kind === 'task.cancel_requested') {
+        push({ cls: 'log-line warning', html: `<span class="log-type">CANCEL</span> · requested` });
+      } else if (msg.kind === 'model.delta') {
+        appendDelta(msg);
       }
-    } else if (msg.kind === 'task.started') {
-      push({ cls: 'log-line', html: `<span class="log-type">STARTED</span> · ${esc(msg.prompt.slice(0, 120))}` });
-    } else if (msg.kind === 'task.result') {
-      const ok = msg.result?.success;
-      push({ cls: `log-line ${ok ? '' : 'error'}`, html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span> · ${esc(msg.result?.summary ?? '')}` });
-      toast(ok ? 'Task complete' : 'Task failed', ok ? 'ok' : 'err');
-    } else if (msg.kind === 'task.error') {
-      push({ cls: 'log-line error', html: `<span class="log-type">ERROR</span> · ${esc(msg.error)}` });
-    } else if (msg.kind === 'task.cancel_requested') {
-      push({ cls: 'log-line warning', html: `<span class="log-type">CANCEL</span> · requested` });
+    };
+    return ws;
+  };
+
+  attachWs(taskId);
+
+  // Follow-up input — typed message spawns a new task with prior-turns
+  // context threaded in via `description`. The server's orchestrator uses
+  // that for the conversation fast-path; for non-conversational intents
+  // it's handed to the planner as context.
+  const input = document.getElementById('followup-input');
+  const sendBtn = document.getElementById('followup-send');
+  const autoCk = document.getElementById('followup-auto');
+  const statusEl = document.getElementById('followup-status');
+  const submitFollowup = async () => {
+    const text = (input?.value || '').trim();
+    if (!text) return;
+    sendBtn.disabled = true;
+    statusEl.textContent = 'sending…';
+    // Push an echo of the user's turn into the stream so the conversation
+    // reads linearly.
+    push({ cls: 'log-line', html: `<span class="log-type">YOU</span> · ${esc(text)}` });
+    const description = composeDescription(text);
+    try {
+      const body = await apiPost('/api/tasks/run', {
+        prompt: text,
+        autoApprove: !!autoCk?.checked,
+        description,
+      });
+      const newTaskId = body.taskId;
+      convoTurns.push({ taskId: newTaskId, input: text, summary: null });
+      updateTurnCount();
+      activeTaskId = newTaskId;
+      statusEl.textContent = 'running · ' + newTaskId.slice(0, 8);
+      input.value = '';
+      attachWs(newTaskId);
+    } catch (e) {
+      toast(String(e), 'err');
+      sendBtn.disabled = false;
+      statusEl.textContent = 'error';
     }
   };
+  sendBtn?.addEventListener('click', submitFollowup);
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void submitFollowup();
+    }
+  });
+  input?.focus();
 };
 
 // ---------- Active / tasks ----------

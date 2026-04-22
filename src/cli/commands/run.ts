@@ -25,6 +25,7 @@ import {
 } from '../ui';
 import chalk from 'chalk';
 import { bootstrap } from '../bootstrap';
+import { startProgress } from '../progress';
 
 const runOptions = (cmd: Command) =>
   cmd
@@ -85,13 +86,19 @@ runCommand.action(async (promptParts: string[], opts) => {
     nonInteractive: Boolean(opts.nonInteractive),
   };
 
-  const result = await orchestrateRun({
-    input: promptText,
-    mode,
-    autoApprove: Boolean(opts.yes),
-    planOnly: Boolean(opts.planOnly) || mode === 'plan',
-    flags,
-  });
+  const progress = opts.trace ? null : startProgress({ initial: 'classifying request' });
+  let result;
+  try {
+    result = await orchestrateRun({
+      input: promptText,
+      mode,
+      autoApprove: Boolean(opts.yes),
+      planOnly: Boolean(opts.planOnly) || mode === 'plan',
+      flags,
+    });
+  } finally {
+    progress?.stop();
+  }
 
   if (result.result.success) {
     process.stdout.write(
@@ -101,6 +108,7 @@ runCommand.action(async (promptParts: string[], opts) => {
           result.result.filesChanged,
           result.result.durationMs,
           result.result.costUsd,
+          progress?.didStream() === true,
         ),
     );
     ok(`Task complete.`);

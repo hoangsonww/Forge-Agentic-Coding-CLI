@@ -6,7 +6,14 @@
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
-import { Mode, ModelMessage, ModelCallOptions, ModelResponse, ModelRole } from '../types';
+import {
+  Mode,
+  ModelMessage,
+  ModelCallOptions,
+  ModelResponse,
+  ModelRole,
+  ModelProvider,
+} from '../types';
 import { loadGlobalConfig } from '../config/loader';
 import { ForgeRuntimeError } from '../types/errors';
 import { getProvider, listProviders, firstAvailableProvider } from './provider';
@@ -16,6 +23,90 @@ import * as rateLimit from './rate-limit';
 import * as breaker from './circuit-breaker';
 import * as cost from './cost';
 import { resolveLocalModel, isLocalProvider } from './adapter';
+import { emitDelta, eventBus } from '../persistence/events';
+
+// Per-process cache of (provider:model) pairs we've already asked to warm.
+// Warming is idempotent and cheap when already loaded, so the only reason to
+// gate is to avoid emitting the "warming…" spinner text on every single call.
+const warmed = new Set<string>();
+const inflightWarms = new Map<string, Promise<void>>();
+
+/**
+ * Ensure the given provider+model is loaded into memory before we send the
+ * first real request. Emits TASK-scoped MODEL_WARMING/MODEL_WARMED events so
+ * the CLI spinner and UI can tell users exactly why they're waiting.
+ *
+ * Concurrent callers for the same (provider, model) share one underlying
+ * warm promise. Warming errors are logged and swallowed — the next real call
+ * will surface any real problem with a clearer error.
+ */
+const ensureWarm = async (
+  provider: ModelProvider,
+  model: string,
+  ctx: CallContext,
+): Promise<void> => {
+  const warmFn = provider.warm;
+  if (typeof warmFn !== 'function') return;
+  const key = `${provider.name}:${model}`;
+  if (warmed.has(key)) return;
+  const existing = inflightWarms.get(key);
+  if (existing) return existing;
+
+  const started = Date.now();
+  const task = (async () => {
+    const timestamp = new Date().toISOString();
+    eventBus.emit('event', {
+      type: 'MODEL_WARMING',
+      taskId: ctx.taskId,
+      projectId: ctx.projectId,
+      severity: 'info',
+      message: `warming ${model}`,
+      payload: { provider: provider.name, model },
+      timestamp,
+    });
+    try {
+      await warmFn.call(provider, model);
+    } catch (err) {
+      log.debug('warm threw despite contract', { provider: provider.name, err: String(err) });
+    } finally {
+      warmed.add(key);
+      inflightWarms.delete(key);
+      eventBus.emit('event', {
+        type: 'MODEL_WARMED',
+        taskId: ctx.taskId,
+        projectId: ctx.projectId,
+        severity: 'info',
+        message: `warmed ${model}`,
+        payload: { provider: provider.name, model, durationMs: Date.now() - started },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  })();
+  inflightWarms.set(key, task);
+  return task;
+};
+
+/**
+ * Best-effort fire-and-forget warm — used by the REPL at startup so the
+ * model is ready by the time the user's first prompt arrives. Callers don't
+ * await it and any errors are fully isolated.
+ */
+export const backgroundWarm = (providerName: string, model: string): void => {
+  try {
+    const provider = getProvider(providerName);
+    void ensureWarm(provider, model, {});
+  } catch {
+    // provider not registered or something similar; silent per contract
+  }
+};
+
+/**
+ * Exposed for tests — clears the warmed set so a fresh run is observable.
+ */
+export const _resetWarmedForTest = (): void => {
+  warmed.clear();
+  inflightWarms.clear();
+};
 
 export interface RoutingDecision {
   provider: string;
@@ -109,7 +200,90 @@ export const resolveModel = async (params: {
 export interface CallContext {
   projectId?: string;
   taskId?: string;
+  role?: ModelRole;
+  /**
+   * Disable streaming for this call even if the provider supports it. Used by
+   * callers that explicitly need a single-shot response (e.g. strict JSON
+   * mode with validators that parse the full body).
+   */
+  noStream?: boolean;
 }
+
+/**
+ * Call a provider and accumulate a full `ModelResponse`, streaming deltas via
+ * the in-process event bus along the way if the provider supports it. Falls
+ * back cleanly to `complete()` for providers without `stream()`, callers that
+ * opt out with `ctx.noStream`, or when `jsonMode` is set (JSON responses are
+ * only useful whole).
+ */
+const callProvider = async (
+  provider: ModelProvider,
+  model: string,
+  messages: ModelMessage[],
+  options: ModelCallOptions,
+  ctx: CallContext,
+): Promise<ModelResponse> => {
+  // Pre-warm on first use of this (provider, model) combo. This is the
+  // difference between a mysterious 60+ second silence and an explicit
+  // "warming qwen2.5:7b…" phase the user can see ticking.
+  await ensureWarm(provider, model, ctx);
+
+  const streamFn = !ctx.noStream && !options.jsonMode ? provider.stream : undefined;
+  if (!streamFn) return provider.complete(model, messages, options);
+
+  const started = Date.now();
+  let text = '';
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+  let finishReason: 'stop' | 'length' | 'error' | 'tool_call' = 'stop';
+  try {
+    for await (const chunk of streamFn.call(provider, model, messages, options)) {
+      if (chunk.delta) {
+        text += chunk.delta;
+        emitDelta({
+          text: chunk.delta,
+          taskId: ctx.taskId,
+          projectId: ctx.projectId,
+          role: ctx.role,
+          model,
+          provider: provider.name,
+          done: false,
+        });
+      }
+      if (chunk.done) {
+        inputTokens = chunk.inputTokens ?? inputTokens;
+        outputTokens = chunk.outputTokens ?? outputTokens;
+        finishReason = chunk.finishReason ?? finishReason;
+        emitDelta({
+          text: '',
+          taskId: ctx.taskId,
+          projectId: ctx.projectId,
+          role: ctx.role,
+          model,
+          provider: provider.name,
+          done: true,
+        });
+      }
+    }
+  } catch (err) {
+    // If streaming fails mid-flight, fall back to a blocking call so we don't
+    // return a torn response to agents that expected a full body.
+    log.debug('stream failed; falling back to complete()', {
+      provider: provider.name,
+      err: String(err),
+    });
+    return provider.complete(model, messages, options);
+  }
+  return {
+    content: text,
+    model,
+    provider: provider.name,
+    inputTokens,
+    outputTokens,
+    durationMs: Date.now() - started,
+    finishReason,
+  };
+};
 
 export const callModel = async (
   role: ModelRole,
@@ -150,8 +324,9 @@ export const callModel = async (
     provider: decision.provider,
     model: decision.model,
   });
+  const effectiveCtx: CallContext = { ...ctx, role };
   try {
-    const response = await provider.complete(decision.model, messages, options);
+    const response = await callProvider(provider, decision.model, messages, options, effectiveCtx);
     breaker.reportSuccess(decision.provider);
     cache.store(decision.provider, decision.model, messages, options, response);
     const usd = cost.record(ctx, response);
@@ -166,7 +341,13 @@ export const callModel = async (
       await rateLimit.acquire(decision.fallback.provider);
       try {
         const fb = getProvider(decision.fallback.provider);
-        const response = await fb.complete(decision.fallback.model, messages, options);
+        const response = await callProvider(
+          fb,
+          decision.fallback.model,
+          messages,
+          options,
+          effectiveCtx,
+        );
         breaker.reportSuccess(decision.fallback.provider);
         cache.store(
           decision.fallback.provider,
