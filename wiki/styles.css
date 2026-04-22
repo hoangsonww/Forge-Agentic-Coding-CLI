@@ -549,15 +549,40 @@ ul li {
 }
 
 @media (max-width: 720px) {
-  .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 2px; }
-  .hero-stat  { border-right: 0; border-bottom: 1px solid var(--border); padding: 12px 0; }
-  .hero-stat:first-child            { padding-top: 0; }
-  .hero-stat:nth-last-child(-n + 2) { border-bottom: 0; }
-  .hero-stat:nth-last-child(2)      { padding-left: 18px; border-left: 1px solid var(--border); }
+  /* Zero the container's padding-top so the vertical divider (border-left on
+     even items) starts exactly at the border-top line with no gap. */
+  .hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    padding-top: 0;
+  }
+  .hero-stat  {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    /* Uniform top padding on all items keeps rows aligned within their cells */
+    padding: 16px 0;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  /* Right-column items: left divider connects with border-top since padding-top is on the items */
+  .hero-stat:nth-child(even) {
+    padding-left: 20px;
+    border-left: 1px solid var(--border);
+  }
+  /* Remove bottom border from last paired row AND lone item below it */
+  .hero-stat:nth-last-child(-n + 3) { border-bottom: 0; }
+  /* Lone 5th item: span full width, center content, clear left styles */
+  .hero-stat:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    text-align: center;
+    border-left: 0;
+    padding-left: 0;
+  }
 }
 
 @media (max-width: 480px) {
   .hero-stats { grid-template-columns: 1fr 1fr; }
+  .hero-stat .n { font-size: clamp(14px, 5vw, 20px); }
 }
 
 /* =============================================================================
