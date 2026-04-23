@@ -241,6 +241,62 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
       log.info('plan auto-fixed', { notes: fixerReport.notes });
       plan = fixerReport.plan;
     }
+    // Runtime enforcement: analysis intent is READ-ONLY. Strip any
+    // mutation steps the planner emitted despite the prompt rule. Also
+    // drop redundant "analyze" steps that follow a retrieve_context /
+    // read — those add no signal and trip up small models that don't
+    // know what to do for an already-read file, often leading to
+    // hallucinated file paths ("src/main/java/com/example/MyClass.java"
+    // in a TypeScript project). The narrator handles synthesis post-steps.
+    if (current.profile?.intent === 'analysis') {
+      const READ_ONLY_TYPES = new Set<string>([
+        'retrieve_context',
+        'analyze',
+        'plan',
+        'review',
+        'debug',
+        'ask_user',
+        'custom',
+      ]);
+      const MUTATION_TYPES = new Set<string>([
+        'edit_file',
+        'create_file',
+        'delete_file',
+        'apply_patch',
+        'run_command',
+        'run_tests',
+      ]);
+      const before = plan.steps.length;
+      let seenRetrieve = false;
+      const filtered = plan.steps.filter((s) => {
+        if (MUTATION_TYPES.has(s.type)) return false;
+        if (s.type === 'analyze' && seenRetrieve) return false;
+        if (s.type === 'retrieve_context') seenRetrieve = true;
+        return READ_ONLY_TYPES.has(s.type);
+      });
+      if (filtered.length === 0) {
+        // Planner produced only mutation steps on an analysis task. Fall
+        // back to a minimal read-only plan targeting any file the user
+        // named in the title/description.
+        const titleFiles =
+          (current.title + ' ' + (current.description ?? '')).match(/[\w./-]+\.\w+/) ?? [];
+        const target = titleFiles[0];
+        filtered.push({
+          id: 'step_001',
+          type: 'retrieve_context',
+          description: target ? `Read ${target}` : `Gather context for: ${current.title}`,
+          target,
+        });
+      }
+      if (filtered.length !== before) {
+        log.info('analysis-intent plan filtered', {
+          before,
+          after: filtered.length,
+          dropped: plan.steps.length - filtered.length,
+        });
+      }
+      plan = { ...plan, steps: filtered };
+    }
     current.plan = plan;
     saveTask(options.projectRoot, current);
     session({ type: 'plan', content: plan, timestamp: new Date().toISOString() });
@@ -359,10 +415,16 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
           // the executor's `completed` flag, falling back to the legacy
           // "no surviving failures at the tail" check so we still catch the
           // case where no recovery was attempted.
-          const tail = out.toolResults[out.toolResults.length - 1];
-          const stepFailed = !out.completed || (tail ? !tail.result.success : false);
+          const lastFailure = [...out.toolResults].reverse().find((r) => !r.result.success);
+          const anyToolFailed = Boolean(lastFailure);
+          // A step is "failed" only when there was an actual tool error OR
+          // the executor produced nothing at all (no tool calls AND no done
+          // flag — means the model is wedged). Running out of turns AFTER
+          // productive work is treated as a soft completion: we have
+          // signals we can carry forward, so don't blow up the whole task.
+          const stepWedged = !out.completed && out.toolResults.length === 0 && !out.summary.trim();
+          const stepFailed = anyToolFailed || stepWedged;
           if (stepFailed) {
-            const lastFailure = [...out.toolResults].reverse().find((r) => !r.result.success);
             loopDetector.record({
               stepId: step.id,
               success: false,
@@ -377,9 +439,20 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
             const retryable = lastFailure?.result.error?.retryable ?? false;
             throw new ForgeRuntimeError({
               class: lastFailure?.result.error?.class ?? 'tool_error',
-              message: lastFailure?.result.error?.message ?? `Step ${step.id} did not complete`,
+              message:
+                lastFailure?.result.error?.message ??
+                `Step ${step.id} produced no tool calls or summary within the turn budget`,
               retryable,
               recoveryHint: lastFailure?.result.error?.recoveryHint,
+            });
+          }
+          if (!out.completed) {
+            // Soft completion: tools ran, we just didn't get an explicit
+            // done. Log it but don't fail — later steps use the gathered
+            // context.
+            log.info('step soft-completed (no explicit done, but tools succeeded)', {
+              step: step.id,
+              toolCalls: out.toolResults.length,
             });
           }
           loopDetector.record({ stepId: step.id, success: true, timestamp: Date.now() });

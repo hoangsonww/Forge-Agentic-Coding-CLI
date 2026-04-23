@@ -736,11 +736,6 @@ export class LineEditor {
     // `dropdownRowsAbove` rows from the prompt row, clear from there to end
     // of screen, and repaint dropdown + prompt. The status line is NEVER
     // part of the per-keystroke redraw — it stays stable up-scroll.
-    //
-    // Why this avoids the previous "row stacking" bug: we never use
-    // `\x1b[s`/`\x1b[u` (save/restore cursor, spotty on macOS Terminal /
-    // some tmux configs), and we never do cursor-up math based on rows we
-    // painted *below* the prompt — there are none.
     const prompt = this.hooks.prompt();
     const promptWidth = visibleWidth(prompt);
     const NL_GLYPH = chalk.dim('↵ ');

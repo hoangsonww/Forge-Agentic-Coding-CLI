@@ -40,6 +40,56 @@ interface RenderOptions {
  * parser picks it up as a real fenced block. Leaves well-formed blocks
  * (already multi-line) untouched.
  */
+/**
+ * Renumber ordered lists that LLMs emit as "1. … 1. … 1. …".
+ *
+ * CommonMark's spec says all ordered-list markers can literally be `1.` and
+ * a compliant renderer auto-numbers sequentially. Models rely on that and
+ * constantly emit repeated `1.`. Our renderer's own ordered-list handler
+ * does renumber within a contiguous run — but when the list has nested
+ * content (a bullet sub-list, an indented code block), the run ends and
+ * the next `1.` starts a fresh list with n=1. Result: "1. Foo → bullets →
+ * 1. Bar → bullets → 1. Baz" renders as three separate "1.".
+ *
+ * This pre-pass walks line-by-line, keeps a counter per indent level, and
+ * rewrites `1.` markers when we're past the first item at that indent. It
+ * deliberately leaves sources that *already* use sequential numbering
+ * (`1.`, `2.`, `3.`) alone — only the literal-`1.`-for-every-item pattern
+ * gets rewritten. Counters reset on headings and fenced code blocks
+ * (genuine section boundaries).
+ */
+const renumberOrderedLists = (input: string): string => {
+  const lines = input.split('\n');
+  const counters = new Map<number, number>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Section break: reset all counters so subsequent ordered lists start
+    // numbering from whatever the source says.
+    if (/^\s*(?:#{1,6}\s|```+|~~~+)/.test(line)) {
+      counters.clear();
+      continue;
+    }
+    const m = /^(\s*)(\d+)\.\s(.*)$/.exec(line);
+    if (!m) continue;
+    const indent = m[1].length;
+    const originalNum = parseInt(m[2], 10);
+    const body = m[3];
+    const prev = counters.get(indent) ?? 0;
+    if (originalNum === 1 && prev >= 1) {
+      // Model wrote `1.` where we're already past item 1 at this indent.
+      // Renumber to maintain the visible sequence.
+      const next = prev + 1;
+      counters.set(indent, next);
+      lines[i] = `${m[1]}${next}. ${body}`;
+    } else {
+      // Trust the source number (could be 2. 3. 4. …, or a fresh 1. that
+      // starts a new top-level list after the counter was empty).
+      counters.set(indent, originalNum);
+    }
+  }
+  return lines.join('\n');
+};
+
 const normaliseInlineFences = (input: string): string => {
   // Matches the whole inline block: opening fence with optional language,
   // then anything (non-greedy) up to the closing fence, ALL on one physical
@@ -56,7 +106,7 @@ const normaliseInlineFences = (input: string): string => {
 /** Render CommonMark-ish text to ANSI-coloured output. */
 export const renderMarkdown = (input: string, opts: RenderOptions = {}): string => {
   if (!input) return '';
-  const rendered = renderBlocks(normaliseInlineFences(input));
+  const rendered = renderBlocks(renumberOrderedLists(normaliseInlineFences(input)));
   if (opts.oneLine) {
     return stripAnsi(rendered).replace(/\s+/g, ' ').trim();
   }
@@ -82,14 +132,29 @@ const renderBlocks = (text: string): string => {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Fenced code block (``` or ~~~, optional language tag)
-    const fenceMatch = /^```+\s*([\w-]*)\s*$|^~~~+\s*([\w-]*)\s*$/.exec(line);
+    // Fenced code block (``` or ~~~, optional language tag).
+    //
+    // LLMs routinely nest code blocks inside bullet / numbered lists, which
+    // means the fence arrives with 2–4 spaces of leading indent. CommonMark
+    // officially allows up to 3 spaces, and in practice we see up to 6 from
+    // small models. Be liberal: strip any leading whitespace before matching.
+    // The closing fence must be on its own line too but may have the same
+    // (or matching) leading indent — we strip to compare.
+    const fenceMatch = /^\s*```+\s*([\w-]*)\s*$|^\s*~~~+\s*([\w-]*)\s*$/.exec(line);
     if (fenceMatch) {
       const lang = fenceMatch[1] || fenceMatch[2] || '';
+      // Remember how much the opener was indented so the body can strip the
+      // same prefix — otherwise the rendered code block inherits the list's
+      // indentation as trailing-whitespace inside each code line.
+      const openerIndent = (line.match(/^\s*/)?.[0] ?? '').length;
       const codeLines: string[] = [];
       i++;
-      while (i < lines.length && !/^(?:```+|~~~+)\s*$/.test(lines[i])) {
-        codeLines.push(lines[i]);
+      while (i < lines.length && !/^\s*(?:```+|~~~+)\s*$/.test(lines[i])) {
+        // Strip up to `openerIndent` leading spaces so "- foo\n  ```js\n  x"
+        // renders as just `x`, not `  x`.
+        const raw = lines[i];
+        const prefixLen = Math.min(openerIndent, (raw.match(/^[ \t]*/)?.[0] ?? '').length);
+        codeLines.push(raw.slice(prefixLen));
         i++;
       }
       if (i < lines.length) i++; // consume closing fence
@@ -127,13 +192,18 @@ const renderBlocks = (text: string): string => {
       continue;
     }
 
-    // Ordered list
+    // Ordered list — honour the actual source number on each line rather
+    // than rerolling from 1 per run. `renumberOrderedLists` has already
+    // rewritten LLM-style "1. 1. 1." input into proper sequential numbers,
+    // so trusting the source here renders them correctly across runs that
+    // get broken by sub-lists or paragraphs.
     if (/^\s*\d+\.\s+/.test(line)) {
-      let n = 1;
-      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+      while (i < lines.length) {
+        const m = /^\s*(\d+)\.\s+/.exec(lines[i]);
+        if (!m) break;
+        const n = parseInt(m[1], 10);
         const item = lines[i].replace(/^\s*\d+\.\s+/, '');
         out.push('  ' + chalk.cyan(`${n}.`) + ' ' + formatInline(item));
-        n++;
         i++;
       }
       continue;
@@ -168,7 +238,9 @@ const renderBlocks = (text: string): string => {
 /** True if a line opens a new block (so we stop collecting paragraph text). */
 const isBlockBoundary = (line: string): boolean => {
   if (!line.trim()) return true;
-  if (/^```+|^~~~+/.test(line)) return true;
+  // Fences may be indented (inside list items, blockquotes); match the same
+  // permissive rule the block-fence handler uses.
+  if (/^\s*(?:```+|~~~+)/.test(line)) return true;
   if (/^#{1,6}\s/.test(line)) return true;
   if (/^\s*>/.test(line)) return true;
   if (/^\s*[-*+]\s+/.test(line)) return true;

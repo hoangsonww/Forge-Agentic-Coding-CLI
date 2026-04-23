@@ -4,7 +4,7 @@
 
 # Forge
 
-**A local-first, multi-agent, programmable software-engineering runtime.**
+**A local-first, plan-first, multi-agent, and programmable software-engineering runtime.**
 
 *Not an assistant. A runtime.* Forge brings its own scheduler, sandbox,
 permission system, state machine, agentic loop, memory layers, and
@@ -42,7 +42,7 @@ is inspectable, replayable, and yours.
 
 ## At a glance
 
-Forge is a local-first, multi-agent, programmable software-engineering runtime. Unlike Claude Code or OpenAI Codex, Forge is local-first infrastructure, not a hosted assistant. It brings its own scheduler, sandbox, permission system, state machine, agentic loop, memory layers, and plugin ecosystem. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
+Forge is a local-first, plan-first, multi-agent, and programmable software-engineering runtime. Unlike Claude Code or OpenAI Codex, Forge is local-first infrastructure, not a hosted assistant. It brings its own scheduler, sandbox, permission system, state machine, agentic loop, memory layers, and plugin ecosystem. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
 
 <div align="center">
 

@@ -80,7 +80,7 @@ const RULES: KeywordRule[] = [
     weight: 3,
   },
   {
-    re: /\b(explain|understand|analy[sz]e|describe|what does|why does)\b/i,
+    re: /\b(explain|understand|analy[sz]e|describe|summari[sz]e|summary|audit|review|what does|why does|how does)\b/i,
     type: 'analysis',
     weight: 2,
   },
