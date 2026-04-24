@@ -44,6 +44,11 @@ jobs:
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - run: npm rebuild better-sqlite3
       - run: npm run build
       - run: npx vitest run
@@ -85,6 +90,11 @@ jobs:
         run: |
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
@@ -213,6 +223,11 @@ jobs:
         run: |
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }

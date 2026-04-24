@@ -46,6 +46,15 @@ jobs:
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
+          # npm/cli#4828: even when `npm ci` succeeds, platform-specific
+          # rollup optionalDependencies can be silently skipped on Linux
+          # runners if the lockfile was generated on macOS. Probe and
+          # self-heal if the native binding is missing.
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Prettier --check
         run: npx prettier --check 'src/**/*.ts' 'test/**/*.ts'
 
@@ -76,6 +85,11 @@ jobs:
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: ESLint
         run: npx eslint 'src/**/*.ts' --max-warnings=100
 
@@ -103,6 +117,11 @@ jobs:
           # to regenerate the lockfile on every contributor's machine.
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
@@ -138,6 +157,11 @@ jobs:
           # to regenerate the lockfile on every contributor's machine.
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
@@ -182,6 +206,11 @@ jobs:
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Rebuild native bindings (better-sqlite3 prebuild)
         run: npm rebuild better-sqlite3
       - name: vitest --coverage
@@ -220,6 +249,11 @@ jobs:
           # to regenerate the lockfile on every contributor's machine.
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
@@ -290,6 +324,11 @@ jobs:
           # to regenerate the lockfile on every contributor's machine.
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
             rm -rf node_modules package-lock.json
             npm install --ignore-scripts --no-audit --no-fund
           }
