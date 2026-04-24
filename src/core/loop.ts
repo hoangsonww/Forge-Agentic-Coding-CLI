@@ -323,7 +323,11 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
     // ---------- APPROVAL ----------
     let decision = await confirmPlan(plan, options.autoApprove ?? false, current.id);
     while (decision === 'edit') {
-      plan = await editPlanInEditor(plan);
+      // Prefer the host's own editor if it implements one (UI uses an
+      // inline modal — no `$EDITOR` available). Fall back to the terminal
+      // editor for CLI.
+      const host = currentHost();
+      plan = host?.editPlan ? await host.editPlan(plan, current.id) : await editPlanInEditor(plan);
       current.plan = plan;
       saveTask(options.projectRoot, current);
       decision = await confirmPlan(plan, false, current.id);
@@ -621,7 +625,13 @@ export const runAgenticLoop = async (task: Task, options: LoopOptions): Promise<
     current = transitionTask(options.projectRoot, current.id, 'completed', {
       result: finalResult,
     });
-    event('TASK_COMPLETED', finalResult.summary, { files: finalResult.filesChanged });
+    // Short event message; the full summary lives in `task.result` and any
+    // narrator stream already rendered it. Emitting the whole summary as
+    // the event `message` caused the UI to render it again as a log line.
+    event('TASK_COMPLETED', 'Task completed', {
+      files: finalResult.filesChanged,
+      summary: finalResult.summary,
+    });
     session({ type: 'result', content: finalResult, timestamp: new Date().toISOString() });
     // Learning: reinforce the successful pattern (intent + scope).
     if (cfg.memory.learningEnabled && current.profile) {

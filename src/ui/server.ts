@@ -9,6 +9,7 @@
  */
 import * as http from 'http';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { URL } from 'url';
 import { WebSocketServer } from 'ws';
@@ -172,6 +173,56 @@ const router = async (
     return sendJson(res, 200, listProjects());
   }
 
+  // Directory browser for the task-view / run-form dir picker. Returns the
+  // resolved absolute path plus its immediate subdirectories. Confined to
+  // the user's home directory + common dev roots; anything outside is
+  // refused so the UI can't be used to enumerate system directories.
+  if (p === '/api/dir' && req.method === 'GET') {
+    try {
+      const homeDir = os.homedir();
+      const raw = u.searchParams.get('path') ?? homeDir;
+      // Expand a bare tilde or `~/...` the same way the task runner does.
+      let target = raw;
+      if (target === '~') target = homeDir;
+      else if (target.startsWith('~/') || target.startsWith('~' + path.sep)) {
+        target = path.join(homeDir, target.slice(2));
+      }
+      const abs = path.resolve(target);
+      // Containment: only allow paths under $HOME. Users who genuinely need
+      // a non-home workspace can still paste an absolute path into the
+      // input itself — the picker just doesn't expose it.
+      const homeReal = fs.realpathSync(homeDir);
+      const absReal = fs.existsSync(abs) ? fs.realpathSync(abs) : abs;
+      const rel = path.relative(homeReal, absReal);
+      if (rel.startsWith('..') || path.isAbsolute(rel)) {
+        return sendJson(res, 403, { error: 'path outside $HOME', path: absReal });
+      }
+      let entries: Array<{ name: string; isDir: boolean }> = [];
+      try {
+        entries = fs
+          .readdirSync(absReal, { withFileTypes: true })
+          .filter((d) => !d.name.startsWith('.'))
+          .map((d) => ({ name: d.name, isDir: d.isDirectory() }))
+          .filter((e) => e.isDir)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .slice(0, 500);
+      } catch {
+        /* unreadable dir — return empty list, frontend shows "no entries" */
+      }
+      const parent = path.dirname(absReal);
+      const parentAllowed = !path.relative(homeReal, parent).startsWith('..');
+      return sendJson(res, 200, {
+        path: absReal,
+        parent: parentAllowed && parent !== absReal ? parent : null,
+        home: homeReal,
+        entries,
+      });
+    } catch (e) {
+      const { status, body } = errorBody(e);
+      return sendJson(res, status, body);
+    }
+  }
+
   if (p === '/api/config' && req.method === 'GET') {
     return sendJson(res, 200, loadGlobalConfig());
   }
@@ -241,7 +292,7 @@ const router = async (
     return sendJson(res, 200, { active: listActive(), pending: listPendingPrompts() });
   }
 
-  const cancelMatch = /^\/api\/tasks\/([a-f0-9]+)\/cancel$/.exec(p);
+  const cancelMatch = /^\/api\/tasks\/([a-z0-9_]+)\/cancel$/.exec(p);
   if (cancelMatch && req.method === 'POST') {
     const ok = cancelTask(cancelMatch[1]);
     return sendJson(res, ok ? 200 : 404, { cancelled: ok });
@@ -700,7 +751,7 @@ export const startUiServer = (
 
     wss.on('connection', (socket, req) => {
       const u = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
-      const taskMatch = /^\/ws\/tasks\/([a-f0-9]+)$/.exec(u.pathname);
+      const taskMatch = /^\/ws\/tasks\/([a-z0-9_]+)$/.exec(u.pathname);
       if (taskMatch) {
         const ok = subscribe(taskMatch[1], socket as unknown as import('ws').WebSocket);
         if (!ok) {

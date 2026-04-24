@@ -25,6 +25,15 @@ export interface OrchestratorInput {
   planOnly?: boolean;
   title?: string;
   description?: string;
+  /**
+   * Caller-provided task id. Used by the UI task-runner so its `active`
+   * map key matches the id the orchestrator emits on events + deltas —
+   * without this the per-task WebSocket bridge silently drops every
+   * `model.delta` because the runner-side id (crypto hex) and the
+   * orchestrator-side id (`task_<hex>`) are unrelated strings. REPL/CLI
+   * don't set it because they don't bridge events over a socket.
+   */
+  taskId?: string;
 }
 
 export const orchestrateRun = async (params: OrchestratorInput) => {
@@ -41,7 +50,7 @@ export const orchestrateRun = async (params: OrchestratorInput) => {
   const title = params.title ?? params.input.slice(0, 80);
   const now = new Date().toISOString();
   const task: Task = {
-    id: newTaskId(),
+    id: params.taskId ?? newTaskId(),
     projectId: pid,
     title,
     description: params.description ?? params.input,

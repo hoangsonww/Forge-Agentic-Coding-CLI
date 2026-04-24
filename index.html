@@ -128,6 +128,7 @@
     <div class="toc">
       <a href="#overview"><span class="n">01</span>Overview</a>
       <a href="#features"><span class="n">02</span>Features</a>
+      <a href="#demos"><span class="n">▶</span>Live demos</a>
       <a href="#loop"><span class="n">03</span>Agentic loop</a>
       <a href="#state"><span class="n">04</span>State machine</a>
       <a href="#executor"><span class="n">05</span>Executor &amp; validation</a>
@@ -210,6 +211,73 @@
       <div class="card"><div class="num">/ 16</div><h3>Router reliability</h3><p>Per-provider rate limit, circuit breaker, prompt cache, USD cost ledger. 1.5 s provider probes.</p><div class="tags"><span>breaker</span></div></div>
       <div class="card"><div class="num">/ 17</div><h3>Release signing</h3><p>Manifest signed with Ed25519. SHA-256 per artefact. npm publishes with provenance.</p><div class="tags"><span>Ed25519</span><span>provenance</span></div></div>
       <div class="card"><div class="num">/ 18</div><h3>Multi-arch containers</h3><p>Single Dockerfile serves CLI + UI. Non-root, HEALTHCHECK, OCI labels, ~355 MB.</p><div class="tags"><span>amd64</span><span>arm64</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     LIVE DEMOS
+     ============================================================ -->
+<section id="demos">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">Live demos</span>
+      <h2>See it <em>running</em>.</h2>
+      <p>Screen captures of each Forge surface — the interactive REPL, the one-shot CLI, and the web dashboard — all driving the same runtime.</p>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom: 32px;">
+      <div class="card">
+        <div class="num">▶ REPL</div>
+        <h3>Interactive session</h3>
+        <p>Multi-turn prompts with slash-command autocomplete, status line, digit shortcuts for prompts, streamed markdown rendering, and live file-change tracking.</p>
+        <div class="tags"><span>stream</span><span>slash</span><span>autocomplete</span></div>
+      </div>
+      <div class="card">
+        <div class="num">▶ CLI</div>
+        <h3>One-shot runs</h3>
+        <p><code>forge run "…"</code> launches a full classify → plan → approve → execute → verify pipeline in the terminal with a progress rail and completion block.</p>
+        <div class="tags"><span>--yes</span><span>--plan-only</span><span>ci-friendly</span></div>
+      </div>
+      <div class="card">
+        <div class="num">▶ UI</div>
+        <h3>Web dashboard</h3>
+        <p>Live WebSocket stream of plan approval, permission prompts, model deltas, and task results. Historical tasks replay from disk; follow-ups thread the conversation.</p>
+        <div class="tags"><span>WebSocket</span><span>stream</span><span>history</span></div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom: 32px;">
+      <div class="card">
+        <h3>What every demo is actually showing</h3>
+        <p>The same <code>src/core/orchestrator.ts</code> runtime drives all three surfaces. Any task you run in one surface is a real row in the SQLite index — pickable from another surface, visible in <code>forge sessions</code>, cancellable from the dashboard.</p>
+        <p>Deltas stream token-by-token from the provider (<code>emitDelta</code> → event bus → WebSocket / REPL progress rail). Markdown reflows in place so headings, fences, and lists form up live instead of dumping at the end.</p>
+      </div>
+      <div class="card">
+        <h3>Run these for yourself</h3>
+        <p class="small" style="margin:0 0 6px;opacity:.8">REPL</p>
+        <pre style="margin:0 0 12px"><code>forge</code></pre>
+        <p class="small" style="margin:0 0 6px;opacity:.8">One-shot</p>
+        <pre style="margin:0 0 12px"><code>forge run "summarize src/core/loop.ts"</code></pre>
+        <p class="small" style="margin:0 0 6px;opacity:.8">Dashboard</p>
+        <pre style="margin:0"><code>forge ui start   # http://127.0.0.1:7823</code></pre>
+      </div>
+    </div>
+
+    <div class="code-win" style="margin: 0 0 32px; display: flex; flex-direction: column;">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">REPL demo · forge</span></div>
+      <video src="images/REPL.mp4" poster="images/repl.png" controls muted playsinline preload="metadata"
+             style="display:block;width:100%;max-height:70vh;height:auto;object-fit:contain;background:#000"></video>
+    </div>
+    <div class="code-win" style="margin: 0 0 32px; display: flex; flex-direction: column;">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">CLI demo · forge run</span></div>
+      <video src="images/CLI.mp4" poster="images/cli.png" controls muted playsinline preload="metadata"
+             style="display:block;width:100%;max-height:70vh;height:auto;object-fit:contain;background:#000"></video>
+    </div>
+    <div class="code-win" style="margin: 0; display: flex; flex-direction: column;">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">Web dashboard demo · forge ui start</span></div>
+      <video src="images/UI.mp4" poster="images/ui.png" controls muted playsinline preload="metadata"
+             style="display:block;width:100%;height:auto;background:#000"></video>
     </div>
   </div>
 </section>

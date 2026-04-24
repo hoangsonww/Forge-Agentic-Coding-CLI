@@ -19,6 +19,14 @@ export interface InteractiveHost {
   /** Returns 'approve' (run the plan), 'cancel' (stop the task), 'edit' (open an editor — only CLI implements this). */
   confirmPlan(plan: Plan, taskId: string): Promise<'approve' | 'cancel' | 'edit'>;
 
+  /**
+   * Optional host-specific plan editor. When present, the loop calls this
+   * instead of the default `$EDITOR` flow — the UI uses it to surface an
+   * inline editor over the WebSocket so users can tweak the JSON without a
+   * terminal. Returns the edited plan (possibly unchanged).
+   */
+  editPlan?(plan: Plan, taskId: string): Promise<Plan>;
+
   /** Decide whether a tool action is permitted. Honor flags (allow-files, strict, non-interactive, etc.). */
   requestPermission(req: PermissionRequest, flags: PermissionFlags): Promise<PermissionDecision>;
 

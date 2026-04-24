@@ -86,7 +86,7 @@
 
   const isBlockBoundary = (line) => {
     if (!line.trim()) return true;
-    if (/^```+|^~~~+/.test(line)) return true;
+    if (/^\s*(?:```+|~~~+)/.test(line)) return true;
     if (/^#{1,6}\s/.test(line)) return true;
     if (BLOCKQUOTE_RE.test(line)) return true;
     if (/^\s*[-*+]\s+/.test(line)) return true;
@@ -95,10 +95,67 @@
     return false;
   };
 
+  // LLMs routinely emit `1. 1. 1.` for every item in a numbered list,
+  // trusting the renderer to auto-number. Our renderer strips the marker
+  // and emits `<ol>`, but if the items are separated by blank lines or
+  // sub-bullets, each run ends up as its own single-item `<ol>` — and the
+  // browser starts every one at 1. Pre-pass: per-indent counter that
+  // rewrites `1.` to sequential numbers whenever we're already past the
+  // first item at that indent. Mirrors src/cli/markdown.ts#renumberOrderedLists.
+  const renumberOrderedLists = (input) => {
+    const lines = input.split('\n');
+    const counters = new Map();
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^\s*(?:#{1,6}\s|```+|~~~+)/.test(line)) {
+        counters.clear();
+        continue;
+      }
+      const m = /^(\s*)(\d+)\.\s(.*)$/.exec(line);
+      if (!m) continue;
+      const indent = m[1].length;
+      const num = parseInt(m[2], 10);
+      const body = m[3];
+      const prev = counters.get(indent) || 0;
+      if (num === 1 && prev >= 1) {
+        const next = prev + 1;
+        counters.set(indent, next);
+        lines[i] = m[1] + next + '. ' + body;
+      } else {
+        counters.set(indent, num);
+      }
+    }
+    return lines.join('\n');
+  };
+
+  // Smaller LLMs (and any model whose output gets re-flowed on its way to
+  // us) emit triple-backtick fences inline:
+  //    ```javascript const numbers = [1,2,3]; numbers.forEach(...); ```
+  // The block parser's fence rule requires the opener to sit on its own
+  // line, so without preprocessing we fall through to the paragraph branch,
+  // and renderInline's `[^`\n]+` span then matches the body between two of
+  // the backticks — leaving a stray pair of backticks floating in the
+  // output. Rewriting inline fences onto their own lines (open / body /
+  // close) fixes both issues. Mirrors src/cli/markdown.ts#normaliseInlineFences.
+  const normaliseInlineFences = (input) => {
+    return input.replace(/```([\w-]*)[ \t]+([^\n]*?)[ \t]*```/g, (_m, lang, body) => {
+      const trimmed = String(body).replace(/\s+$/, '');
+      return '\n```' + lang + '\n' + trimmed + '\n```\n';
+    });
+  };
+
   /** Convert markdown input to a safe HTML fragment string. */
   const mdToHtml = (raw) => {
     if (raw == null || raw === '') return '';
-    const escaped = esc(raw).replace(/\r\n?/g, '\n');
+    // Normalize inline fences BEFORE escaping — the regex matches literal
+    // backticks, not `&#96;`, and we want the rewritten newlines to survive
+    // into the line-based block parser. Renumber before splitting so the
+    // ordered-list loop below sees sequential numbers (and honors them via
+    // `<ol start="N">`).
+    const prepped = renumberOrderedLists(
+      normaliseInlineFences(String(raw).replace(/\r\n?/g, '\n')),
+    );
+    const escaped = esc(prepped);
     const lines = escaped.split('\n');
     const out = [];
     let i = 0;
@@ -107,17 +164,27 @@
       const line = lines[i];
 
       // Fenced code (```), optional language tag.
-      const fence = /^(```+|~~~+)\s*([\w-]*)\s*$/.exec(line);
+      //
+      // LLMs routinely nest code blocks inside bullet / numbered lists so the
+      // fence arrives with 2–6 spaces of leading indent. Match liberally on
+      // whitespace prefix, and strip the same prefix from body lines so the
+      // code doesn't inherit the list indent as visible leading whitespace.
+      const fence = /^(\s*)(```+|~~~+)\s*([\w-]*)\s*$/.exec(line);
       if (fence) {
-        const closer = fence[1].replace(/\s/g, '').charAt(0);
+        const openerIndent = fence[1].length;
+        const closer = fence[2].charAt(0);
+        const closerRe = new RegExp('^\\s*' + closer + '{3,}\\s*$');
         const buf = [];
         i++;
-        while (i < lines.length && !new RegExp('^' + closer + '{3,}\\s*$').test(lines[i])) {
-          buf.push(lines[i]);
+        while (i < lines.length && !closerRe.test(lines[i])) {
+          const raw = lines[i];
+          const leading = (raw.match(/^[ \t]*/) || [''])[0].length;
+          const strip = Math.min(openerIndent, leading);
+          buf.push(raw.slice(strip));
           i++;
         }
         if (i < lines.length) i++;
-        const langAttr = fence[2] ? ' data-lang="' + esc(fence[2]) + '"' : '';
+        const langAttr = fence[3] ? ' data-lang="' + esc(fence[3]) + '"' : '';
         out.push(
           '<pre' + langAttr + '><code>' + buf.join('\n') + '</code></pre>',
         );
@@ -155,14 +222,40 @@
         continue;
       }
 
-      // Ordered list
-      if (/^\s*\d+\.\s+/.test(line)) {
+      // Ordered list. LLMs routinely separate items with blank lines —
+      // without the peek-past-blanks lookahead, each item became its own
+      // single-entry `<ol>` and every one rendered as "1." since browsers
+      // auto-number each `<ol>` from 1. Fix: consume blank lines between
+      // items as long as the next non-blank line is still a list item,
+      // and emit `start="N"` so the first number from source is honored.
+      const olHead = /^\s*(\d+)\.\s+/.exec(line);
+      if (olHead) {
+        const firstNum = parseInt(olHead[1], 10);
         const items = [];
-        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
-          items.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
-          i++;
+        while (i < lines.length) {
+          const cur = lines[i];
+          if (/^\s*\d+\.\s+/.test(cur)) {
+            items.push(cur.replace(/^\s*\d+\.\s+/, ''));
+            i++;
+            continue;
+          }
+          if (!cur.trim()) {
+            // Peek ahead past blank lines to see if more items follow.
+            let j = i + 1;
+            while (j < lines.length && !lines[j].trim()) j++;
+            if (j < lines.length && /^\s*\d+\.\s+/.test(lines[j])) {
+              i = j;
+              continue;
+            }
+          }
+          break;
         }
-        out.push('<ol>' + items.map((it) => '<li>' + renderInline(it) + '</li>').join('') + '</ol>');
+        const startAttr = firstNum > 1 ? ` start="${firstNum}"` : '';
+        out.push(
+          '<ol' + startAttr + '>' +
+          items.map((it) => '<li>' + renderInline(it) + '</li>').join('') +
+          '</ol>',
+        );
         continue;
       }
 

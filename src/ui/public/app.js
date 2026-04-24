@@ -391,7 +391,7 @@ views.dashboard = async () => {
               <th data-sort="text" class="col-wrap">title</th>
               <th data-sort="date" data-default-dir="desc">updated</th>
             </tr></thead>
-            <tbody>${tasks.map((t) => `<tr>
+            <tbody>${tasks.map((t) => `<tr class="row-clickable" data-open-task="${esc(t.id)}" title="Open task">
               <td><code>${esc(t.id)}</code></td>
               <td>${badge(t.status)}</td>
               <td>${esc(t.mode)}</td>
@@ -435,6 +435,12 @@ views.dashboard = async () => {
           <input class="hero-input" id="hero-input" placeholder="e.g. add a /health endpoint to the Express server" autocomplete="off" />
           <button class="hero-submit" id="hero-go" aria-label="Run">${icon('arrow')}</button>
         </div>
+        <div class="hero-project">
+          <span class="hero-project-label">in</span>
+          <input type="text" id="hero-cwd" class="hero-cwd" list="hero-cwd-list" placeholder="project path · blank = server cwd" value="${esc(status.cwd ?? '')}">
+          <datalist id="hero-cwd-list"></datalist>
+          <button type="button" class="btn btn-ghost" id="hero-browse">Browse…</button>
+        </div>
         <div class="hero-chips">${chipsHtml}</div>
         <div class="hero-hint"><kbd>⏎</kbd> run · <kbd>⇧ ⏎</kbd> open advanced form</div>
       </section>
@@ -452,8 +458,25 @@ views.dashboard = async () => {
         </div>
         <div class="stat">
           <div class="label">Spend</div>
-          <div class="value">$${Number(cost.totals?.usd ?? 0).toFixed(3)}</div>
-          <div class="sub">${Number(cost.totals?.tokens ?? 0).toLocaleString()} tokens</div>
+          ${(() => {
+            const usd = Number(cost.totals?.usd ?? 0);
+            const toks = Number(cost.totals?.tokens ?? 0);
+            // Local providers (Ollama, llama.cpp) have no per-token pricing,
+            // so usd is always 0 even when tokens flow. Showing $0.000 in
+            // the headline makes the card look broken. When there is no
+            // billable cost but tokens are being used, promote the token
+            // count to the headline and annotate as "local · free".
+            if (usd > 0) {
+              return `<div class="value">$${usd.toFixed(3)}</div>
+          <div class="sub">${toks.toLocaleString()} tokens</div>`;
+            }
+            if (toks > 0) {
+              return `<div class="value" style="font-size:22px">${toks.toLocaleString()}</div>
+          <div class="sub">tokens · local · free</div>`;
+            }
+            return `<div class="value">$0.000</div>
+          <div class="sub">no tokens yet</div>`;
+          })()}
         </div>
         <div class="stat">
           <div class="label">Provider</div>
@@ -474,17 +497,34 @@ views.dashboard = async () => {
     `);
 
     const input = document.getElementById('hero-input');
+    const cwdInput = document.getElementById('hero-cwd');
     const go = async (prompt = null) => {
       const p = (prompt ?? input.value).trim();
       if (!p) return;
       pushPromptHistory(p);
+      const cwd = (cwdInput?.value || '').trim() || undefined;
       try {
-        const { taskId } = await apiPost('/api/tasks/run', { prompt: p, autoApprove: false });
+        const { taskId } = await apiPost('/api/tasks/run', { prompt: p, autoApprove: false, cwd });
         toast('Task started', 'ok');
         openTask(taskId);
       } catch (e) { toast(String(e), 'err'); }
     };
     document.getElementById('hero-go').addEventListener('click', () => go());
+    // Known-projects autocomplete + Browse modal for the hero cwd input so
+    // the user can pick a dir directly from the Dashboard before running
+    // their first task, instead of having to dig into the New-task form.
+    api('/api/projects').then((ps) => {
+      const dl = document.getElementById('hero-cwd-list');
+      if (!dl) return;
+      dl.innerHTML = (ps || [])
+        .map((p) => `<option value="${esc(p.path)}">${esc(p.name || p.path)}</option>`)
+        .join('');
+    }).catch(() => {});
+    document.getElementById('hero-browse')?.addEventListener('click', () => {
+      openDirPicker((picked) => {
+        if (cwdInput) cwdInput.value = picked;
+      });
+    });
     attachPromptHistory(input);
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); }
@@ -876,7 +916,11 @@ views.run = async () => {
         </select>
       </div>
       <div class="form-row"><label>Project path</label>
-        <input type="text" id="run-cwd" value="${esc(status.cwd ?? '')}" placeholder="/absolute/path (blank = current)">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="run-cwd" list="run-cwd-list" value="${esc(status.cwd ?? '')}" placeholder="/absolute/path · start typing to search · blank = current" style="flex:1">
+          <datalist id="run-cwd-list"></datalist>
+          <button type="button" class="btn btn-ghost" id="run-browse" style="flex:0 0 auto">Browse…</button>
+        </div>
       </div>
       <div class="form-row"><label>Permissions</label>
         <div class="grid-checkboxes">
@@ -927,6 +971,22 @@ views.run = async () => {
   });
   document.getElementById('run-reset').addEventListener('click', () => setView('run'));
   document.getElementById('run-prompt').focus();
+  // Populate the project datalist + wire the Browse button for the dir
+  // picker. Known projects come from Forge's project index so the user can
+  // jump to repos they've run tasks against before without retyping a path.
+  api('/api/projects').then((ps) => {
+    const dl = document.getElementById('run-cwd-list');
+    if (!dl) return;
+    dl.innerHTML = (ps || [])
+      .map((p) => `<option value="${esc(p.path)}">${esc(p.name || p.path)}</option>`)
+      .join('');
+  }).catch(() => {});
+  document.getElementById('run-browse')?.addEventListener('click', () => {
+    openDirPicker((picked) => {
+      const el = document.getElementById('run-cwd');
+      if (el) el.value = picked;
+    });
+  });
 };
 
 // ---------- Task detail ----------
@@ -957,10 +1017,16 @@ const openTask = (taskId) => {
       <div class="section-body"><div style="padding:12px 18px;display:flex;flex-direction:column;gap:10px">
         <textarea id="followup-input" class="fu-input" rows="2"
           placeholder="Ask a follow-up, or start a new task in the same conversation… (Enter to send · Shift+Enter for newline)"></textarea>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:11.5px;color:var(--dim);flex:0 0 auto">Project</label>
+          <input type="text" id="followup-cwd" class="fu-cwd" list="followup-cwd-list" placeholder="/absolute/path · start typing to search · blank = server cwd">
+          <datalist id="followup-cwd-list"></datalist>
+          <button type="button" class="btn btn-ghost" id="followup-browse" style="flex:0 0 auto;padding:6px 10px;font-size:12px">Browse…</button>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)">
-              <input type="checkbox" id="followup-auto" checked> auto-approve
+              <input type="checkbox" id="followup-auto"> auto-approve
             </label>
             <span style="font-size:11.5px;color:var(--dim)" id="followup-turns">0 prior turns</span>
           </div>
@@ -969,6 +1035,36 @@ const openTask = (taskId) => {
       </div></div>
     </section>
   `);
+  // Pre-populate the project path from /api/status so the user can see where
+  // tasks will run and override before sending. Without this the server-side
+  // cwd is whatever the `forge ui start` process inherited and the user has
+  // no visibility, which led to paths being joined against the wrong root
+  // (e.g. "~/Forge-Agentic-Coding-CLI/src/..." resolved under the real cwd).
+  api('/api/status').then((s) => {
+    const el = document.getElementById('followup-cwd');
+    if (el && s?.cwd) el.value = s.cwd;
+  }).catch(() => {});
+
+  // Populate the datalist with recent/known projects. Users can either type
+  // to autocomplete, pick from the dropdown, or click Browse for a full
+  // server-side directory picker.
+  api('/api/projects').then((ps) => {
+    const dl = document.getElementById('followup-cwd-list');
+    if (!dl) return;
+    dl.innerHTML = (ps || [])
+      .map((p) => `<option value="${esc(p.path)}">${esc(p.name || p.path)}</option>`)
+      .join('');
+  }).catch(() => {});
+
+  // Browse modal — walks directories under $HOME and lets the user click a
+  // folder to set it as the project. Server enforces the $HOME containment
+  // rule so the picker can't be used as a system enumerator.
+  document.getElementById('followup-browse')?.addEventListener('click', () => {
+    openDirPicker((picked) => {
+      const el = document.getElementById('followup-cwd');
+      if (el) el.value = picked;
+    });
+  });
 
   const stream = document.getElementById('task-stream');
   const planSec = document.getElementById('task-plan');
@@ -1003,39 +1099,150 @@ const openTask = (taskId) => {
     if (el) el.textContent = `${convoTurns.filter((t) => t.summary).length} prior turn${convoTurns.filter((t) => t.summary).length === 1 ? '' : 's'}`;
   };
 
+  // Stream flows earliest → latest top-to-bottom (chat-style). Each line gets
+  // a right-aligned local timestamp. Auto-scroll sticks to the bottom as long
+  // as the user hasn't deliberately scrolled up to read history.
+  const isAtBottom = () => {
+    const gap = stream.scrollHeight - stream.scrollTop - stream.clientHeight;
+    return gap < 48;
+  };
+  const scrollToBottom = () => {
+    stream.scrollTop = stream.scrollHeight;
+  };
+  const tsNow = () => {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+  };
   const push = (line) => {
     const el = document.createElement('div');
     el.className = line.cls;
-    el.innerHTML = line.html;
-    stream.insertBefore(el, stream.firstChild);
-    while (stream.childElementCount > 300) stream.lastChild?.remove();
+    // Wrap message in a flex row so the right-aligned timestamp never
+    // collides with the body. `.log-body` is a div (not span) because
+    // callers pass block-level markdown such as `<pre>` and `<div
+    // class="log-md">` — a span around block content is invalid HTML and
+    // triggered subtle inline-baseline artifacts between code lines in
+    // some browsers.
+    el.innerHTML =
+      `<div class="log-body">${line.html}</div>` +
+      `<span class="log-ts">${tsNow()}</span>`;
+    const stick = isAtBottom();
+    stream.appendChild(el);
+    while (stream.childElementCount > 300) stream.firstChild?.remove();
+    if (stick) scrollToBottom();
+    return el;
   };
 
-  // Streaming model output is rendered into a single rolling node so tokens
-  // append smoothly instead of pushing dozens of one-char log lines. A new
-  // node is created whenever a `done` frame closes the prior stream or when a
-  // new provider/model shows up.
+  // Markdown renderer reused by the chat view. Falls back to plain-text
+  // escaping when the markdown helper script hasn't loaded for some reason.
+  const md = (s) =>
+    window.forgeMd && window.forgeMd.mdToHtml ? window.forgeMd.mdToHtml(s || '') : esc(s || '');
+
+  // Live "working" spinner lives between STARTED and DONE. REPL/CLI already
+  // show an ora spinner during this phase; without something equivalent in
+  // the UI the task just sits on "STARTED" for ~2 minutes. The spinner goes
+  // away the moment streaming starts, DONE/FAILED/ERROR arrives, or the
+  // task is cancelled.
+  let workingEl = null;
+  const showWorking = (phase) => {
+    if (workingEl) {
+      const ph = workingEl.querySelector('.working-phase');
+      if (ph) ph.textContent = phase;
+      return;
+    }
+    workingEl = document.createElement('div');
+    workingEl.className = 'log-line log-line-working';
+    workingEl.innerHTML =
+      `<span class="log-body"><span class="log-type">WORKING</span> · <span class="working-spinner">⠋</span> <span class="working-phase">${esc(phase)}</span></span>` +
+      `<span class="log-ts">${tsNow()}</span>`;
+    const stick = isAtBottom();
+    stream.appendChild(workingEl);
+    if (stick) scrollToBottom();
+    // Tiny inline spinner animation — swap the braille glyph every 80ms. Kept
+    // in-element so one interval per spawned spinner, cleared on hide().
+    const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    let i = 0;
+    const sp = workingEl.querySelector('.working-spinner');
+    workingEl._timer = setInterval(() => {
+      if (!workingEl || !sp) return;
+      i = (i + 1) % frames.length;
+      sp.textContent = frames[i];
+    }, 80);
+  };
+  const hideWorking = () => {
+    if (!workingEl) return;
+    if (workingEl._timer) clearInterval(workingEl._timer);
+    workingEl.remove();
+    workingEl = null;
+  };
+
+  // Streaming model output: the REPL/CLI render accumulated markdown live
+  // as tokens arrive (headings, fences, lists all form up in place). The UI
+  // now does the same — each delta appends to a per-stream buffer, and a
+  // requestAnimationFrame-coalesced re-render pipes the buffer through the
+  // same `mdToHtml` the rest of the UI uses. One rAF tick per frame caps
+  // work at ~60 re-renders/sec even if tokens arrive faster.
   let deltaEl = null;
   let deltaKey = '';
+  let deltaBuf = '';
+  let deltaRaf = 0;
+  // Track whether any delta was rendered during this task. If yes, the
+  // final `task.result` frame shouldn't repeat the full summary as a DONE
+  // block — the user already read it live.
+  let deltaStreamed = false;
+  const flushDeltaRender = () => {
+    deltaRaf = 0;
+    if (!deltaEl) return;
+    const span = deltaEl.querySelector('.stream-text');
+    if (!span) return;
+    const stick = isAtBottom();
+    // Render the whole accumulator so mid-stream markdown (headings,
+    // partially-closed fences, list sequences) reflows cleanly.
+    span.innerHTML = md(deltaBuf);
+    if (stick) scrollToBottom();
+  };
   const appendDelta = (msg) => {
     const key = `${msg.provider || ''}/${msg.model || ''}/${msg.role || ''}`;
     if (msg.done) {
+      // Final render pass so the closing tokens (last list items, closing
+      // code fence, etc.) are reflected even if the last rAF tick hadn't
+      // fired yet.
+      if (deltaRaf) cancelAnimationFrame(deltaRaf);
+      flushDeltaRender();
       if (deltaEl) deltaEl.classList.add('log-line-done');
       deltaEl = null;
       deltaKey = '';
+      deltaBuf = '';
       return;
     }
     if (!msg.text) return;
     if (!deltaEl || deltaKey !== key) {
       deltaEl = document.createElement('div');
       deltaEl.className = 'log-line log-line-stream';
-      deltaEl.innerHTML = `<span class="log-type">${esc(msg.model || 'model')}</span> · <span class="stream-text"></span>`;
-      stream.insertBefore(deltaEl, stream.firstChild);
-      while (stream.childElementCount > 300) stream.lastChild?.remove();
+      // `.stream-text` needs to be block-level because the streamed
+      // markdown may include `<pre>` / `<ul>` / `<h*>` — wrapping a block
+      // like `<pre>` in an inline `<span>` made browsers render subtle
+      // inline-baseline artifacts between code lines (the "weird lines"
+      // users saw). Use a div container for the body with an inline head
+      // row for the model label; the markdown target is its own div.
+      deltaEl.innerHTML =
+        `<div class="log-body"><div class="stream-head"><span class="log-type">${esc(msg.model || 'model')}</span></div><div class="stream-text md"></div></div>` +
+        `<span class="log-ts">${tsNow()}</span>`;
+      const stick = isAtBottom();
+      stream.appendChild(deltaEl);
+      while (stream.childElementCount > 300) stream.firstChild?.remove();
+      if (stick) scrollToBottom();
       deltaKey = key;
+      deltaBuf = '';
     }
-    const span = deltaEl.querySelector('.stream-text');
-    if (span) span.append(msg.text);
+    deltaBuf += msg.text;
+    deltaStreamed = true;
+    // Coalesce re-renders. Multiple deltas within the same frame collapse
+    // into one innerHTML assignment so fast providers (local Ollama can
+    // emit 100+ tokens/sec) don't thrash the layout.
+    if (!deltaRaf) deltaRaf = requestAnimationFrame(flushDeltaRender);
   };
 
   const renderPlan = (plan) => {
@@ -1062,12 +1269,23 @@ const openTask = (taskId) => {
         <div class="plan-viewer">${steps}</div>
         <div style="padding:12px 18px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border)">
           <button class="btn btn-ghost" data-plan-action="cancel">Reject</button>
+          <button class="btn btn-secondary" data-plan-action="edit">Edit…</button>
           <button class="btn btn-primary" data-plan-action="approve">Approve & run</button>
         </div>
       </div>`;
     planSec.querySelectorAll('[data-plan-action]').forEach((b) =>
       b.addEventListener('click', async () => {
         if (!currentPlanPromptId) return;
+        if (b.dataset.planAction === 'edit') {
+          // Show the inline JSON editor. When the user saves, we'll
+          // receive a fresh `plan_edit` prompt from the server (because
+          // the loop re-calls confirmPlan after editPlan returns) — this
+          // click itself only needs to resolve the CURRENT approval
+          // prompt with value='edit'.
+          await apiPost('/api/prompts/respond', { promptId: currentPlanPromptId, value: 'edit' });
+          currentPlanPromptId = null;
+          return;
+        }
         await apiPost('/api/prompts/respond', { promptId: currentPlanPromptId, value: b.dataset.planAction });
         planSec.hidden = true;
         planSec.innerHTML = '';
@@ -1087,13 +1305,66 @@ const openTask = (taskId) => {
   // Attach a WebSocket to a given taskId; swaps the listener when a
   // follow-up turn spawns a new task. Returns the socket so we can close
   // it when swapping again.
+  // Replay a historical task's saved detail into the stream. The WS server
+  // only streams live/active tasks, so when the user opens a completed task
+  // from the Tasks / Dashboard tables we need to hydrate the view from the
+  // persisted JSON instead of leaving it blank with "disconnected". Safe to
+  // call at any point — `push` is idempotent per event, and we guard with a
+  // flag so a brief race where the WS opens + detail arrives doesn't
+  // double-render.
+  let hydrated = false;
+  const hydrateHistorical = async (id) => {
+    if (hydrated) return;
+    try {
+      const t = await api(`/api/tasks/${id}`);
+      if (!t || hydrated) return;
+      hydrated = true;
+      meta.textContent = `historical · ${String(t.status || 'done')}`;
+      push({ cls: 'log-line', html: `<span class="log-type">PROMPT</span> · ${esc((t.title || '').slice(0, 200))}` });
+      if (t.plan) renderPlan(t.plan);
+      const ok = t.result?.success !== false;
+      const summary = t.result?.summary || '';
+      if (summary) {
+        const multiline = summary.includes('\n');
+        push({
+          cls: `log-line ${ok ? '' : 'error'}`,
+          html: multiline
+            ? `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span><div class="log-md md">${md(summary)}</div>`
+            : `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span> · <span class="md md-inline">${md(summary)}</span>`,
+        });
+      }
+      for (const f of (t.result?.filesChanged || []).slice(0, 12)) {
+        push({ cls: 'log-line', html: `<span class="log-type">FILE</span> · <code>${esc(f)}</code>` });
+      }
+    } catch (e) {
+      // Task not found or error — show a one-line note so the page isn't
+      // silently empty.
+      push({ cls: 'log-line warning', html: `<span class="log-type">HISTORY</span> · unable to load task detail (${esc(String(e).slice(0, 120))})` });
+    }
+  };
+
   const attachWs = (id) => {
     if (taskConnections.has(id)) { try { taskConnections.get(id).close(); } catch {} }
     const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/tasks/${id}`;
     const ws = new WebSocket(url);
     taskConnections.set(id, ws);
-    ws.onopen = () => { meta.textContent = 'live · ' + id.slice(0, 8); };
-    ws.onclose = () => { meta.textContent = 'disconnected'; };
+    // If the WS hasn't opened within 800ms, assume this is a historical
+    // task (the server closes with 1008 'unknown task' almost instantly in
+    // that case) and hydrate from persisted state. 800ms is long enough
+    // that live tasks reliably OPEN first, short enough that the UX feels
+    // instant.
+    let openedOrErrored = false;
+    setTimeout(() => { if (!openedOrErrored && ws.readyState !== ws.OPEN) hydrateHistorical(id); }, 800);
+    ws.onopen = () => { openedOrErrored = true; meta.textContent = 'live · ' + id.slice(0, 8); };
+    ws.onclose = () => {
+      openedOrErrored = true;
+      // Close with code 1008 (policy violation) is how the server says
+      // "unknown task" for historical rows — treat that as a cue to load
+      // the detail view. For tasks that opened live and then closed, the
+      // stream already has content; leave the meta as "disconnected".
+      if (!hydrated) { hydrateHistorical(id); }
+      else { meta.textContent = 'disconnected'; }
+    };
     ws.onmessage = (e) => {
       let msg;
       try { msg = JSON.parse(e.data); } catch { return; }
@@ -1103,10 +1374,17 @@ const openTask = (taskId) => {
           cls: `log-line ${ev.severity ?? 'info'}`,
           html: `<time>${esc(fmtDate(ev.timestamp))}</time><span class="log-type">${esc(ev.type)}</span> · ${esc(ev.message)}`,
         });
+        // Keep the "working" spinner label in sync with the latest phase
+        // event so the user sees what Forge is doing (classify / plan /
+        // step_001 reading src/foo…) instead of a static "classifying
+        // request" label for the full run.
+        if (ev?.message) showWorking(ev.message.slice(0, 80));
       } else if (msg.kind === 'prompt') {
         if (msg.promptType === 'plan_approval') {
           currentPlanPromptId = msg.promptId;
           renderPlan(msg.plan);
+        } else if (msg.promptType === 'plan_edit') {
+          openPlanEditModal(msg.promptId, msg.plan);
         } else if (msg.promptType === 'permission') {
           openPermissionModal(msg);
         } else if (msg.promptType === 'user_input') {
@@ -1114,11 +1392,40 @@ const openTask = (taskId) => {
         }
       } else if (msg.kind === 'task.started') {
         push({ cls: 'log-line', html: `<span class="log-type">STARTED</span> · ${esc(msg.prompt.slice(0, 120))}` });
+        showWorking('classifying request…');
       } else if (msg.kind === 'task.result') {
+        hideWorking();
         const ok = msg.result?.success;
         const summary = msg.result?.summary ?? '';
-        push({ cls: `log-line ${ok ? '' : 'error'}`, html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span> · ${esc(summary)}` });
+        if (deltaStreamed) {
+          // The narrator / conversation answer already streamed into the
+          // view as model deltas — rendering the same text again as a
+          // DONE block is pure duplication. Emit a single status line
+          // instead so the user sees the task finished.
+          push({
+            cls: `log-line ${ok ? '' : 'error'}`,
+            html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span>${ok ? '' : ` · <span class="md md-inline">${md(summary)}</span>`}`,
+          });
+        } else {
+          // No live stream happened (planner-only task, executor used
+          // jsonMode, etc.) — render the full summary so the user has
+          // something to read.
+          const isMultiline = summary.includes('\n');
+          if (isMultiline) {
+            push({
+              cls: `log-line ${ok ? '' : 'error'}`,
+              html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span><div class="log-md md">${md(summary)}</div>`,
+            });
+          } else {
+            push({
+              cls: `log-line ${ok ? '' : 'error'}`,
+              html: `<span class="log-type">${ok ? 'DONE' : 'FAILED'}</span> · <span class="md md-inline">${md(summary)}</span>`,
+            });
+          }
+        }
         toast(ok ? 'Task complete' : 'Task failed', ok ? 'ok' : 'err');
+        // Reset for the next task in this tab.
+        deltaStreamed = false;
         // Record the summary against the most recently-sent turn so future
         // follow-ups can thread it into the composed description.
         const pending = convoTurns[convoTurns.length - 1];
@@ -1133,14 +1440,20 @@ const openTask = (taskId) => {
         if (sendBtn) sendBtn.disabled = false;
         if (statusEl) statusEl.textContent = 'ready';
       } else if (msg.kind === 'task.error') {
+        hideWorking();
         push({ cls: 'log-line error', html: `<span class="log-type">ERROR</span> · ${esc(msg.error)}` });
         const sendBtn = document.getElementById('followup-send');
         const statusEl = document.getElementById('followup-status');
         if (sendBtn) sendBtn.disabled = false;
         if (statusEl) statusEl.textContent = 'ready';
       } else if (msg.kind === 'task.cancel_requested') {
+        hideWorking();
         push({ cls: 'log-line warning', html: `<span class="log-type">CANCEL</span> · requested` });
       } else if (msg.kind === 'model.delta') {
+        // First token arriving means the model is speaking — the generic
+        // "working" spinner has served its purpose; the streamed text is
+        // the new source of motion.
+        if (msg.text) hideWorking();
         appendDelta(msg);
       }
     };
@@ -1156,6 +1469,7 @@ const openTask = (taskId) => {
   const input = document.getElementById('followup-input');
   const sendBtn = document.getElementById('followup-send');
   const autoCk = document.getElementById('followup-auto');
+  const cwdInput = document.getElementById('followup-cwd');
   const statusEl = document.getElementById('followup-status');
   const submitFollowup = async () => {
     const text = (input?.value || '').trim();
@@ -1166,11 +1480,13 @@ const openTask = (taskId) => {
     // reads linearly.
     push({ cls: 'log-line', html: `<span class="log-type">YOU</span> · ${esc(text)}` });
     const description = composeDescription(text);
+    const cwd = (cwdInput?.value || '').trim() || undefined;
     try {
       const body = await apiPost('/api/tasks/run', {
         prompt: text,
         autoApprove: !!autoCk?.checked,
         description,
+        cwd,
       });
       const newTaskId = body.taskId;
       convoTurns.push({ taskId: newTaskId, input: text, summary: null });
@@ -1253,7 +1569,7 @@ views.tasks = async () => {
             <th data-sort="text" class="col-wrap">title</th>
             <th data-sort="date">updated</th>
           </tr></thead>
-          <tbody>${rows.map((t) => `<tr>
+          <tbody>${rows.map((t) => `<tr class="row-clickable" data-open-task="${esc(t.id)}" title="Open task">
             <td><code>${esc(t.id)}</code></td>
             <td>${badge(t.status)}</td>
             <td>${esc(t.mode)}</td>
@@ -1264,6 +1580,9 @@ views.tasks = async () => {
           </tr>`).join('')}</tbody>
         </table></div></div></section>`
       : `<div class="empty"><div class="empty-title">No matching tasks</div></div>`;
+    body.querySelectorAll('[data-open-task]').forEach((el) =>
+      el.addEventListener('click', () => openTask(el.dataset.openTask)),
+    );
   };
   const input = document.getElementById('q');
   let h;
@@ -1562,7 +1881,16 @@ views.cost = async () => {
     <div class="stats">
       <div class="stat"><div class="label">Calls</div><div class="value">${esc(t.calls)}</div><div class="sub">all providers</div></div>
       <div class="stat"><div class="label">Tokens</div><div class="value">${Number(t.tokens).toLocaleString()}</div><div class="sub">input + output</div></div>
-      <div class="stat"><div class="label">Spend</div><div class="value">$${Number(t.usd).toFixed(4)}</div><div class="sub">estimated USD</div></div>
+      <div class="stat"><div class="label">Spend</div>${(() => {
+        const usd = Number(t.usd);
+        const toks = Number(t.tokens);
+        // Cost view: if only local providers were used, usd is 0 by design
+        // (Ollama, llama.cpp are free). Surface that explicitly instead of
+        // a deceptive "$0.0000 estimated USD" line.
+        if (usd > 0) return `<div class="value">$${usd.toFixed(4)}</div><div class="sub">estimated USD</div>`;
+        if (toks > 0) return `<div class="value" style="font-size:22px">local · free</div><div class="sub">no billable providers</div>`;
+        return `<div class="value">$0.0000</div><div class="sub">no calls yet</div>`;
+      })()}</div>
     </div>
     <section class="section"><div class="section-head"><h2>Recent calls</h2></div>
       <div class="section-body">${rows.length
@@ -1762,6 +2090,64 @@ const mountOverlay = (innerHTML, { closeOnClickOutside = true, onClose, onKey } 
   return { overlay, close };
 };
 
+// Inline plan editor. The user clicked "Edit…" on a plan approval; the
+// server's loop re-called `host.editPlan(plan)` which surfaces this
+// prompt. We show the plan JSON in a textarea; on Save we POST the new
+// plan back as the response, the loop installs it, and re-surfaces a
+// fresh plan_approval prompt so the user can approve/reject/edit-again.
+const openPlanEditModal = (promptId, plan) => {
+  const initial = JSON.stringify(plan, null, 2);
+  const { overlay, close } = mountOverlay(`
+    <div class="modal" style="max-width:760px">
+      <div class="modal-head">
+        <div class="modal-title">Edit plan</div>
+        <button class="modal-close" data-close aria-label="Close">${icon('close')}</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--dim);margin-bottom:8px">
+          Edit the plan JSON directly. Steps, descriptions, targets, dependsOn,
+          risk — anything the planner produced. The loop will re-ask you to
+          approve after saving.
+        </div>
+        <textarea id="plan-edit-text" class="fu-input" style="min-height:360px;max-height:60vh;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px"></textarea>
+        <div id="plan-edit-err" style="color:var(--err);font-size:12px;margin-top:6px;min-height:16px"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-pe="cancel">Cancel</button>
+        <button class="btn btn-primary" data-pe="save">Save & re-approve</button>
+      </div>
+    </div>`, { closeOnClickOutside: false });
+  const ta = overlay.querySelector('#plan-edit-text');
+  const errEl = overlay.querySelector('#plan-edit-err');
+  ta.value = initial;
+  ta.focus();
+  overlay.querySelector('[data-pe="cancel"]').addEventListener('click', async () => {
+    // Cancel leaves the plan unchanged; responding with the original
+    // plan satisfies the edit contract without mutating anything.
+    await apiPost('/api/prompts/respond', { promptId, value: plan });
+    close();
+  });
+  overlay.querySelector('[data-pe="save"]').addEventListener('click', async () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(ta.value);
+    } catch (e) {
+      errEl.textContent = 'Invalid JSON: ' + String(e).slice(0, 160);
+      return;
+    }
+    if (!parsed || !Array.isArray(parsed.steps)) {
+      errEl.textContent = 'Plan needs a `steps` array.';
+      return;
+    }
+    try {
+      await apiPost('/api/prompts/respond', { promptId, value: parsed });
+      close();
+    } catch (e) {
+      errEl.textContent = 'Save failed: ' + String(e).slice(0, 160);
+    }
+  });
+};
+
 const openPermissionModal = (msg) => {
   const { overlay, close } = mountOverlay(`
     <div class="modal">
@@ -1817,6 +2203,76 @@ const openUserInputModal = (msg) => {
     const v = b.dataset.ui === '__submit__' ? overlay.querySelector('#ui-input').value : '';
     send(v);
   }));
+};
+
+// ---------- Directory picker ----------
+//
+// Server-side browser modal. Calls `/api/dir?path=...` to list subdirs of a
+// given path (confined to $HOME on the server), and lets the user click a
+// folder to drill in or pick it. Useful when the user doesn't remember the
+// exact absolute path of the project they want to run a task against.
+
+const openDirPicker = (onPick) => {
+  const { overlay, close } = mountOverlay(`
+    <div class="modal" style="max-width:640px">
+      <div class="modal-head">
+        <div class="modal-title">Choose project directory</div>
+        <button class="modal-close" data-close aria-label="Close">${icon('close')}</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
+          <button type="button" class="btn btn-ghost" id="dp-up" title="Parent">↑ Up</button>
+          <button type="button" class="btn btn-ghost" id="dp-home" title="Home">🏠 Home</button>
+          <input type="text" id="dp-path" class="fu-cwd" style="flex:1" placeholder="/path/to/dir">
+          <button type="button" class="btn btn-primary" id="dp-pick">Select</button>
+        </div>
+        <div id="dp-list" style="max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:6px"></div>
+        <div id="dp-hint" style="margin-top:8px;font-size:11.5px;color:var(--dim)">Paths outside <code>$HOME</code> aren't listed here — type them directly in the input.</div>
+      </div>
+    </div>`);
+
+  const listEl = overlay.querySelector('#dp-list');
+  const pathEl = overlay.querySelector('#dp-path');
+  let currentPath = '';
+  const load = async (target) => {
+    listEl.innerHTML = `<div style="padding:10px;color:var(--dim);font-size:12px">Loading…</div>`;
+    try {
+      const qs = target ? `?path=${encodeURIComponent(target)}` : '';
+      const data = await api('/api/dir' + qs);
+      currentPath = data.path;
+      pathEl.value = data.path;
+      const rows = (data.entries || [])
+        .map((e) => `<div class="dp-row" data-name="${esc(e.name)}">
+          <span class="dp-icon">📁</span>
+          <span class="dp-name">${esc(e.name)}</span>
+        </div>`)
+        .join('');
+      listEl.innerHTML = rows || `<div style="padding:10px;color:var(--dim);font-size:12px">(no subdirectories)</div>`;
+      listEl.querySelectorAll('.dp-row').forEach((r) =>
+        r.addEventListener('click', () => {
+          const name = r.getAttribute('data-name');
+          load(currentPath + '/' + name);
+        }),
+      );
+      const up = overlay.querySelector('#dp-up');
+      if (up) up.disabled = !data.parent;
+    } catch (e) {
+      listEl.innerHTML = `<div style="padding:10px;color:var(--err);font-size:12px">Error: ${esc(String(e))}</div>`;
+    }
+  };
+  overlay.querySelector('#dp-up')?.addEventListener('click', () => {
+    if (currentPath) load(currentPath.replace(/\/[^/]+\/?$/, '') || '/');
+  });
+  overlay.querySelector('#dp-home')?.addEventListener('click', () => load(''));
+  overlay.querySelector('#dp-pick')?.addEventListener('click', () => {
+    onPick(pathEl.value.trim() || currentPath);
+    close();
+  });
+  pathEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); load(pathEl.value.trim()); }
+  });
+  // Start at the server's cwd so "same as when I opened" is the first view.
+  api('/api/status').then((s) => load(s?.cwd || '')).catch(() => load(''));
 };
 
 // ---------- Command palette ----------
@@ -1938,20 +2394,61 @@ const openPalette = () => {
 
 // ---------- Project event WS (for live log on dashboard, if used) ----------
 
+// The project event WS closes for several reasons that are not "the server
+// is down" — file rotation, fs.watch quirks on macOS when the events file
+// is rewritten, the server swapping the watched handle during project
+// changes. When that happens we verify liveness via a lightweight HTTP
+// probe before flagging offline, and schedule a reconnect. Without this,
+// the sidebar can read "offline" while a task is actively streaming.
+let projectWsReconnectTimer = null;
+const probeAndMarkStatus = async () => {
+  try {
+    const r = await fetch('/api/status', { cache: 'no-store' });
+    if (r.ok) {
+      setStatus(true);
+      return true;
+    }
+  } catch {
+    /* fall through to offline */
+  }
+  setStatus(false);
+  return false;
+};
 const connectProjectWs = (projectPath) => {
   if (projectWs) { try { projectWs.close(); } catch {} }
   const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?projectPath=${encodeURIComponent(projectPath)}`;
   try {
     projectWs = new WebSocket(url);
-    projectWs.onopen = () => setStatus(true);
-    projectWs.onclose = () => setStatus(false);
-  } catch {}
+    projectWs.onopen = () => {
+      setStatus(true);
+      if (projectWsReconnectTimer) { clearTimeout(projectWsReconnectTimer); projectWsReconnectTimer = null; }
+    };
+    projectWs.onclose = () => {
+      // Don't flip to offline just because the event-watcher socket
+      // hiccuped. Probe the HTTP side; if the server responds, stay
+      // online and schedule a reconnect so the event feed resumes.
+      probeAndMarkStatus();
+      if (!projectWsReconnectTimer) {
+        projectWsReconnectTimer = setTimeout(() => {
+          projectWsReconnectTimer = null;
+          if (currentProject) connectProjectWs(currentProject);
+        }, 1500);
+      }
+    };
+    projectWs.onerror = () => probeAndMarkStatus();
+  } catch { probeAndMarkStatus(); }
 };
 
 const setStatus = (online) => {
   statusDot.classList.toggle('off', !online);
   statusText.textContent = online ? 'online' : 'offline';
 };
+// Periodic liveness heartbeat. 8s is frequent enough to catch a real
+// server death within ~10s, sparse enough not to spam the log. Skips the
+// probe when the page is hidden so background tabs don't churn.
+setInterval(() => {
+  if (document.visibilityState !== 'hidden') probeAndMarkStatus();
+}, 8000);
 
 const updateActiveBadge = (list) => {
   const n = (list ?? []).filter((t) => t.status === 'running' || t.status === 'awaiting').length;

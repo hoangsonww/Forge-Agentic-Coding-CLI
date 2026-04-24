@@ -28,7 +28,19 @@ const pkg = require('../../package.json') as { version?: string };
 import { Command, CommanderError } from 'commander';
 import chalk from 'chalk';
 import { PALETTE } from './banners';
-import { ok, err, info, dim, accent, warn } from './ui';
+import {
+  ok,
+  err,
+  info,
+  dim,
+  accent,
+  warn,
+  divider,
+  rocket,
+  completionSummary,
+  failure,
+  breadcrumbs,
+} from './ui';
 import { bootstrap } from './bootstrap';
 import { setConsoleOutput } from '../logging/logger';
 import { orchestrateRun } from '../core/orchestrator';
@@ -45,7 +57,6 @@ import {
   rankSlash,
 } from './repl-commands';
 import { listProviders } from '../models/provider';
-import { renderMarkdown } from './markdown';
 import { startProgress } from './progress';
 import {
   Conversation,
@@ -848,7 +859,17 @@ const runTaskTurn = async (
   state.abort = new AbortController();
 
   const composed = composeDescription(effectiveInput, state.conversation.turns.slice(0, -1));
-  process.stdout.write('\n');
+  // Launch banner — parity with `forge run` so REPL users see the same
+  // mode/task/phase breadcrumbs. Rendered synchronously (no animation) so it
+  // doesn't fight the line editor or the progress spinner.
+  const displayedPrompt =
+    effectiveInput.length > 100 ? effectiveInput.slice(0, 100) + '…' : effectiveInput;
+  process.stdout.write('\n' + divider('launching') + '\n\n');
+  info(`${rocket()}  mode=${accent(turn.mode)}`);
+  process.stdout.write(`  ${chalk.dim('task:')} ${chalk.white(displayedPrompt)}\n`);
+  process.stdout.write(
+    '  ' + breadcrumbs(['classify', 'plan', 'approve', 'execute', 'verify'], 0) + '\n\n',
+  );
   const progress = startProgress({ initial: 'classifying request' });
   try {
     const out = await orchestrateRun({
@@ -885,36 +906,35 @@ const runTaskTurn = async (
     }
     process.stdout.write('\n');
     if (r.success) {
-      const costBit = r.costUsd && r.costUsd > 0 ? chalk.dim(` · $${r.costUsd.toFixed(4)}`) : '';
-      ok(
-        `turn ${turnsOf(state).length} done  ${chalk.dim(
-          `(${((r.durationMs ?? 0) / 1000).toFixed(1)}s · ${r.filesChanged?.length ?? 0} files)`,
-        )}${costBit}`,
+      // DONE block — parity with `forge run` so REPL and CLI surfaces emit
+      // the same divider + metadata + file list. `skipTitle` avoids
+      // re-rendering the summary when the progress rail already streamed it
+      // live; otherwise completionSummary renders the markdown itself.
+      process.stdout.write(
+        completionSummary(
+          r.summary ?? '',
+          r.filesChanged ?? [],
+          r.durationMs ?? 0,
+          r.costUsd,
+          progress.didStream() === true,
+        ),
       );
-      // When the progress rail already streamed (+ markdown-rendered) the
-      // answer live, repeating the summary here dumps the same text to the
-      // terminal twice. Skip it in that case — files/cost/duration line is
-      // enough context.
-      if (r.summary && !progress.didStream()) {
-        process.stdout.write('\n' + renderMarkdown(r.summary, { indent: 2 }) + '\n');
-      }
-      if (r.filesChanged?.length) {
-        process.stdout.write('\n');
-        for (const f of r.filesChanged.slice(0, 8)) {
-          process.stdout.write(`   ${chalk.rgb(...PALETTE.teal)('▸')} ${chalk.white(f)}\n`);
-        }
-        if (r.filesChanged.length > 8) {
-          process.stdout.write(chalk.dim(`   …+${r.filesChanged.length - 8} more\n`));
-        }
-      }
+      ok(`turn ${turnsOf(state).length} done.`);
     } else {
-      err(`turn ${turnsOf(state).length} failed`);
+      // Error summaries contain identifiers like `step_001`, `tool_error`,
+      // `not_found`, file paths — running them through the markdown renderer
+      // would strip underscores (interpreted as italic markers) and mangle
+      // paths with `*` in them. Emit the failure frame, then the raw
+      // dim-wrapped summary, matching `forge run`'s failure path.
+      process.stdout.write(
+        '\n' +
+          failure(`turn ${turnsOf(state).length} failed`, [
+            (r.summary ?? '').slice(0, 40),
+            'see forge session list for replay',
+          ]) +
+          '\n',
+      );
       if (r.summary) {
-        // Error summaries contain identifiers like `step_001`, `tool_error`,
-        // `not_found`, file paths — running them through the markdown
-        // renderer would strip underscores (interpreted as italic markers)
-        // and mangle paths with `*` in them. Print plain + dim-wrapped
-        // instead. Indented to match the success-path style.
         const lines = r.summary.split('\n').map((l) => '  ' + chalk.dim(l));
         process.stdout.write('\n' + lines.join('\n') + '\n');
       }
