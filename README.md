@@ -11,7 +11,9 @@ permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/INSTALL.md) · [Dev setup](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/SETUP.md) · [Architecture](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/ARCHITECTURE.md) · [Releases & versioning](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/RELEASES.md) · [Wiki Page](https://hoangsonww.github.io/Forge-Agentic-Coding-CLI/) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
+<img src="images/logo.jpeg" alt="Forge logo" width="50%" />
+
+**[Install](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/INSTALL.md) · [Dev setup](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/SETUP.md) · [Architecture](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/ARCHITECTURE.md) · [Releases & versioning](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/RELEASES.md) · [Demo walkthrough](DEMO.md) · [Wiki Page](https://hoangsonww.github.io/Forge-Agentic-Coding-CLI/) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
 
 </div>
 
@@ -46,21 +48,21 @@ Forge is a local-first, plan-first, multi-agent, and programmable software-engin
 
 <div align="center">
 
-| | value | reproducer |
-|---|---|---|
-| ⚡ **`forge doctor` cold-start** | **173 ms** | `time node bin/forge.js doctor --no-banner` |
-| ⚡ **`forge --help` cold-start** | **238 ms** | `time node bin/forge.js --help` |
-| 📦 **UI shell · zero CDN** | **90 KB** uncompressed | `wc -c src/ui/public/app.js` |
-| 🌐 **Provider probe timeout** | **1.5 s** | `src/models/openai.ts#isAvailable` |
-| 🔌 **Model providers** (auto-detected) | **6** | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic |
-| 🧠 **Model families** classified | **41** | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / … |
-| 🤖 **Built-in agents** | **6** | planner · architect · executor · reviewer · debugger · memory |
-| 🛠 **Tools** available to agents | **18** | read · write · edit · grep · glob · run_command · git · web · … |
-| 💬 **CLI subcommands · slash commands** | **24 · 55** | `forge --help` · `/help` in REPL |
-| 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
-| ✅ **Tests** | **548 / 97 files** · 100% passing · ~5.5 s wall-clock | `npx vitest run` |
-| 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
-| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest` |
+|                                         | value                                                 | reproducer                                                                          |
+|-----------------------------------------|-------------------------------------------------------|-------------------------------------------------------------------------------------|
+| ⚡ **`forge doctor` cold-start**         | **173 ms**                                            | `time node bin/forge.js doctor --no-banner`                                         |
+| ⚡ **`forge --help` cold-start**         | **238 ms**                                            | `time node bin/forge.js --help`                                                     |
+| 📦 **UI shell · zero CDN**              | **90 KB** uncompressed                                | `wc -c src/ui/public/app.js`                                                        |
+| 🌐 **Provider probe timeout**           | **1.5 s**                                             | `src/models/openai.ts#isAvailable`                                                  |
+| 🔌 **Model providers** (auto-detected)  | **6**                                                 | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic                    |
+| 🧠 **Model families** classified        | **41**                                                | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / …                     |
+| 🤖 **Built-in agents**                  | **6**                                                 | planner · architect · executor · reviewer · debugger · memory                       |
+| 🛠 **Tools** available to agents        | **18**                                                | read · write · edit · grep · glob · run_command · git · web · …                     |
+| 💬 **CLI subcommands · slash commands** | **24 · 55**                                           | `forge --help` · `/help` in REPL                                                    |
+| 🎛 **Modes**                            | **9**                                                 | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
+| ✅ **Tests**                             | **548 / 97 files** · 100% passing · ~5.5 s wall-clock | `npx vitest run`                                                                    |
+| 🐳 **CI jobs · release stages**         | **9 · 6**                                             | [`.github/workflows/`](.github/workflows)                                           |
+| 📦 **Container image**                  | ~355 MB · multi-arch · non-root · HEALTHCHECK         | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest`                     |
 
 </div>
 
@@ -251,6 +253,41 @@ docker compose -f docker/docker-compose.yml up -d
 **Recommended** (not required): `ripgrep` (fast `grep` tool path), `git` (diff/status tools + project-root detection), `$EDITOR` (used when you pick "Edit" on a plan).
 
 See [`docs/INSTALL.md`](docs/INSTALL.md) for per-OS notes and [`docs/SETUP.md`](docs/SETUP.md) for contributor setup.
+
+### See it running
+
+Three surfaces, one runtime. Screenshots link through to the full video clips; see [DEMO.md](DEMO.md) for a guided walkthrough.
+
+<table>
+  <tr>
+    <th align="center"><code>forge</code> · REPL</th>
+    <th align="center"><code>forge run "…"</code> · CLI</th>
+    <th align="center"><code>forge ui start</code> · Dashboard</th>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/REPL.mp4"><img src="images/repl.png" alt="REPL demo — click to play" width="100%"/></a></td>
+    <td align="center"><a href="images/CLI.mp4"><img src="images/cli.png" alt="CLI demo — click to play" width="100%"/></a></td>
+    <td align="center"><a href="images/UI.mp4"><img src="images/ui.png" alt="Dashboard demo — click to play" width="100%"/></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Interactive session · slash commands · streamed markdown</sub></td>
+    <td align="center"><sub>One-shot classify → plan → approve → execute → verify</sub></td>
+    <td align="center"><sub>Live WebSocket stream · plan approval · follow-ups</sub></td>
+  </tr>
+</table>
+
+<details>
+<summary><b>Prefer inline video playback?</b> (click to expand)</summary>
+
+<br>
+
+<video src="images/REPL.mp4" poster="images/repl.png" controls muted playsinline width="100%"></video>
+
+<video src="images/CLI.mp4" poster="images/cli.png" controls muted playsinline width="100%"></video>
+
+<video src="images/UI.mp4" poster="images/ui.png" controls muted playsinline width="100%"></video>
+
+</details>
 
 ---
 
@@ -616,6 +653,8 @@ Each mode is an **enforceable budget** — not a hint to the model. See
 
 ## CLI reference
 
+> **▶ See each surface in action** in [DEMO.md](DEMO.md) — REPL walkthrough, `forge run` one-shots, and the web dashboard.
+
 24 subcommands. Full surface:
 
 ```
@@ -745,6 +784,8 @@ API key auth. Tokens stored in the OS keychain.
 
 Single hardened image (non-root, HEALTHCHECK, OCI labels, ~355 MB) that
 serves both CLI and UI.
+
+> [▶ Dashboard demo](images/UI.mp4) — `forge ui start` driving a full task end-to-end (plan approval, streamed model output, follow-up thread). More in [DEMO.md](DEMO.md).
 
 ```bash
 # Pull (multi-arch: linux/amd64 + linux/arm64):
