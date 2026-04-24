@@ -32,7 +32,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Prettier --check
         run: npx prettier --check 'src/**/*.ts' 'test/**/*.ts'
 
@@ -49,7 +62,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: ESLint
         run: npx eslint 'src/**/*.ts' --max-warnings=100
 
@@ -66,7 +92,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: TypeScript
         run: npx tsc -p tsconfig.json --noEmit
 
@@ -88,7 +127,20 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Rebuild native bindings (better-sqlite3 prebuild)
         run: npm rebuild better-sqlite3
       - name: Run vitest
@@ -116,7 +168,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Rebuild native bindings (better-sqlite3 prebuild)
         run: npm rebuild better-sqlite3
       - name: vitest --coverage
@@ -144,7 +209,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: Rebuild native bindings (better-sqlite3 prebuild)
         run: npm rebuild better-sqlite3
       - name: Build (tsc + asset copy)
@@ -201,7 +279,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          # npm/cli#4828: platform-specific optionalDependencies (rollup
+          # native binaries like @rollup/rollup-linux-x64-gnu) can be
+          # missing from a package-lock.json generated on a different
+          # platform. `npm ci` then fails with "Cannot find module
+          # @rollup/rollup-linux-x64-gnu" on Linux runners when the
+          # lockfile was generated on macOS. Fall back to a clean
+          # `npm install` in that case so CI self-heals without needing
+          # to regenerate the lockfile on every contributor's machine.
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - name: npm audit (high)
         run: npm audit --audit-level=high || true
 
