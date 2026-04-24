@@ -252,18 +252,21 @@ revealTargets.forEach((el) => {
   el.setAttribute('data-reveal', '');
 });
 
-/* Stagger grid children so they reveal in a cascade, not a slab. */
+/* Stagger grid children so they reveal in a cascade, not a slab.
+   Delays deliberately shallow and capped at item #5 so large grids don't
+   take a full second before the last card appears — the user was
+   previously waiting ~880ms for an 8-card grid to finish. */
 document.querySelectorAll('.grid').forEach((grid) => {
   Array.from(grid.children).forEach((child, i) => {
     if (child.hasAttribute('data-reveal')) {
-      child.style.setProperty('--reveal-delay', `${Math.min(i, 8) * 110}ms`);
+      child.style.setProperty('--reveal-delay', `${Math.min(i, 5) * 40}ms`);
     }
   });
 });
 document.querySelectorAll('.bars').forEach((bars) => {
   Array.from(bars.children).forEach((row, i) => {
     if (row.hasAttribute('data-reveal')) {
-      row.style.setProperty('--reveal-delay', `${Math.min(i, 8) * 90}ms`);
+      row.style.setProperty('--reveal-delay', `${Math.min(i, 5) * 30}ms`);
     }
   });
 });
@@ -271,7 +274,7 @@ document.querySelectorAll('.bars').forEach((bars) => {
 document.querySelectorAll('.hero-stats').forEach((row) => {
   Array.from(row.children).forEach((stat, i) => {
     if (stat.hasAttribute('data-reveal')) {
-      stat.style.setProperty('--reveal-delay', `${i * 120}ms`);
+      stat.style.setProperty('--reveal-delay', `${i * 50}ms`);
     }
   });
 });
@@ -285,7 +288,11 @@ if ('IntersectionObserver' in window && revealTargets.length) {
         revealIO.unobserve(entry.target);
       }
     },
-    { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+    // Trigger earlier: fire as soon as any pixel enters the viewport,
+    // and pre-reveal a band above the fold (240px) so elements finish
+    // animating right as the user scrolls them into view instead of
+    // starting the animation only once they're already on screen.
+    { threshold: 0, rootMargin: '0px 0px 240px 0px' },
   );
   revealTargets.forEach((el) => revealIO.observe(el));
 } else {

@@ -1400,12 +1400,14 @@ footer a {
 
 [data-reveal] {
   opacity: 0;
-  transform: translate3d(0, 48px, 0) scale(.94);
-  filter: blur(8px);
+  transform: translate3d(0, 24px, 0) scale(.97);
+  filter: blur(4px);
+  /* Snappier reveal: durations roughly halved so elements don't feel like
+     they're floating in over a full second. Delay still honored via JS. */
   transition:
-    opacity .9s var(--ease) var(--reveal-delay, 0ms),
-    transform 1s var(--ease-snap) var(--reveal-delay, 0ms),
-    filter .8s var(--ease) var(--reveal-delay, 0ms);
+    opacity .45s var(--ease) var(--reveal-delay, 0ms),
+    transform .5s var(--ease-snap) var(--reveal-delay, 0ms),
+    filter .35s var(--ease) var(--reveal-delay, 0ms);
   will-change: opacity, transform, filter;
 }
 
@@ -1418,11 +1420,11 @@ footer a {
 /* Cards get a short extra slide from the side depending on column position —
    gives a gentle cascade instead of a flat sweep. */
 .grid > [data-reveal] {
-  transform: translate3d(-12px, 56px, 0) scale(.92);
+  transform: translate3d(-6px, 28px, 0) scale(.96);
 }
 
 .grid > [data-reveal]:nth-child(even) {
-  transform: translate3d(12px, 56px, 0) scale(.92);
+  transform: translate3d(6px, 28px, 0) scale(.96);
 }
 
 .grid > [data-reveal].is-visible {
