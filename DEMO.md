@@ -50,7 +50,7 @@ Interactive shell with multi-turn prompts, slash-command autocomplete, digit sho
 
 ### Video
 
-<video src="images/REPL.mp4" poster="images/repl.png" controls muted playsinline width="100%"></video>
+https://github.com/user-attachments/assets/550c76ed-ee05-438f-a55d-5be09e2cf78f
 
 > If your markdown viewer doesn't render the video inline, open [`images/REPL.mp4`](images/REPL.mp4) directly.
 
@@ -91,7 +91,7 @@ A single task end-to-end: classify → plan → approve → execute → verify �
 
 ### Video
 
-<video src="images/CLI.mp4" poster="images/cli.png" controls muted playsinline width="100%"></video>
+https://github.com/user-attachments/assets/9e1cbbd0-764c-46b4-a937-447ef37fe31a
 
 > If your markdown viewer doesn't render the video inline, open [`images/CLI.mp4`](images/CLI.mp4) directly.
 
@@ -149,7 +149,7 @@ A local HTTP + WebSocket dashboard (vanilla JS, <120 KB, no CDN). Runs on `http:
 
 ### Video
 
-<video src="images/UI.mp4" poster="images/ui.png" controls muted playsinline width="100%"></video>
+https://github.com/user-attachments/assets/49a9e479-5be6-4cc7-ab5e-c906d0103316
 
 > If your markdown viewer doesn't render the video inline, open [`images/UI.mp4`](images/UI.mp4) directly.
 
