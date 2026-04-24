@@ -256,38 +256,19 @@ See [`docs/INSTALL.md`](docs/INSTALL.md) for per-OS notes and [`docs/SETUP.md`](
 
 ### See it running
 
-Three surfaces, one runtime. Screenshots link through to the full video clips; see [DEMO.md](DEMO.md) for a guided walkthrough.
+Three surfaces, one runtime.
 
-<table>
-  <tr>
-    <th align="center"><code>forge</code> · REPL</th>
-    <th align="center"><code>forge run "…"</code> · CLI</th>
-    <th align="center"><code>forge ui start</code> · Dashboard</th>
-  </tr>
-  <tr>
-    <td align="center"><a href="images/REPL.mp4"><img src="images/repl.png" alt="REPL demo — click to play" width="100%"/></a></td>
-    <td align="center"><a href="images/CLI.mp4"><img src="images/cli.png" alt="CLI demo — click to play" width="100%"/></a></td>
-    <td align="center"><a href="images/UI.mp4"><img src="images/ui.png" alt="Dashboard demo — click to play" width="100%"/></a></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Interactive session · slash commands · streamed markdown</sub></td>
-    <td align="center"><sub>One-shot classify → plan → approve → execute → verify</sub></td>
-    <td align="center"><sub>Live WebSocket stream · plan approval · follow-ups</sub></td>
-  </tr>
-</table>
+**REPL (Interactive Terminal) Mode**
 
-<details>
-<summary><b>Prefer inline video playback?</b> (click to expand)</summary>
+https://github.com/user-attachments/assets/eb592bbf-62a1-4d74-a540-7e066ebe56a4
 
-<br>
+**CLI (Headless, One-shot run) Mode**
 
-<video src="images/REPL.mp4" poster="images/repl.png" controls muted playsinline width="100%"></video>
+https://github.com/user-attachments/assets/bc3b3204-fd87-436f-9467-604535edb4e2
 
-<video src="images/CLI.mp4" poster="images/cli.png" controls muted playsinline width="100%"></video>
+**Web UI Dashboard**
 
-<video src="images/UI.mp4" poster="images/ui.png" controls muted playsinline width="100%"></video>
-
-</details>
+https://github.com/user-attachments/assets/218cd64f-40fe-4836-9c62-c7a08538056b
 
 ---
 
