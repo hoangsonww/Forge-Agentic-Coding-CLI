@@ -6,7 +6,24 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { ForgeRuntimeError } from '../types/errors';
+
+// `~` is shell syntax; Node treats it as a literal directory name. LLMs
+// routinely produce paths like `~/project/src/file.ts` when the user
+// mentions a home-relative directory, and without pre-expansion those get
+// joined against the project root as `<root>/~/project/src/file.ts` — the
+// exact ENOENT noise users see. Expanding here means the resolved absolute
+// path still goes through the regular `allowedRoots` containment check
+// below, so sandbox guarantees are unchanged.
+const expandTilde = (p: string): string => {
+  if (!p) return p;
+  if (p === '~') return os.homedir();
+  if (p.startsWith('~/') || p.startsWith('~' + path.sep)) {
+    return path.join(os.homedir(), p.slice(2));
+  }
+  return p;
+};
 
 // Paths we NEVER allow regardless of scope configuration.
 const ALWAYS_FORBIDDEN = [
@@ -40,7 +57,7 @@ export const resolveSafe = (
   policy: SandboxPolicy,
   mode: 'read' | 'write',
 ): string => {
-  const abs = path.resolve(policy.projectRoot, inputPath);
+  const abs = path.resolve(policy.projectRoot, expandTilde(inputPath));
   const normalized = path.normalize(abs);
 
   for (const forbidden of ALWAYS_FORBIDDEN) {

@@ -24,16 +24,21 @@ interface CacheShape {
   notes?: string;
 }
 
-const readPkgVersion = (): string => {
+const readPkg = (): { name: string; version: string } => {
   try {
     const pkg = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
     );
-    return String(pkg.version ?? '0.0.0');
+    return {
+      name: String(pkg.name ?? '@hoangsonw/forge'),
+      version: String(pkg.version ?? '0.0.0'),
+    };
   } catch {
-    return '0.0.0';
+    return { name: '@hoangsonw/forge', version: '0.0.0' };
   }
 };
+
+const readPkgVersion = (): string => readPkg().version;
 
 const shouldCheckNow = (): boolean => {
   try {
@@ -61,10 +66,15 @@ const writeCache = (data: CacheShape): void => {
 };
 
 const fetchLatest = async (channel: string): Promise<string | null> => {
-  // Default to the npm registry; teams can host their own. We treat the
-  // network fetch as best-effort and never block.
+  // Derive the registry path from package.json#name so renaming the package
+  // (or forking it) Just Works. The previous hard-coded `@forge/cli` pointed
+  // at an unrelated package that happened to exist on npm — update prompts
+  // were wildly wrong ("Forge 12.18.0 available"). Scoped names include a
+  // slash which must be URL-encoded in the registry path.
+  const { name } = readPkg();
+  const registryPath = encodeURIComponent(name).replace('%40', '@');
   try {
-    const res = await request('https://registry.npmjs.org/@forge/cli', {
+    const res = await request(`https://registry.npmjs.org/${registryPath}`, {
       method: 'GET',
       headersTimeout: 8000,
       bodyTimeout: 8000,

@@ -6,16 +6,12 @@
 
 # Releases & Versioning
 
-<div align="center">
-
 **How Forge versions, tags, builds, signs, and ships.**
 
 Who this is for:
 - **Users** installing, upgrading, pinning, or rolling back.
 - **Maintainers** cutting a release or shipping a hotfix.
 - **Integrators** consuming Forge from CI, Docker, or the npm registry.
-
-</div>
 
 ---
 
@@ -480,12 +476,12 @@ flowchart TD
   H --> C1{{"match?"}}:::step
   L --> C1
   C1 -->|yes| OK1["layer 1 ok"]:::ok
-  C1 -->|no|  F1["REFUSE — retain existing binary"]:::fail
+  C1 -->|no| F1["REFUSE — retain existing binary"]:::fail
 
   OK1 --> VER["Ed25519.verify(<br/>  public_key = trusted_keys[i],<br/>  message = manifest.json,<br/>  signature = manifest.sig<br/>)"]:::step
   VER --> C2{{"any trusted key verifies?"}}:::step
   C2 -->|yes| OK2["layer 2 ok<br/>install"]:::ok
-  C2 -->|no|  F2["REFUSE — unless<br/>FORGE_ALLOW_UNSIGNED=1 (dev only)"]:::fail
+  C2 -->|no| F2["REFUSE — unless<br/>FORGE_ALLOW_UNSIGNED=1 (dev only)"]:::fail
 ```
 
 ### Verifying by hand

@@ -1,6 +1,6 @@
 {
   "name": "@hoangsonw/forge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Forge - a local-first, multi-agent, programmable software-engineering runtime",
   "license": "MIT",
   "author": "Son Nguyen (hoangsonw)",
@@ -35,7 +35,7 @@
     "prepare": "npm run build",
     "start": "node ./bin/forge.js",
     "link": "npm run build && npm link",
-    "unlink": "npm unlink -g @forge/cli",
+    "unlink": "npm unlink -g @hoangsonw/forge",
     "relink": "npm run unlink --silent; npm run link",
     "postinstall": "node scripts/postinstall.js"
   },

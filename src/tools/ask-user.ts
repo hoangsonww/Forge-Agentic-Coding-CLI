@@ -11,6 +11,7 @@
 import prompts from 'prompts';
 import { Tool, ToolResult } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
+import { chooseNumbered } from '../cli/choose';
 
 interface Args {
   question: string;
@@ -22,7 +23,8 @@ interface Args {
 export const askUserTool: Tool<Args, { answer: string }> = {
   schema: {
     name: 'ask_user',
-    description: 'Ask the user a clarifying question. Use sparingly.',
+    description:
+      'Ask the user a clarifying question when the ORIGINAL request is genuinely ambiguous. Do NOT call this to recover from tool errors — retry with different args or switch tools instead. Requires a clear, non-empty question (>= 3 chars).',
     sideEffect: 'pure',
     risk: 'low',
     permissionDefault: 'allow',
@@ -41,6 +43,23 @@ export const askUserTool: Tool<Args, { answer: string }> = {
   },
   async execute(args): Promise<ToolResult<{ answer: string }>> {
     const start = Date.now();
+    // Reject malformed calls fast so the executor can recover (non-retryable,
+    // so it'll switch tools instead of looping on the same bad call).
+    // Common failure mode: a smaller model calls ask_user after a tool error
+    // to "ask the user how to proceed" with a malformed or empty question.
+    // The executor prompt forbids that — this is belt-and-braces.
+    if (typeof args.question !== 'string' || args.question.trim().length < 3) {
+      return {
+        success: false,
+        error: {
+          class: 'user_input',
+          message:
+            'ask_user requires a clear, non-empty question (>= 3 chars). Tool errors should be recovered by retrying with different args or switching tools — not by calling ask_user.',
+          retryable: false,
+        },
+        durationMs: Date.now() - start,
+      };
+    }
     if (!process.stdin.isTTY) {
       if (args.nonInteractiveDefault !== undefined) {
         return {
@@ -62,13 +81,12 @@ export const askUserTool: Tool<Args, { answer: string }> = {
     try {
       let answer = '';
       if (args.choices && args.choices.length) {
-        const resp = await prompts({
-          type: 'select',
-          name: 'value',
+        const picked = await chooseNumbered<string>({
           message: args.question,
           choices: args.choices.map((c) => ({ title: c, value: c })),
+          initial: args.defaultValue ? Math.max(0, args.choices.indexOf(args.defaultValue)) : 0,
         });
-        answer = resp?.value ?? args.defaultValue ?? '';
+        answer = picked ?? args.defaultValue ?? '';
       } else {
         const resp = await prompts({
           type: 'text',

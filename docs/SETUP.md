@@ -21,16 +21,64 @@
 
 ## 1. Prerequisites
 
-| | Version |
-|---|---|
-| Node.js | ≥ 20 (22 tested) |
-| npm | bundled with Node |
-| git | any |
-| ripgrep | optional but recommended — used by tools |
-| Docker (for image work) | ≥ 25 |
+### Host toolchain
 
-Optional: Ollama / LM Studio / vLLM / llama.cpp for testing against a real
-local model. Hosted `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` also works.
+| | Version | Why |
+|---|---|---|
+| **Node.js** | **≥ 20** (22 tested in CI) | Enforced via `package.json#engines`. Uses async iterators on `undici` request bodies, `node:events`, and native ESM/CJS interop. |
+| **npm** | bundled with Node | For `npm ci` / `npm link`. |
+| **git** | any modern | Project-root detection, `git_diff` / `git_status` tools. |
+| **ripgrep** | any | Optional but recommended — fast path for the `grep` tool. Falls back to a Node glob walker. |
+| **Docker** | ≥ 25 | Only needed for building the image or using the compose stack. |
+| **$EDITOR** | any | Used when you pick "Edit" on a plan; falls back to `vi`. |
+
+### OS support
+
+| OS | Status |
+|---|---|
+| macOS (darwin-x64, darwin-arm64) | first-class, tested in CI |
+| Linux (linux-x64, linux-arm64) | first-class, tested in CI |
+| Windows (native + WSL) | supported via native `better-sqlite3` prebuilds; WSL recommended for POSIX symlink / ripgrep parity |
+
+### Runtime npm dependencies
+
+Forge declares **13 runtime deps** and **zero optional deps**. None require a C/C++/Rust/Go/Python toolchain at install time — `better-sqlite3` is the only native module and ships prebuilds for every supported triple.
+
+| Package | Version | What for |
+|---|---|---|
+| `@modelcontextprotocol/sdk` | ^1.0.0 | MCP bridge (stdio/http_stream/websocket transports) |
+| `better-sqlite3` | ^11.3.0 | Local index DB (`~/.forge/forge.db`), FTS5 cold memory |
+| `chalk` | ^4.1.2 | ANSI color (v4 kept for CJS) |
+| `cli-table3` | ^0.6.5 | Tables in `forge doctor`, `task list`, `model list` |
+| `commander` | ^12.1.0 | CLI argv parsing |
+| `dotenv` | ^16.4.5 | `.env` loading |
+| `ora` | ^5.4.1 | Progress spinner (v5 kept for CJS) |
+| `prompts` | ^2.4.2 | Non-TTY fallback for the numbered-select helper |
+| `semver` | ^7.6.3 | Update-check version comparison |
+| `undici` | ^6.19.2 | HTTP client for Ollama / Anthropic / OpenAI streams |
+| `ws` | ^8.18.0 | UI dashboard WebSocket |
+| `yaml` | ^2.5.0 | Skill-file frontmatter |
+| `zod` | ^3.23.8 | Runtime validation of plans and tool args |
+
+### Model source — you need at least one
+
+Local runtimes (auto-detected on standard ports with a ~1.5 s probe):
+
+| Runtime | Default endpoint | Env override |
+|---|---|---|
+| Ollama | `http://127.0.0.1:11434` | `OLLAMA_ENDPOINT` |
+| LM Studio | `http://127.0.0.1:1234/v1` | `LMSTUDIO_ENDPOINT` |
+| vLLM | `http://127.0.0.1:8000/v1` | `VLLM_ENDPOINT` |
+| llama.cpp (`server`) | `http://127.0.0.1:8080/v1` | `LLAMACPP_ENDPOINT` |
+
+Hosted runtimes (API key via env or OS keychain):
+
+| Runtime | Env var |
+|---|---|
+| Anthropic | `ANTHROPIC_API_KEY` |
+| OpenAI-compatible | `OPENAI_API_KEY` (+ `OPENAI_BASE_URL` for non-OpenAI endpoints) |
+
+If no provider is reachable, `forge doctor` reports it explicitly and prints the exact command to start one — no silent fallbacks.
 
 ---
 
@@ -222,6 +270,16 @@ flowchart TB
   providers the router sees as up.
 - **Events log:** `~/.forge/logs/events.jsonl` is append-only JSONL and
   trivially `jq`-queryable.
+- **"Is this a model-capability bug or a Forge bug?"** — when tracking a
+  failing task, check the capability tier before changing code. Small
+  models (<7B, or any general 7B on multi-step edits) produce failure
+  modes that the runtime deliberately surfaces loudly rather than hides:
+  wrong-tool selection, `ask_user` escalation, split create-empty-then-fill
+  plans. See [ARCHITECTURE §6.1](ARCHITECTURE.md#61-model-capability-assumptions-and-the-runtime-guards-that-defend-them)
+  for the full table of failure modes → runtime guards. If you reproduce
+  the same failure on a hosted frontier model, it's a Forge bug. If only
+  on a small local, check the guard exists and that your change hasn't
+  regressed it.
 
 ---
 

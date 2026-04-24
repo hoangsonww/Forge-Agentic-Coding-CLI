@@ -425,6 +425,36 @@ html, body { overflow-x: hidden; }
 .hero-submit:hover { background: var(--accent-hi); }
 .hero-submit svg { width: 18px; height: 18px; }
 
+.hero-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 720px;
+  margin: 12px auto 0;
+  padding: 0 6px;
+}
+.hero-project-label {
+  font-size: 12px;
+  color: var(--dim);
+  flex: 0 0 auto;
+}
+.hero-cwd {
+  flex: 1 1 auto;
+  padding: 7px 11px;
+  background: var(--bg-1);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.hero-cwd:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.hero-cwd::placeholder { color: var(--dim); }
+.hero-project .btn { flex: 0 0 auto; padding: 6px 12px; font-size: 12px; }
+
 .hero-hint {
   color: var(--muted);
   font-size: 11.5px;
@@ -587,6 +617,13 @@ html, body { overflow-x: hidden; }
 .table tr:last-child td { border-bottom: none; }
 .table tbody tr { transition: background var(--tween); }
 .table tbody tr:hover { background: var(--surface-hi); cursor: default; }
+.table tbody tr.row-clickable { cursor: pointer; }
+.table tbody tr.row-clickable:hover {
+  background: var(--accent-soft);
+}
+.table tbody tr.row-clickable:active {
+  background: var(--surface-hi);
+}
 .table th {
   color: var(--muted);
   font-weight: 600;
@@ -785,6 +822,22 @@ textarea {
   animation: fade-in 0.15s ease-out;
   white-space: pre-wrap;
   word-break: break-word;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.log-line .log-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.log-line .stream-head { margin-bottom: 4px; }
+.log-line .log-ts {
+  flex: 0 0 auto;
+  color: var(--dim);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+  padding-top: 2px;
 }
 .log-line time {
   color: var(--dim);
@@ -795,6 +848,152 @@ textarea {
 .log-line.warning { color: var(--warn); }
 .log-line.error { color: var(--err); }
 .log-line.critical { color: var(--err); font-weight: 700; }
+.log-line-stream {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+.log-line-stream .stream-text {
+  color: var(--fg);
+  white-space: normal;
+  word-break: break-word;
+}
+/* Live-streamed markdown inside a .stream-text span — same visual rules as
+   .log-md so the live reflow matches the final DONE render. Block-level
+   children (pre, ul, ol, h1-6) need proper spacing so partial renders
+   during streaming don't jump around as new tokens land. */
+.log-line-stream .stream-text p { margin: 4px 0; }
+.log-line-stream .stream-text pre {
+  background: rgba(0,0,0,0.3);
+  padding: 8px 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 6px 0;
+}
+.log-line-stream .stream-text code {
+  background: rgba(0,0,0,0.35);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.log-line-stream .stream-text pre code { background: transparent; padding: 0; border: none; }
+.log-line-stream .stream-text h1,
+.log-line-stream .stream-text h2,
+.log-line-stream .stream-text h3,
+.log-line-stream .stream-text h4 { margin: 8px 0 4px; font-size: 13px; }
+.log-line-stream .stream-text ul,
+.log-line-stream .stream-text ol { margin: 4px 0; padding-left: 22px; }
+.log-line-stream.log-line-done {
+  border-left-color: var(--border);
+}
+/* Live "working" indicator shown between STARTED and DONE, mirrors the
+   ora spinner the REPL/CLI emit. The braille glyph is swapped every 80ms
+   via JS; the CSS here just colors + positions. */
+.log-line-working {
+  color: var(--dim);
+}
+.log-line-working .working-spinner {
+  color: var(--accent);
+  display: inline-block;
+  min-width: 1ch;
+  font-weight: 700;
+}
+.log-line-working .working-phase {
+  color: var(--fg);
+}
+/* Markdown emitted inside a log line — summary from DONE/FAILED. Block
+   markdown (code fences, lists, headings) gets its own indented card so
+   the label + body don't share a single line. */
+.log-line .log-md {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  border-radius: 4px;
+  line-height: 1.5;
+}
+.log-line .log-md p { margin: 4px 0; }
+.log-line .log-md pre {
+  background: rgba(0,0,0,0.3);
+  padding: 8px 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.log-line .log-md code {
+  background: rgba(0,0,0,0.35);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.log-line .log-md pre code { background: transparent; padding: 0; border: none; }
+.log-line .log-md h1,
+.log-line .log-md h2,
+.log-line .log-md h3 { margin: 8px 0 4px; font-size: 13px; }
+.log-line .log-md ul,
+.log-line .log-md ol { margin: 4px 0; padding-left: 22px; }
+.log-line .md-inline code {
+  background: rgba(0,0,0,0.35);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* ---- Conversation follow-up input ---- */
+.fu-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 48px;
+  max-height: 260px;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: 13.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.fu-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.fu-input::placeholder {
+  color: var(--dim);
+}
+.fu-cwd {
+  flex: 1 1 auto;
+  padding: 6px 10px;
+  background: var(--bg-1);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.fu-cwd:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.fu-cwd::placeholder { color: var(--dim); }
+
+/* ---- Directory picker modal ---- */
+.dp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--fg);
+}
+.dp-row:last-child { border-bottom: none; }
+.dp-row:hover { background: var(--accent-soft); }
+.dp-row .dp-icon { opacity: 0.7; flex: 0 0 auto; }
+.dp-row .dp-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Plan viewer ---- */
 .plan-viewer { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; }
@@ -999,6 +1198,18 @@ code {
   border-radius: 4px;
   font-size: 11.5px;
   border: 1px solid var(--border);
+}
+/* The global `code` rule above puts a 1px border + background on inline
+   `<code>`. Inside a `<pre>` (fenced block) the `<code>` wraps multi-line
+   text; because `<code>` is inline, each rendered line becomes its own
+   line-box and each line-box gets its own top + bottom border — which
+   shows up as thin horizontal lines between every code line. Strip the
+   per-line chrome anywhere `<code>` lives inside a `<pre>`. */
+pre code {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
 kbd {
@@ -1317,13 +1528,19 @@ kbd {
   background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 8px 14px;
   max-width: min(780px, 74%);
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--fg-1);
-  white-space: pre-wrap;
   word-break: break-word;
+  /* NO `white-space: pre-wrap` here. The agent bubble receives
+     pre-rendered HTML and the template literal that builds it has
+     newlines + indentation between `<div class="chat-bubble-head">`,
+     `${body}`, and `${files}` — `pre-wrap` rendered those as actual
+     blank lines, producing huge empty gaps above and below the reply
+     text. `pre-wrap` is only needed on the user bubble where the
+     literal typed input might contain intentional newlines. */
 }
 .chat-msg-user .chat-bubble { border: none; white-space: pre-wrap; }
 
@@ -1340,6 +1557,13 @@ kbd {
 /* Markdown rendering in chat bubbles (both success and failure bodies) */
 .md p { margin: 0 0 8px; line-height: 1.55; }
 .md p:last-child { margin-bottom: 0; }
+/* Collapse top margin on the first block and bottom margin on the last
+   block inside an .md container. The bubble already provides 10px vertical
+   padding; without these resets the first heading/list added its own
+   10–12px top margin on top of that, making bot replies look padded by
+   ~22px on the first line and ~18px after the last paragraph. */
+.md > *:first-child { margin-top: 0; }
+.md > *:last-child { margin-bottom: 0; }
 .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
   margin: 12px 0 6px; font-weight: 700; line-height: 1.25; letter-spacing: -.01em;
 }
@@ -1360,7 +1584,7 @@ kbd {
   border-radius: 8px; padding: 10px 12px; margin: 8px 0;
   overflow-x: auto; font-size: .88em; line-height: 1.5;
 }
-.md pre code { background: transparent; padding: 0; color: #e2e8f0; font-size: inherit; }
+.md pre code { background: transparent; padding: 0; color: #e2e8f0; font-size: inherit; border: none; }
 .md blockquote {
   border-left: 3px solid rgba(148, 163, 184, .4);
   padding: 2px 0 2px 10px; margin: 8px 0; color: var(--muted);

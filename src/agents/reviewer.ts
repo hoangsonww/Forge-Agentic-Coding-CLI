@@ -26,11 +26,17 @@ Output STRICT JSON:
   "summary": string
 }
 
-Approve only if:
-- The requested change is actually complete.
-- No obvious regressions introduced.
-- Tests (if any) pass.
-- No security issues introduced (secrets, unsafe commands, unsanitized input).`;
+Approval rules:
+- For tasks that modify code (bugfix/feature/refactor/test/optimization):
+    Approve only if the requested change is complete, no obvious regressions
+    were introduced, any tests pass, and no security issues were introduced
+    (secrets, unsafe commands, unsanitized input).
+- For analysis / informational tasks (summarize, explain, describe, audit):
+    The deliverable is the answer itself, NOT a diff. Do NOT reject such a
+    task merely because there are no file changes — that's the expected
+    shape of the work. Approve if the requested analysis was produced and
+    appears coherent and on-topic. Reject only if the analysis is absent,
+    contradictory, or the agent clearly didn't perform the work.`;
 
 const parse = (content: string): ReviewVerdict | null => {
   const fence = /```(?:json)?\s*([\s\S]+?)\s*```/i.exec(content);
@@ -57,18 +63,24 @@ export interface ReviewerInput {
   changesSummary: string;
   filesChanged: string[];
   testsPassed?: boolean;
+  /** Intent from the classifier — lets the reviewer judge analysis tasks by analysis content, not by file-change count. */
+  intent?: import('../types').TaskType;
 }
 
 export const reviewOutcome = async (
   input: ReviewerInput,
   mode: import('../types').Mode,
 ): Promise<ReviewVerdict> => {
+  const intentLine = input.intent
+    ? `Task intent: ${input.intent}${input.intent === 'analysis' ? ' (informational — no file changes expected)' : ''}`
+    : '';
   const prompt = assembleTaskPrompt({
     mode,
     title: `Review: ${input.taskTitle}`,
     description: input.changesSummary,
     additionalUserText: `${reviewerSchema}
 
+${intentLine}
 Files changed: ${input.filesChanged.join(', ') || '(none)'}
 Tests passed: ${input.testsPassed ?? 'unknown'}
 

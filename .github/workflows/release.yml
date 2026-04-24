@@ -36,7 +36,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci --ignore-scripts
+      - name: Install dependencies
+        # npm/cli#4828 self-heal (see ci.yml for rationale).
+        run: |
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - run: npm rebuild better-sqlite3
       - run: npm run build
       - run: npx vitest run
@@ -73,7 +85,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci --ignore-scripts
+      - name: Install dependencies
+        # npm/cli#4828 self-heal (see ci.yml for rationale).
+        run: |
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - run: npm rebuild better-sqlite3
       - run: npm run build
       - run: npm pack
@@ -194,7 +218,19 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
           cache: npm
-      - run: npm ci --ignore-scripts
+      - name: Install dependencies
+        # npm/cli#4828 self-heal (see ci.yml for rationale).
+        run: |
+          npm ci --ignore-scripts || {
+            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
+          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+            rm -rf node_modules package-lock.json
+            npm install --ignore-scripts --no-audit --no-fund
+          }
       - run: npm rebuild better-sqlite3
       - run: npm run build
       - run: npm publish --provenance --access public

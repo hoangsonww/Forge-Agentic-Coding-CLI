@@ -345,6 +345,48 @@ total — into `{class, roles, contextTokens}`.
 model isn't installed on the user's provider. Picks best-fit from what's
 actually there, caches per process, warns once.
 
+### 6.1 Model-capability assumptions and the runtime guards that defend them
+
+Forge does not assume a frontier model. The agentic loop is shaped so that
+small, cheap, local-first models (down to the 7B tier) can drive it usefully
+— but not silently. Every observed small-model failure mode has a
+corresponding runtime guard so that either:
+
+- the model recovers cleanly (retry with different args, switch tool, set
+  `done:true`), or
+- the tool fails loudly and non-retryably, forcing the executor to change
+  strategy instead of looping, or
+- the task ends with an honest failure message rather than corrupted state.
+
+| Failure mode (small / mid models) | Where it manifests | Runtime guard |
+|---|---|---|
+| Wrong tool selection (e.g. `run_command` to write file contents) | `src/agents/executor.ts` | System prompt spells out `step.type → tool` mapping and forbids `run_command` for file writes |
+| Splitting "create empty file → edit to fill" across steps | planner output → `src/tools/edit-file.ts` | `edit_file` with `oldText=""` on an empty/missing file writes the full body instead of erroring |
+| Missing-parent-directory `ENOENT` on `write_file` | `src/tools/write-file.ts` | `createDirs` defaults to `true` (mkdir-p); opt out explicitly to get the old behaviour |
+| Escalating to `ask_user` on tool errors, stalling the step | `src/tools/ask-user.ts` | Rejects questions < 3 chars as non-retryable; description tells the model "tool errors are for you to recover from, not escalate" |
+| Cold-load timeout treated as a model failure and fallback to hosted | `src/models/ollama.ts`, `src/models/router.ts` | Headers-timeout floor at 300 s; proactive `warm()` with `/api/ps` preflight; explicit `MODEL_WARMING`/`MODEL_WARMED` events drive the spinner |
+| Malformed JSON breaking `{actions, summary, done}` | `src/agents/executor.ts` | Parse-through-first-fence + schema validation; per-step retry budget capped; loop detector catches thrashing |
+| Reviewer rejecting analysis tasks for "no file changes" | `src/agents/reviewer.ts` | Classifier sets `requiresReview=false` for intent=analysis; loop short-circuits the verify phase; reviewer prompt knows analysis tasks have no diff |
+| Two concurrent edits racing on the same file | `src/sandbox/file-lock.ts` | Per-process path-keyed mutex serializes read-modify-write; atomic `writeAtomic` via temp + rename prevents torn reads |
+| `create_file` step that emits an empty file | `src/agents/planner.ts` | Planner prompt requires a single `create_file` step with the full intended body; `edit_file`-on-empty safety-net if ignored |
+
+**Consequences for capability tiers** (measured empirically, not specced —
+expect some variance across model families):
+
+| Work | Local floor | Above the floor | Below the floor |
+|---|---|---|---|
+| Conversation / concept Q&A | 3B instruct | — | fast-path skips tool use, so even 3B works |
+| Summarize / explain | 7B instruct | clean streaming narrator output | summary reduces to "I read the file" |
+| Single-file edits | 7B code specialist (deepseek-coder, qwen2.5-coder) | reliable tool calls, minimal retries | wrong-tool selection, step retries, occasional loop-detector trips |
+| Multi-file / new feature | 14B+ code specialist OR hosted | plan quality holds; dependencies tracked | plan IDs drift; validation retries exhausted |
+| Architecture / refactor | hosted frontier | end-to-end runs without intervention | not practical today |
+
+When the local-first path is insufficient, the router's fallback wiring
+(circuit breaker + `fallback` field on `RoutingDecision`) transparently
+routes the next call to the hosted provider if one is configured. No code
+change, no flag — just set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` and the
+system degrades gracefully under model failure.
+
 ---
 
 ## 7. Permission + sandbox model

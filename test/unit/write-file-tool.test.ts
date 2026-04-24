@@ -85,9 +85,18 @@ describe('write_file tool', () => {
     expect(fs.existsSync(path.join(tmp, 'sub/nested/deep.txt'))).toBe(true);
   });
 
-  it('fails without createDirs when parent is missing', async () => {
+  it('auto-creates missing parent dirs by default (mkdir -p semantics)', async () => {
     const r = await writeFileTool.execute(
       { path: 'missing/x.txt', content: 'hi' },
+      { ...ctx, projectRoot: tmp },
+    );
+    expect(r.success).toBe(true);
+    expect(fs.existsSync(path.join(tmp, 'missing/x.txt'))).toBe(true);
+  });
+
+  it('fails when createDirs is explicitly false and parent is missing', async () => {
+    const r = await writeFileTool.execute(
+      { path: 'absent/y.txt', content: 'hi', createDirs: false },
       { ...ctx, projectRoot: tmp },
     );
     expect(r.success).toBe(false);

@@ -15,7 +15,12 @@ import { indexTask, upsertProject, deleteTaskFromIndex } from './index-db';
 import * as pathModule from 'path';
 
 const LEGAL_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  draft: ['planned', 'cancelled'],
+  // `completed` and `failed` direct from `draft` are used by the
+  // conversation fast-path (`TaskType === 'conversation'`), where no
+  // planning/execution ever occurs — the orchestrator calls the model
+  // directly and records a terminal result. Keeping these transitions
+  // explicit is honest about the lifecycle a task actually went through.
+  draft: ['planned', 'cancelled', 'completed', 'failed'],
   planned: ['approved', 'cancelled', 'blocked'],
   approved: ['scheduled', 'cancelled'],
   scheduled: ['running', 'cancelled', 'blocked'],

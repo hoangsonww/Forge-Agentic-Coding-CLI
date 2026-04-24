@@ -54,6 +54,7 @@ export type TaskType =
   | 'setup'
   | 'test'
   | 'optimization'
+  | 'conversation'
   | 'other';
 
 export type Complexity = 'trivial' | 'simple' | 'moderate' | 'complex';
@@ -173,8 +174,11 @@ export type EventType =
   | 'TOOL_COMPLETED'
   | 'TOOL_FAILED'
   | 'MODEL_CALLED'
+  | 'MODEL_DELTA'
   | 'MODEL_COMPLETED'
   | 'MODEL_FAILED'
+  | 'MODEL_WARMING'
+  | 'MODEL_WARMED'
   | 'PERMISSION_REQUESTED'
   | 'PERMISSION_GRANTED'
   | 'PERMISSION_DENIED'
@@ -245,6 +249,24 @@ export interface ModelResponse {
   finishReason?: 'stop' | 'length' | 'error' | 'tool_call';
 }
 
+/**
+ * One frame of a streaming completion. Providers yield any number of
+ * `done:false` chunks (each carrying a text `delta`), terminated by a single
+ * `done:true` chunk that may also carry usage, finishReason, and duration.
+ * The final `delta` on a done:true frame is usually empty but implementations
+ * may concatenate it verbatim.
+ */
+export interface ModelStreamChunk {
+  delta: string;
+  done: boolean;
+  model?: string;
+  provider?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  durationMs?: number;
+  finishReason?: 'stop' | 'length' | 'error' | 'tool_call';
+}
+
 export interface ModelProvider {
   readonly name: string;
   isAvailable(): Promise<boolean>;
@@ -254,6 +276,24 @@ export interface ModelProvider {
     messages: ModelMessage[],
     options?: ModelCallOptions,
   ): Promise<ModelResponse>;
+  /**
+   * Optional streaming completion. When absent, callers should treat the
+   * provider as non-streaming and fall back to `complete()`.
+   */
+  stream?(
+    model: string,
+    messages: ModelMessage[],
+    options?: ModelCallOptions,
+  ): AsyncIterable<ModelStreamChunk>;
+  /**
+   * Optional pre-warm hook. For runtimes that load models into RAM/VRAM on
+   * demand (Ollama, LM Studio), calling `warm` before the first real call
+   * hides the cold-load latency behind an explicit "warming" phase instead
+   * of a mysterious headers-timeout. Should be idempotent — already-loaded
+   * models return quickly. Must not throw: failures are treated as "did
+   * what we could" and the next real call surfaces any real error.
+   */
+  warm?(model: string): Promise<void>;
 }
 
 // ---------- Prompts ----------

@@ -6,6 +6,60 @@
 
 import { TaskType, Complexity, Risk, Scope } from '../types';
 
+/**
+ * Conservative detector for "pure conversational question" inputs that don't
+ * need the plan/approve/execute pipeline — e.g. "what's the difference
+ * between a Map and a Dict?" or "explain closures".
+ *
+ * Err strongly toward false (treat as normal task). A missed-conversation
+ * just means the user waits through planning for a tiny reply; a
+ * false-positive means we answer from general knowledge when the user was
+ * asking about their codebase.
+ *
+ * Rejects anything that:
+ *   - references a file/path/extension in the repo
+ *   - mentions "this codebase / this file / our code / …"
+ *   - contains any imperative code verb (create/fix/refactor/write/…)
+ *   - is longer than ~400 chars (chat questions are short)
+ * Accepts if it starts with an interrogative (what/why/how/…) or ends with `?`.
+ */
+export const looksConversational = (input: string): boolean => {
+  const s = input.trim();
+  if (!s || s.length > 400) return false;
+
+  // Any reference to repo artifacts disqualifies — the user is asking about
+  // their code, not a general concept.
+  const repoRef =
+    /\b(src|lib|app|test|tests|docs|bin|dist|node_modules|public|scripts)\/[\w./-]+|\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|cs|php|swift|kt|md|json|yaml|yml|toml|html|css|scss|sh|sql|proto|graphql)\b|\bthis (repo|repository|codebase|code ?base|project|file|function|module|component|class|package|method|script|service)\b|\bthe (codebase|repo|project|file)\b|\b(README|CHANGELOG|LICENSE|NOTICE|CONTRIBUTING|SECURITY|Dockerfile|Makefile|package\.json|tsconfig|eslintrc|prettierrc)\b/;
+  if (repoRef.test(s)) return false;
+
+  // Imperative code / analysis actions imply the user wants something DONE
+  // on concrete targets, not chatted about abstractly.
+  const imperative =
+    /\b(create|add|build|implement|introduce|fix|patch|refactor|rewrite|edit|modify|update|change|write|delete|remove|drop|migrate|install|upgrade|downgrade|optimi[sz]e|scaffold|deploy|setup|configure|rename|move|copy|generate|run|execute|test|summari[sz]e|analy[sz]e|audit|review|investigate|debug|trace|lint|format)\b/i;
+  if (imperative.test(s)) return false;
+
+  // Greetings / short chat openers. Pulled out because they're common REPL
+  // starters and don't match any interrogative pattern.
+  const greeting =
+    /^(hi|hello|hey|yo|sup|howdy|greetings|good (morning|afternoon|evening|night)|thanks?|thx|ty|ok|okay|cool|nice|great|sure|yep|yeah|yes|no|nope|bye|goodbye|cheers)\b[!?. ]*$/i;
+  if (greeting.test(s)) return true;
+
+  // Question shape: starts with an interrogative or ends with '?'.
+  const interrogative =
+    /^(what|why|how|when|where|who|which|is|are|can|could|should|would|will|does|do|did|explain|compare|contrast|tell me|describe (?!src)|define|difference between)\b/i;
+  if (interrogative.test(s)) return true;
+  if (s.endsWith('?')) return true;
+
+  // Short, non-imperative, no-repo-ref text (<=5 words, <=40 chars) is
+  // almost always small talk or a clarifying remark rather than a coding
+  // task. Takes the fast-path.
+  const wordCount = s.split(/\s+/).filter(Boolean).length;
+  if (s.length <= 40 && wordCount <= 5) return true;
+
+  return false;
+};
+
 interface KeywordRule {
   re: RegExp;
   type: TaskType;
@@ -26,7 +80,7 @@ const RULES: KeywordRule[] = [
     weight: 3,
   },
   {
-    re: /\b(explain|understand|analy[sz]e|describe|what does|why does)\b/i,
+    re: /\b(explain|understand|analy[sz]e|describe|summari[sz]e|summary|audit|review|what does|why does|how does)\b/i,
     type: 'analysis',
     weight: 2,
   },

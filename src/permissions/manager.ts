@@ -8,7 +8,7 @@
  */
 
 import chalk from 'chalk';
-import prompts from 'prompts';
+import { chooseNumbered } from '../cli/choose';
 import { PermissionRequest, PermissionDecision } from '../types';
 import { ForgeRuntimeError } from '../types/errors';
 import { loadPermissionGrants, savePermissionGrant, PermissionRow } from '../persistence/index-db';
@@ -84,25 +84,31 @@ const promptUser = async (req: PermissionRequest): Promise<PermissionDecision> =
     }`,
   );
 
-  const choices = [
-    { title: 'Allow once', value: 'allow' },
-    { title: 'Allow for this session', value: 'allow_session' },
-    { title: 'Deny', value: 'deny' },
+  // Color choices so digit hotkeys feel obvious (green = allow family,
+  // red = deny). `allow_project` appears only for medium/low risk since
+  // a persistent grant on a `high`/`critical` tool is too sharp an edge.
+  const choices: Array<{
+    title: string;
+    value: PermissionDecision | 'allow_project';
+    color?: 'green' | 'red' | 'yellow' | 'cyan';
+    hint?: string;
+  }> = [
+    { title: 'Allow once', value: 'allow', color: 'green' },
+    { title: 'Allow for this session', value: 'allow_session', color: 'green' },
   ];
-  // Only non-high-risk tools can be saved as persistent grants.
   if (req.risk !== 'critical' && req.risk !== 'high') {
-    choices.splice(2, 0, { title: 'Allow for this project (remember)', value: 'allow_project' });
+    choices.push({
+      title: 'Allow for this project',
+      value: 'allow_project',
+      color: 'cyan',
+      hint: '(remember)',
+    });
   }
+  choices.push({ title: 'Deny', value: 'deny', color: 'red' });
 
-  const resp = await prompts({
-    type: 'select',
-    name: 'value',
-    message: 'Decision',
-    choices,
-    initial: 0,
-  });
-  if (!resp || !resp.value) return 'deny';
-  if (resp.value === 'allow_project') {
+  const value = await chooseNumbered({ message: 'Decision', choices, initial: 0 });
+  if (!value) return 'deny';
+  if (value === 'allow_project') {
     savePermissionGrant({
       tool: req.tool,
       project_id: req.projectId,
@@ -112,7 +118,7 @@ const promptUser = async (req: PermissionRequest): Promise<PermissionDecision> =
     });
     return 'allow_session';
   }
-  return resp.value as PermissionDecision;
+  return value as PermissionDecision;
 };
 
 export const requestPermission = async (
@@ -143,9 +149,15 @@ export const requestPermission = async (
     return blanket;
   }
 
-  // Cached decision
+  // Cached decision — an explicit "Allow for session/project/global" from
+  // the user is a first-class authorization and MUST be honored on
+  // subsequent calls. The old `!shouldAlwaysAsk` gate here was double-
+  // counting: it treated every `execute`/`network` tool as "always ask"
+  // even after the user had explicitly granted it, so users saw the same
+  // prompt 3+ times and their grant never took effect. Only `critical`
+  // risk should ignore the cache — those must re-confirm every call.
   const cached = tryCachedGrant(req);
-  if (cached && !shouldAlwaysAsk({ risk: req.risk, sideEffect: req.sideEffect }, true)) {
+  if (cached && req.risk !== 'critical') {
     return cached;
   }
 

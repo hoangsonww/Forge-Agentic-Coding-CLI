@@ -14,9 +14,30 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Shared mutable fixture so individual tests can seed persisted grants
+// without redeclaring the mock per file.
+const persisted: Array<{
+  tool: string;
+  project_id: string | null;
+  scope: string;
+  granted_at: string;
+  expires_at: string | null;
+}> = [];
+
 vi.mock('../../src/persistence/index-db', () => ({
-  loadPermissionGrants: () => [],
-  savePermissionGrant: () => undefined,
+  loadPermissionGrants: (tool: string, projectId: string | null) =>
+    persisted.filter(
+      (g) => g.tool === tool && (g.project_id === projectId || g.scope === 'global'),
+    ),
+  savePermissionGrant: (row: {
+    tool: string;
+    project_id: string | null;
+    scope: string;
+    granted_at: string;
+    expires_at: string | null;
+  }) => {
+    persisted.push(row);
+  },
   getDb: () => ({
     prepare: () => ({ all: () => [], get: () => null, run: () => undefined }),
     exec: () => undefined,
@@ -89,5 +110,59 @@ describe('permission manager — non-interactive decisions', () => {
         nonInteractive: true,
       }),
     ).rejects.toThrow(/permission denied/i);
+  });
+});
+
+describe('permission manager — cached grants', () => {
+  beforeEach(() => {
+    clearSession();
+    persisted.length = 0;
+  });
+
+  it("honors a project grant for an execute tool (fix: don't re-prompt run_tests)", async () => {
+    persisted.push({
+      tool: 'run_tests',
+      project_id: 'proj',
+      scope: 'project',
+      granted_at: new Date().toISOString(),
+      expires_at: null,
+    });
+    const d = await requestPermission(
+      baseReq({ tool: 'run_tests', sideEffect: 'execute', risk: 'medium' }),
+      { nonInteractive: true },
+    );
+    expect(d).toBe('allow_session');
+  });
+
+  it('honors a global grant for a network tool', async () => {
+    persisted.push({
+      tool: 'web.fetch',
+      project_id: null,
+      scope: 'global',
+      granted_at: new Date().toISOString(),
+      expires_at: null,
+    });
+    const d = await requestPermission(
+      baseReq({ tool: 'web.fetch', sideEffect: 'network', risk: 'medium' }),
+      { nonInteractive: true },
+    );
+    expect(d).toBe('allow_session');
+  });
+
+  it('still re-confirms critical-risk tools regardless of grants', async () => {
+    persisted.push({
+      tool: 'dangerous_op',
+      project_id: 'proj',
+      scope: 'project',
+      granted_at: new Date().toISOString(),
+      expires_at: null,
+    });
+    const d = await requestPermission(
+      baseReq({ tool: 'dangerous_op', sideEffect: 'execute', risk: 'critical' }),
+      { nonInteractive: true },
+    );
+    // Critical risk bypasses cache and falls through to prompt; in
+    // non-interactive mode that means deny.
+    expect(d).toBe('deny');
   });
 });

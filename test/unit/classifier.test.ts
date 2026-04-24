@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { heuristicClassify } from '../../src/classifier/heuristics';
+import { heuristicClassify, looksConversational } from '../../src/classifier/heuristics';
 
 describe('heuristicClassify', () => {
   it('detects bugfix intent', () => {
@@ -39,5 +39,48 @@ describe('heuristicClassify', () => {
   it('returns trivial complexity for renames', () => {
     const r = heuristicClassify('rename variable foo to bar');
     expect(r.complexity).toBe('trivial');
+  });
+});
+
+describe('looksConversational', () => {
+  it('accepts pure concept questions', () => {
+    expect(looksConversational('what is the difference between a map and a dict?')).toBe(true);
+    expect(looksConversational('why is tail-call optimization hard in v8?')).toBe(true);
+    expect(looksConversational('how does the event loop work?')).toBe(true);
+    expect(looksConversational('explain closures')).toBe(true);
+    expect(looksConversational('compare goroutines and threads')).toBe(true);
+  });
+
+  it('rejects anything that references repo artifacts', () => {
+    expect(looksConversational('explain how src/core/loop.ts works')).toBe(false);
+    expect(looksConversational('what is this codebase doing in the auth module?')).toBe(false);
+    expect(looksConversational('summarize the README')).toBe(false);
+    expect(looksConversational('why is this function so slow?')).toBe(false);
+  });
+
+  it('rejects imperatives that imply code changes', () => {
+    expect(looksConversational('create a Map class')).toBe(false);
+    expect(looksConversational('fix the bug where X')).toBe(false);
+    expect(looksConversational('refactor to use async/await')).toBe(false);
+    expect(looksConversational('write a test for Y')).toBe(false);
+  });
+
+  it('accepts common greetings and short chat openers', () => {
+    expect(looksConversational('hi')).toBe(true);
+    expect(looksConversational('hello')).toBe(true);
+    expect(looksConversational('hey!')).toBe(true);
+    expect(looksConversational('thanks')).toBe(true);
+    expect(looksConversational('good morning')).toBe(true);
+    expect(looksConversational('ok')).toBe(true);
+  });
+
+  it('accepts short non-imperative prose without a repo reference', () => {
+    expect(looksConversational('tell me something fun')).toBe(true);
+    expect(looksConversational('recommend a book')).toBe(true);
+    expect(looksConversational('your thoughts on rust')).toBe(true);
+  });
+
+  it('rejects overly long inputs', () => {
+    expect(looksConversational('a'.repeat(500))).toBe(false);
   });
 });

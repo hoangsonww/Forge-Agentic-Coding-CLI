@@ -9,7 +9,7 @@ set -euo pipefail
 #
 # End result (either path): `forge` on your PATH.
 
-FORGE_PKG="${FORGE_PKG:-@forge/cli}"
+FORGE_PKG="${FORGE_PKG:-@hoangsonw/forge}"
 FORGE_VERSION="${FORGE_VERSION:-latest}"
 FORGE_MODE="${FORGE_MODE:-auto}"
 
@@ -35,7 +35,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 IN_REPO=0
-if [ -f "${REPO_ROOT}/package.json" ] && grep -q '"name": "@forge/cli"' "${REPO_ROOT}/package.json"; then
+if [ -f "${REPO_ROOT}/package.json" ] && grep -q '"name": "@hoangsonw/forge"' "${REPO_ROOT}/package.json"; then
   IN_REPO=1
 fi
 

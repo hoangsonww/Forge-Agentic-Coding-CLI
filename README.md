@@ -4,14 +4,16 @@
 
 # Forge
 
-**A local-first, multi-agent, programmable software-engineering runtime.**
+**A local-first, plan-first, multi-agent, and programmable software-engineering runtime.**
 
 *Not an assistant. A runtime.* Forge brings its own scheduler, sandbox,
 permission system, state machine, agentic loop, memory layers, and
 plugin ecosystem. You pick the model. You approve the actions. Everything
 is inspectable, replayable, and yours.
 
-**[Install](docs/INSTALL.md) · [Dev setup](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Releases & versioning](RELEASES.md) · [Wiki Page](index.html) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
+<img src="images/logo.jpeg" alt="Forge logo" width="50%" />
+
+**[Install](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/INSTALL.md) · [Dev setup](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/SETUP.md) · [Architecture](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/docs/ARCHITECTURE.md) · [Releases & versioning](https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/blob/master/RELEASES.md) · [Demo walkthrough](DEMO.md) · [Wiki Page](https://hoangsonww.github.io/Forge-Agentic-Coding-CLI/) · [NPM Package](https://www.npmjs.com/package/@hoangsonw/forge) · [License](LICENSE)**
 
 </div>
 
@@ -42,25 +44,25 @@ is inspectable, replayable, and yours.
 
 ## At a glance
 
-Forge is a local-first, multi-agent, programmable software-engineering runtime. Unlike Claude Code or OpenAI Codex, Forge is local-first infrastructure, not a hosted assistant. It brings its own scheduler, sandbox, permission system, state machine, agentic loop, memory layers, and plugin ecosystem. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
+Forge is a local-first, plan-first, multi-agent, and programmable software-engineering runtime. Unlike Claude Code or OpenAI Codex, Forge is local-first infrastructure, not a hosted assistant. It brings its own scheduler, sandbox, permission system, state machine, agentic loop, memory layers, and plugin ecosystem. You pick & host the model. You approve the actions. Everything is inspectable, replayable, and yours.
 
 <div align="center">
 
-| | value | reproducer |
-|---|---|---|
-| ⚡ **`forge doctor` cold-start** | **173 ms** | `time node bin/forge.js doctor --no-banner` |
-| ⚡ **`forge --help` cold-start** | **238 ms** | `time node bin/forge.js --help` |
-| 📦 **UI shell · zero CDN** | **90 KB** uncompressed | `wc -c src/ui/public/app.js` |
-| 🌐 **Provider probe timeout** | **1.5 s** | `src/models/openai.ts#isAvailable` |
-| 🔌 **Model providers** (auto-detected) | **6** | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic |
-| 🧠 **Model families** classified | **41** | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / … |
-| 🤖 **Built-in agents** | **6** | planner · architect · executor · reviewer · debugger · memory |
-| 🛠 **Tools** available to agents | **18** | read · write · edit · grep · glob · run_command · git · web · … |
-| 💬 **CLI subcommands · slash commands** | **24 · 55** | `forge --help` · `/help` in REPL |
-| 🎛 **Modes** | **9** | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
-| ✅ **Tests** | **548 / 97 files** · 100% passing · ~5.5 s wall-clock | `npx vitest run` |
-| 🐳 **CI jobs · release stages** | **9 · 6** | [`.github/workflows/`](.github/workflows) |
-| 📦 **Container image** | ~355 MB · multi-arch · non-root · HEALTHCHECK | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest` |
+|                                         | value                                                 | reproducer                                                                          |
+|-----------------------------------------|-------------------------------------------------------|-------------------------------------------------------------------------------------|
+| ⚡ **`forge doctor` cold-start**         | **173 ms**                                            | `time node bin/forge.js doctor --no-banner`                                         |
+| ⚡ **`forge --help` cold-start**         | **238 ms**                                            | `time node bin/forge.js --help`                                                     |
+| 📦 **UI shell · zero CDN**              | **90 KB** uncompressed                                | `wc -c src/ui/public/app.js`                                                        |
+| 🌐 **Provider probe timeout**           | **1.5 s**                                             | `src/models/openai.ts#isAvailable`                                                  |
+| 🔌 **Model providers** (auto-detected)  | **6**                                                 | ollama · lmstudio · vllm · llama.cpp · openai-compat · anthropic                    |
+| 🧠 **Model families** classified        | **41**                                                | Llama / Qwen / DeepSeek / Gemma / Phi / Mistral / Codestral / …                     |
+| 🤖 **Built-in agents**                  | **6**                                                 | planner · architect · executor · reviewer · debugger · memory                       |
+| 🛠 **Tools** available to agents        | **18**                                                | read · write · edit · grep · glob · run_command · git · web · …                     |
+| 💬 **CLI subcommands · slash commands** | **24 · 55**                                           | `forge --help` · `/help` in REPL                                                    |
+| 🎛 **Modes**                            | **9**                                                 | fast · balanced · heavy · plan · execute · audit · debug · architect · offline-safe |
+| ✅ **Tests**                             | **548 / 97 files** · 100% passing · ~5.5 s wall-clock | `npx vitest run`                                                                    |
+| 🐳 **CI jobs · release stages**         | **9 · 6**                                             | [`.github/workflows/`](.github/workflows)                                           |
+| 📦 **Container image**                  | ~355 MB · multi-arch · non-root · HEALTHCHECK         | `docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:latest`                     |
 
 </div>
 
@@ -235,9 +237,38 @@ docker compose -f docker/docker-compose.yml up -d
 # open http://127.0.0.1:7823
 ```
 
-**Requirements:** Node ≥ 20 *and/or* Docker ≥ 25. At least one LLM source
-(local runtime or API key). See [`docs/INSTALL.md`](docs/INSTALL.md) for
-per-OS notes.
+### System requirements
+
+| | Minimum | Notes |
+|---|---|---|
+| **Node.js** | **≥ 20** (22 tested) | Enforced via `package.json#engines`. Not needed if you use Docker. |
+| **OS** | macOS · Linux · Windows (WSL recommended) | `better-sqlite3` ships prebuilds for darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64 — no compile step. |
+| **Disk** | ~150 MB for `node_modules`; state under `~/.forge` grows with history | Override via `FORGE_HOME`. |
+| **RAM** | Forge ~100 MB; your local model consumes its own RAM/VRAM | `forge doctor` cold-starts in ~170 ms. |
+| **Docker** (alt path) | ≥ 25 | Multi-arch (amd64, arm64) image on GHCR. Zero host Node needed. |
+| **At least one model source** | Ollama · LM Studio · vLLM · llama.cpp · Anthropic · OpenAI-compatible | `forge doctor` tells you which are reachable. |
+
+**Runtime npm dependencies** (13, zero optional): `@modelcontextprotocol/sdk`, `better-sqlite3` (native, prebuilt), `chalk`, `cli-table3`, `commander`, `dotenv`, `ora`, `prompts`, `semver`, `undici`, `ws`, `yaml`, `zod`. No Python, Rust, or Go toolchain.
+
+**Recommended** (not required): `ripgrep` (fast `grep` tool path), `git` (diff/status tools + project-root detection), `$EDITOR` (used when you pick "Edit" on a plan).
+
+See [`docs/INSTALL.md`](docs/INSTALL.md) for per-OS notes and [`docs/SETUP.md`](docs/SETUP.md) for contributor setup.
+
+### See it running
+
+Three surfaces, one runtime.
+
+**REPL (Interactive Terminal) Mode**
+
+https://github.com/user-attachments/assets/eb592bbf-62a1-4d74-a540-7e066ebe56a4
+
+**CLI (Headless, One-shot run) Mode**
+
+https://github.com/user-attachments/assets/bc3b3204-fd87-436f-9467-604535edb4e2
+
+**Web UI Dashboard**
+
+https://github.com/user-attachments/assets/218cd64f-40fe-4836-9c62-c7a08538056b
 
 ---
 
@@ -496,6 +527,42 @@ warns once, never refuses to route.
 Unknown models are accepted too — Forge rates them as generic executors
 rather than refusing to route.
 
+### Model size & capability notes
+
+The agentic loop is cheap for the runtime but expensive for the *model*.
+Every step is a multi-turn tool-use conversation that returns strict JSON.
+Small models struggle with this in recognisable ways — please pick the
+right tool for the job.
+
+| Work you want to do | Safe local floor | What fails below the floor |
+|---|---|---|
+| Pure chat ("explain closures") | any 3B instruct (phi-3:mini, gemma-3:2b) | fine — conversation fast-path bypasses tool use entirely |
+| Summarize a file, explain a snippet | 7B instruct (qwen2.5:7b, llama3.1:8b) | summary is a line of "I read the file" instead of content |
+| Single-file edits / small features | **7B+ code specialist** (deepseek-coder:6.7b, qwen2.5-coder:7b) | picks wrong tool (run_command to write files), splits "create empty + edit" patterns, escalates to ask_user on tool errors |
+| Multi-file refactors, new features | 14B+ code specialist or a hosted frontier model | plan quality drops; step IDs get inconsistent; validation retries exhausted |
+| Architecture-level changes | hosted (Claude Opus/Sonnet, GPT-4 class) realistically | budgets blow out; changes go off-plan |
+
+Forge ships with defences so a small model fails *loudly* instead of
+silently corrupting files: the executor prompt spells out step-type →
+tool mappings, `ask_user` rejects empty/too-short questions as
+non-retryable, `edit_file` handles "create empty then fill" gracefully,
+parent directories auto-create, provider warm-up is explicit, and the
+router streams prose without `jsonMode` for narrator/conversation
+paths. The result is that a small model will often tell you it can't
+finish a task; it will rarely write the wrong code into a file.
+
+If in doubt: configure a code specialist for the `code` role, keep
+something lighter for `fast`, and set `ANTHROPIC_API_KEY` or
+`OPENAI_API_KEY` as a fallback — the router uses the hosted provider
+automatically when the local one fails or trips its circuit breaker.
+
+```bash
+forge config set models.code    deepseek-coder:6.7b
+forge config set models.planner qwen2.5:7b
+forge config set models.fast    phi3:mini
+export ANTHROPIC_API_KEY=sk-…   # optional fallback
+```
+
 ---
 
 ## Safety model (not optional)
@@ -566,6 +633,8 @@ Each mode is an **enforceable budget** — not a hint to the model. See
 ---
 
 ## CLI reference
+
+> **▶ See each surface in action** in [DEMO.md](DEMO.md) — REPL walkthrough, `forge run` one-shots, and the web dashboard.
 
 24 subcommands. Full surface:
 
@@ -696,6 +765,8 @@ API key auth. Tokens stored in the OS keychain.
 
 Single hardened image (non-root, HEALTHCHECK, OCI labels, ~355 MB) that
 serves both CLI and UI.
+
+> [▶ Dashboard demo](images/UI.mp4) — `forge ui start` driving a full task end-to-end (plan approval, streamed model output, follow-up thread). More in [DEMO.md](DEMO.md).
 
 ```bash
 # Pull (multi-arch: linux/amd64 + linux/arm64):

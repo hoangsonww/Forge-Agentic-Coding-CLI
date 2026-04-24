@@ -411,6 +411,31 @@ ul li {
   50%      { transform: scale(1.6); opacity: .5; }
 }
 
+@media (max-width: 560px) {
+  .eyebrow {
+    gap: 8px;
+    padding: 7px 14px;
+    font-size: 9px;
+    letter-spacing: .12em;
+    line-height: 1.45;
+    max-width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  .eyebrow .pulse {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .eyebrow {
+    font-size: 8.5px;
+    letter-spacing: .08em;
+    padding: 7px 12px;
+  }
+}
+
 .hero h1 {
   margin-top: 22px;
   font-size: clamp(34px, 5.5vw, 72px);
