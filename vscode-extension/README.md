@@ -17,6 +17,12 @@ The full Forge agentic coding workflow, brought into your editor. Run tasks from
 - **Click-through to task detail**: every recent task in the sidebar opens directly into its conversation, plan, and result, not just the dashboard home.
 - **Workspace-aware**: respects your VS Code workspace folder by default and lets you override the working directory per project, or pick a fresh one with a folder picker.
 
+> [!TIP]
+> Marketplace Link: [https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli](https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli).
+
+> [!IMPORTANT]
+> Be sure to install the Forge runtime (`@hoangsonw/forge`) globally before using the extension, as it relies on Forge for all interactions. The extension does not bundle the runtime, so it can stay up to date independently.
+
 ## Quick start
 
 ```bash
