@@ -2757,7 +2757,35 @@ _sortObserver.observe(document.getElementById('app'), { childList: true, subtree
 
 renderNav();
 setStatus(true);
-setView('dashboard');
+
+// Deep-link support — `?task=<id>` (or `#task=<id>`) opens the task
+// detail view on load. `?view=<name>` (or `#view=<name>`) jumps to a
+// named view (e.g. ?view=tasks). Used by the VS Code extension and
+// any other surface that wants to link directly.
+const bootRoute = () => {
+  try {
+    const url  = new URL(location.href);
+    const hash = url.hash || '';
+    const qid  = url.searchParams.get('task');
+    const hid  = hash.match(/(?:^|[#&])task=([a-z0-9_]+)/i);
+    const id   = qid || (hid ? hid[1] : '');
+    if (id && typeof openTask === 'function') {
+      openTask(id);
+      return true;
+    }
+    const qview = url.searchParams.get('view');
+    const hview = hash.match(/(?:^|[#&])view=([a-z0-9_-]+)/i);
+    const view  = qview || (hview ? hview[1] : '');
+    if (view && views[view]) {
+      setView(view);
+      return true;
+    }
+  } catch {}
+  return false;
+};
+if (!bootRoute()) setView('dashboard');
+window.addEventListener('hashchange', () => bootRoute());
+
 setInterval(pollActive, 4000);
 pollActive();
 

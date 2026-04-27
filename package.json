@@ -1,6 +1,6 @@
 {
   "name": "@hoangsonw/forge",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Forge - a local-first, multi-agent, programmable software-engineering runtime",
   "license": "MIT",
   "author": "Son Nguyen (hoangsonw)",

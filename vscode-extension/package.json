@@ -1,0 +1,133 @@
+{
+  "name": "forge-agentic-coding-cli",
+  "displayName": "Forge - Agentic Coding CLI",
+  "description": "Run Forge agentic coding tasks, watch them stream live, and browse history without leaving VS Code.",
+  "version": "1.1.1",
+  "publisher": "hoangsonw",
+  "license": "MIT",
+  "author": "Son Nguyen <hoangson091104@gmail.com>",
+  "homepage": "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoangsonww/Forge-Agentic-Coding-CLI.git",
+    "directory": "vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/hoangsonww/Forge-Agentic-Coding-CLI/issues"
+  },
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": ["AI", "Other"],
+  "keywords": ["forge", "agent", "cli", "repl", "ai"],
+  "icon": "media/android-chrome-512x512.png",
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "forge.openRepl",       "title": "Forge: Open REPL",                   "icon": "$(terminal)"          },
+      { "command": "forge.runTask",        "title": "Forge: Run Task…",                   "icon": "$(rocket)"            },
+      { "command": "forge.runSelection",   "title": "Forge: Run Selection as Task",       "icon": "$(play)"              },
+      { "command": "forge.runFile",        "title": "Forge: Use Active File as Task",     "icon": "$(file)"              },
+      { "command": "forge.startUi",        "title": "Forge: Start UI Server",             "icon": "$(server-environment)"},
+      { "command": "forge.stopUi",         "title": "Forge: Stop UI Server",              "icon": "$(stop)"              },
+      { "command": "forge.openDashboard",  "title": "Forge: Open Dashboard",              "icon": "$(browser)"           },
+      { "command": "forge.openInBrowser",  "title": "Forge: Open Dashboard in Browser",   "icon": "$(link-external)"     },
+      { "command": "forge.doctor",         "title": "Forge: Run Doctor",                  "icon": "$(pulse)"             },
+      { "command": "forge.status",         "title": "Forge: Show Status",                 "icon": "$(info)"              },
+      { "command": "forge.refreshTree",    "title": "Forge: Refresh Sidebar",             "icon": "$(refresh)"           },
+      { "command": "forge.openSettings",   "title": "Forge: Open Settings",               "icon": "$(gear)"              },
+      { "command": "forge.copyDashUrl",    "title": "Forge: Copy Dashboard URL",          "icon": "$(clippy)"            },
+      { "command": "forge.killTerminals",  "title": "Forge: Stop All Forge Terminals",    "icon": "$(close-all)"         },
+      { "command": "forge.changeCwd",      "title": "Forge: Change Working Directory",    "icon": "$(folder-opened)"     },
+      { "command": "forge.openTask",       "title": "Forge: Open Task in Dashboard",      "icon": "$(go-to-file)"        },
+      { "command": "forge.openTasksView",  "title": "Forge: Open Tasks Page",             "icon": "$(list-unordered)"    },
+      { "command": "forge.install",        "title": "Forge: Install Runtime via npm",     "icon": "$(cloud-download)"    },
+      { "command": "forge.openInstallDocs", "title": "Forge: Open Install Docs",          "icon": "$(book)"              }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "forge.runSelection",
+          "when": "editorHasSelection",
+          "group": "forge@1"
+        }
+      ],
+      "view/title": [
+        { "command": "forge.refreshTree",  "when": "view == forgeView", "group": "navigation@9" },
+        { "command": "forge.openRepl",     "when": "view == forgeView", "group": "navigation@1" },
+        { "command": "forge.runTask",      "when": "view == forgeView", "group": "navigation@2" },
+        { "command": "forge.openDashboard","when": "view == forgeView", "group": "navigation@3" }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "forge",
+          "title": "Forge",
+          "icon": "media/sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "forge": [
+        { "id": "forgeView", "name": "Forge", "type": "webview", "icon": "media/sidebar.svg" }
+      ]
+    },
+    "configuration": {
+      "title": "Forge",
+      "properties": {
+        "forge.binaryPath": {
+          "type": "string",
+          "default": "forge",
+          "description": "Path to the Forge binary. Defaults to the `forge` command on PATH. May be a relative path resolved against the workspace folder."
+        },
+        "forge.cwd": {
+          "type": "string",
+          "default": "",
+          "description": "Working directory for Forge processes. Empty = first workspace folder."
+        },
+        "forge.uiHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host the dashboard listens on."
+        },
+        "forge.uiPort": {
+          "type": "number",
+          "default": 7823,
+          "description": "Port the dashboard listens on."
+        },
+        "forge.autoStartUi": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start the dashboard server automatically when VS Code activates the extension."
+        },
+        "forge.replArgs": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string" },
+          "description": "Extra arguments passed to the Forge REPL when launched from the extension."
+        },
+        "forge.runArgs": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string" },
+          "description": "Extra arguments forwarded to `forge run` (e.g. [\"--mode\",\"plan\"])."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json",
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.4.0"
+  }
+}

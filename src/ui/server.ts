@@ -13,7 +13,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { URL } from 'url';
 import { WebSocketServer } from 'ws';
-import { listTasks, listProjects, searchTasks, getDb } from '../persistence/index-db';
+import { listTasks, listProjects, searchTasks, getDb, getTask } from '../persistence/index-db';
 import { loadTask } from '../persistence/tasks';
 import { loadSession } from '../persistence/sessions';
 import { loadGlobalConfig, updateGlobalConfig, findProjectRoot } from '../config/loader';
@@ -314,10 +314,28 @@ const router = async (
   // Historical task detail — last to avoid catching /active, /run, /<id>/cancel.
   const taskMatch = /^\/api\/tasks\/([a-z0-9_]+)$/.exec(p);
   if (taskMatch && req.method === 'GET') {
-    const projectPath = u.searchParams.get('projectPath') ?? findProjectRoot() ?? process.cwd();
-    const task = loadTask(projectPath, taskMatch[1]);
-    if (!task) return sendJson(res, 404, { error: 'task not found' });
-    return sendJson(res, 200, task);
+    const taskId = taskMatch[1];
+    const explicit = u.searchParams.get('projectPath');
+    const candidates: string[] = [];
+    if (explicit) candidates.push(explicit);
+    // Resolve via the global index: every task row knows its project_id,
+    // and the projects table maps project_id → absolute path. This is
+    // what makes cross-project task detail lookups work without the
+    // caller having to know which project the task was created in.
+    const indexed = getTask(taskId);
+    if (indexed) {
+      const proj = listProjects().find((p) => p.id === indexed.project_id);
+      if (proj?.path) candidates.push(proj.path);
+    }
+    const detected = findProjectRoot();
+    if (detected) candidates.push(detected);
+    candidates.push(process.cwd());
+
+    for (const root of candidates) {
+      const task = loadTask(root, taskId);
+      if (task) return sendJson(res, 200, task);
+    }
+    return sendJson(res, 404, { error: 'task not found', taskId, tried: candidates });
   }
 
   // ---- Sessions ----
