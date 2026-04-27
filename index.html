@@ -44,6 +44,7 @@
     <nav class="nav-links" aria-label="primary">
       <a href="#overview">Overview</a>
       <a href="#features">Features</a>
+      <a href="#vscode">VS Code</a>
       <a href="#loop">Loop</a>
       <a href="#executor">Executor</a>
       <a href="#memory">Memory</a>
@@ -129,6 +130,7 @@
       <a href="#overview"><span class="n">01</span>Overview</a>
       <a href="#features"><span class="n">02</span>Features</a>
       <a href="#demos"><span class="n">▶</span>Live demos</a>
+      <a href="#vscode"><span class="n">▶</span>VS Code extension</a>
       <a href="#loop"><span class="n">03</span>Agentic loop</a>
       <a href="#state"><span class="n">04</span>State machine</a>
       <a href="#executor"><span class="n">05</span>Executor &amp; validation</a>
@@ -223,7 +225,7 @@
     <div class="section-head">
       <span class="tag">Live demos</span>
       <h2>See it <em>running</em>.</h2>
-      <p>Screen captures of each Forge surface — the interactive REPL, the one-shot CLI, and the web dashboard — all driving the same runtime.</p>
+      <p>Screen captures of each Forge surface — the interactive REPL, the one-shot CLI, and the web dashboard — all driving the same runtime. The VS Code extension has its own showcase <a href="#vscode">below</a>.</p>
     </div>
 
     <div class="grid grid-3" style="margin-bottom: 32px;">
@@ -289,6 +291,67 @@
 " poster="images/ui.png" controls muted playsinline preload="metadata"
              style="display:block;width:100%;height:auto;background:#000"></video>
         <a class="video-overlay-btn" href="https://drive.google.com/drive/folders/1YJLQblgGl_2fNZ0-8-lX9TvQsGGZ12sn?usp=sharing" target="_blank" rel="noopener noreferrer" title="Open all demos on Google Drive">Drive</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ▶ VS CODE EXTENSION
+     ============================================================ -->
+<section id="vscode">
+  <div class="container">
+    <div class="section-head">
+      <span class="tag">▶ VS Code</span>
+      <h2>The full workflow, <em>in your editor.</em></h2>
+      <p>A first-class Forge surface that lives next to your code. Same runtime, same persisted state, same agents — surfaced through an activity-bar sidebar, integrated terminals, and an embedded dashboard webview.</p>
+    </div>
+
+    <div class="code-win" style="margin: 0 0 32px; display: flex; flex-direction: column;">
+      <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">forge-agentic-coding-cli · activity-bar sidebar</span></div>
+      <div class="video-wrap" style="position:relative">
+        <img src="vscode-extension/vscode.png" alt="Forge for VS Code — activity-bar sidebar with stats, recent tasks, and quick actions"
+             style="display:block;width:100%;height:auto;background:#000;object-fit:contain">
+        <a class="video-overlay-btn" href="https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli" target="_blank" rel="noopener noreferrer" title="Open on the VS Code Marketplace">Marketplace</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>What the extension brings to your editor</h3>
+        <p>The activity-bar webview reads straight from <code>~/.forge/global/index.db</code> via the system <code>sqlite3</code>, so lifetime stats (tokens, calls, task counts) stay accurate even with no Forge process running. When the dashboard server <em>is</em> up, the sidebar layers in live provider state on top.</p>
+        <p>Click any task in the recent list and the embedded webview opens directly to its conversation view — not the dashboard home. Cross-project lookups work because the runtime's <code>/api/tasks/:id</code> endpoint resolves the project automatically from the index.</p>
+        <div class="tags"><span>sidebar</span><span>deep-link</span><span>offline-stats</span><span>cross-project</span></div>
+      </div>
+      <div class="card">
+        <h3>Install the extension</h3>
+        <p class="small" style="margin:0 0 6px;opacity:.8">From the command line</p>
+        <pre style="margin:0 0 12px"><code>code --install-extension hoangsonw.forge-agentic-coding-cli</code></pre>
+        <p class="small" style="margin:0 0 6px;opacity:.8">From the Marketplace</p>
+        <pre style="margin:0 0 12px"><code>https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli</code></pre>
+        <p class="small" style="margin:0 0 6px;opacity:.8">Prereq</p>
+        <pre style="margin:0"><code>npm install -g @hoangsonw/forge   # the runtime</code></pre>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top: 24px;">
+      <div class="card">
+        <div class="num">⌘ ⇧ P</div>
+        <h3>Run anything as a task</h3>
+        <p>Highlight a TODO comment, right-click → <em>Run Selection as Task</em>. Or use the whole buffer with <em>Use Active File as Task</em>. Each run opens its own integrated terminal and streams in real time.</p>
+        <div class="tags"><span>selection</span><span>file</span><span>palette</span></div>
+      </div>
+      <div class="card">
+        <div class="num">◫</div>
+        <h3>Dashboard, embedded</h3>
+        <p>One click launches <code>forge ui start</code> in the background, polls until reachable, and embeds the dashboard in a webview right next to your code. Reload + open-in-browser shortcuts at the top.</p>
+        <div class="tags"><span>webview</span><span>auto-start</span><span>iframe</span></div>
+      </div>
+      <div class="card">
+        <div class="num">◉</div>
+        <h3>Status-bar pill + workspace meta</h3>
+        <p>Single rocket pill flips between <em>live</em> and <em>idle</em>. The sidebar's workspace card shows <code>cwd</code>, <code>url</code>, provider and mode with one-click copy. <em>Change Working Directory</em> retargets per workspace.</p>
+        <div class="tags"><span>status-bar</span><span>cwd-picker</span><span>copy</span></div>
       </div>
     </div>
   </div>
@@ -864,9 +927,9 @@ zod                        <span class="com"># runtime validation of plans &amp;
   <div class="container">
     <div class="section-head">
       <span class="tag">14 · Install</span>
-      <h2>Three paths. <em>Pick one.</em></h2>
+      <h2>Four paths. <em>Pick one.</em></h2>
     </div>
-    <div class="grid grid-3">
+    <div class="grid grid-4">
       <div>
         <h4>01 / npm</h4>
         <div class="code-win">
@@ -879,7 +942,18 @@ zod                        <span class="com"># runtime validation of plans &amp;
         <p style="margin-top:12px"><a href="https://www.npmjs.com/package/@hoangsonw/forge">View the published npm package</a></p>
       </div>
       <div>
-        <h4>02 / Docker</h4>
+        <h4>02 / VS Code</h4>
+        <div class="code-win">
+          <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">marketplace</span><span class="lang">bash</span></div>
+<pre><span class="prompt"></span>npm i -g @hoangsonw/forge
+<span class="prompt"></span>code --install-extension \
+  hoangsonw.forge-agentic-coding-cli
+</pre>
+        </div>
+        <p style="margin-top:12px"><a href="https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli">Open on the VS Code Marketplace</a></p>
+      </div>
+      <div>
+        <h4>03 / Docker</h4>
         <div class="code-win">
           <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">zero local Node</span><span class="lang">bash</span></div>
 <pre><span class="prompt"></span>docker run --rm -it \
@@ -890,7 +964,7 @@ zod                        <span class="com"># runtime validation of plans &amp;
         </div>
       </div>
       <div>
-        <h4>03 / Compose</h4>
+        <h4>04 / Compose</h4>
         <div class="code-win">
           <div class="titlebar"><div class="traffic"><i></i><i></i><i></i></div><span class="ttl">full stack</span><span class="lang">bash</span></div>
 <pre><span class="prompt"></span>docker compose \

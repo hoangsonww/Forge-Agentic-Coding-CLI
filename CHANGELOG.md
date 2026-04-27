@@ -2,6 +2,35 @@
 
 All notable changes to Forge are tracked here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0] - 2026-04-27
+
+First stable release. The runtime, agentic loop, persistence model, permission system, sandbox, and provider abstractions are now considered stable surface area. Breaking changes from here on bump MAJOR.
+
+### Added
+- **VS Code extension** (`vscode-extension/`, published as `hoangsonw.forge-agentic-coding-cli`). First-class editor surface with an activity-bar webview, status-bar pill, command palette integration, deep-linking from any task into the dashboard's conversation view, integrated terminals for REPL / `forge run` / `forge ui start` / `forge doctor`, and an embedded dashboard webview. Reads stats directly from `~/.forge/global/index.db` so token, call, and task counts stay accurate even with no Forge process running. Onboarding flow when the runtime is missing: install via npm, custom-path override, docs link.
+- **Dashboard URL deep-linking** — `?task=<id>` (or `#task=<id>`) opens the task detail view on load; `?view=<name>` jumps directly to a named view. Used by the VS Code extension's "view all" and per-task click-through, but available to any caller.
+- **Plan-edit modal** in the dashboard — JSON editor pops up when you choose Edit on a plan approval; edited plans flow back through the same `interactive-host` channel as terminal edits.
+- **Live markdown streaming in the dashboard** — `model.delta` events render via `requestAnimationFrame`-coalesced markdown reflow so headings, fences, and lists form up as tokens arrive instead of dumping at the end.
+- **Per-task delta replay buffer** so a WebSocket client that connects mid-stream sees the tokens that were already emitted, not just future ones.
+- **Cross-project task detail lookup** — `/api/tasks/:id` resolves the project automatically via the global index, with a fallback chain (explicit `?projectPath=` → `getTask().project_id` → `findProjectRoot()` → `process.cwd()`). 404 responses now include the list of paths that were tried.
+- **Demos page** in the docs site (`#demos`) and a dedicated **VS Code section** (`#vscode`) on the landing page.
+- **Demo recordings** for REPL, CLI, and dashboard surfaces, plus a screenshot of the VS Code extension. Drive overlay buttons on every video for users who can't load embedded MP4s.
+
+### Changed
+- Tightened dashboard markdown renderer: inline triple-backtick fences now normalised to multi-line; ordered lists honor source numbering via `<ol start="N">` and tolerate blank lines between items; per-line borders inside `<pre><code>` removed; chat-bubble whitespace tightened.
+- REPL launch banner and completion block now render with the same divider/breadcrumb/summary treatment as `forge run`, so REPL turns and one-shot CLI runs look identical.
+- Status-bar dashboard reachability indicator now probes `/api/status` over HTTP before flipping to "offline", eliminating false-offline blips during heavy task streams.
+- Plan auto-approval bug: plans now wait for the user's decision in the UI before execution. Previously some plans were silently approved.
+- Conversation rendering: TASK_COMPLETED events carry a short message; the streamed reply is no longer duplicated in the DONE block.
+
+### Fixed
+- Streaming dropping deltas due to a task-id mismatch between the UI runner and the orchestrator. Both sides now agree on the canonical `task_<hex>` id.
+- "Spend $0.000" stat tile removed for local providers (Ollama / llama.cpp), where cost is always zero by design. Token totals still shown.
+- Tokens stat now reflects the real lifetime sum from `model_cost_ledger` instead of the in-memory delta.
+- Recent-task rows weren't clickable / showed every task as `pending` because the API field is `status` (not `state`) and `title` (not `prompt`). Field names corrected and the entire row is now the click target.
+- Sidebar layout overflowed on narrow widths. Action grid uses `repeat(auto-fit, minmax(96px, 1fr))`; stats grid uses `minmax(78px, 1fr)`. Workspace card uses RTL truncation so long paths show their tail.
+- VS Code "view all" button now opens the dashboard's Tasks page, not the home view.
+
 ## [0.1.0] - 2026-04-18
 
 Initial public release. Includes the full planning spec surface area.

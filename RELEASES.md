@@ -443,10 +443,10 @@ FROM ghcr.io/hoangsonw/forge-agentic-coding-cli:0.2.0
 
 ```bash
 # npm — downgrade explicitly.
-npm install -g @hoangsonw/forge@0.1.1
+npm install -g @hoangsonw/forge@1.0.0
 
 # Docker — swap the tag.
-docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:0.1.1
+docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:1.0.0
 
 # Tell the built-in updater to stop nagging about a broken version.
 forge update ignore 0.2.0
@@ -643,6 +643,32 @@ Stable within a MAJOR. Migrations under [`src/migrations/runner.ts`](src/migrati
 
 <!-- Newest at the top. Keep the template from
      "Release-notes template" above. -->
+
+### v1.0.0 — 2026-04-27
+
+#### Highlights
+- First stable release. Runtime, agentic loop, persistence, permissions, sandbox, and provider abstractions are now stable surface area; future breaking changes bump MAJOR.
+- New first-class **VS Code extension** (`hoangsonw.forge-agentic-coding-cli`) with activity-bar webview, stats grid, recent tasks, and deep-linking from any task into the dashboard's conversation view.
+- **Dashboard URL deep-linking** — `?task=<id>` opens task detail; `?view=<name>` jumps to a named view. Used by the VS Code extension and any other surface that links into the dashboard.
+- Cross-project task detail lookup via `/api/tasks/:id` — resolves the project automatically from the global index.
+
+#### Added
+- VS Code extension surface (separate npm package + Marketplace listing).
+- `?task=` / `?view=` deep-link routing in the dashboard SPA.
+- Plan-edit modal in the dashboard (JSON editor for plan approval).
+- Per-task delta replay buffer so late-connecting WebSocket clients see prior tokens.
+- Demo recordings + VS Code screenshot on the landing page.
+
+#### Changed
+- Live markdown streaming uses rAF-coalesced reflow instead of dump-at-end.
+- REPL completion summary now matches `forge run` formatting.
+- Status-bar reachability indicator HTTP-probes before flipping to offline.
+- Plans wait for explicit user decision in the UI; no silent auto-approval.
+
+#### Fixed
+- Streaming previously dropped deltas due to a task-id mismatch between the UI runner and the orchestrator.
+- Recent-task rows in the VS Code sidebar are now clickable and show the right status.
+- Cross-project task detail lookups no longer 404.
 
 ### v0.1.1 — 2026-04-20
 

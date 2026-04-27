@@ -18,6 +18,7 @@
 - [7. Permission + sandbox model](#7-permission--sandbox-model)
 - [8. Conversation & persistence](#8-conversation--persistence)
 - [9. UI topology](#9-ui-topology)
+  - [9.1 VS Code extension](#91-vs-code-extension)
 - [10. CI/CD pipeline](#10-cicd-pipeline)
 - [11. Deployment topologies](#11-deployment-topologies)
 - [12. Runtime metrics at a glance](#12-runtime-metrics-at-a-glance)
@@ -42,6 +43,7 @@ flowchart TB
     CLI["CLI (commander)"]:::surface
     REPL["REPL (raw-mode editor)"]:::surface
     UI["Dashboard (HTTP + WS)"]:::surface
+    VSCX["VS Code extension<br/>(vscode-extension/)"]:::surface
   end
 
   ORCH["Orchestrator<br/>src/core/orchestrator.ts"]:::core
@@ -105,6 +107,7 @@ Code it maps to:
 | CLI surface | `src/cli/` (24 commands) |
 | REPL | `src/cli/repl.ts` + `src/cli/repl-input.ts` |
 | UI | `src/ui/server.ts` + `src/ui/public/` |
+| VS Code extension | `vscode-extension/` (separate npm package, ships to the VS Code Marketplace) |
 | Orchestrator | `src/core/orchestrator.ts` |
 | Agentic loop | `src/core/loop.ts` |
 | Agents | `src/agents/{planner,architect,executor,reviewer,debugger,memory}.ts` |
@@ -493,6 +496,57 @@ flowchart LR
 - Conversation ids validated against `^(?:repl|chat|conv)-[a-z0-9_-]+$`
   for path-traversal safety.
 - Healthcheck endpoint `/api/status` used by the Docker HEALTHCHECK.
+
+### 9.1 VS Code extension
+
+The extension at `vscode-extension/` is a sibling surface — its own npm package, its own version, its own publish pipeline. It does not import any runtime code from `src/`; instead it talks to a Forge install the user already has on `PATH` and reads from the same persisted state.
+
+```mermaid
+flowchart LR
+  classDef b fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef s fill:#082f49,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef d fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  EDITOR[VS Code editor]:::b
+  EXT["forge-agentic-coding-cli<br/>extension host"]:::s
+  TERM[integrated terminals]:::s
+  WV["webview (iframe)"]:::s
+  SIDEBAR["activity-bar webview<br/>(stats / tasks / actions)"]:::s
+  FORGE[forge binary on $PATH]:::s
+  UISERVER[forge ui server]:::s
+  DB[(~/.forge/global/index.db)]:::d
+
+  EDITOR --> EXT
+  EXT -->|spawn forge / forge run / forge ui start| TERM
+  EXT -->|sqlite3 read-only| DB
+  EXT --> SIDEBAR
+  EXT --> WV
+  WV -->|iframe src + ?task=id| UISERVER
+  TERM --> FORGE
+  UISERVER --> DB
+```
+
+What the extension owns:
+
+- **Activity-bar webview** with status pill, workspace meta, live stats grid, action buttons, recent tasks, and providers. Polls every 4 s when visible.
+- **Status-bar item** that flips between *live* and *idle* based on `/api/status` reachability.
+- **Commands** for REPL, run-task / run-selection / run-file, dashboard lifecycle, doctor, settings, copy URL, change cwd, kill all.
+- **Deep linking** — clicking a recent task opens the dashboard webview with `?task=<id>`, which the SPA picks up at boot and routes straight to the conversation view.
+
+Data sources, in order of preference:
+
+1. The dashboard REST API (`/api/status`, `/api/tasks`, `/api/models`) when `forge ui` is running.
+2. The local SQLite index (`$FORGE_HOME/global/index.db`) read in read-only mode via the system `sqlite3` CLI. This is what makes lifetime stats (tokens, calls, task counts) work even with no Forge process running.
+
+The runtime exposes one piece of code specifically for this surface: `src/ui/server.ts → /api/tasks/:id` resolves the task's project automatically (index → projects → cwd fallback chain) so cross-project task detail lookups from the extension don't 404.
+
+Build and publish:
+
+```bash
+cd vscode-extension && npm install && npm run build
+npx @vscode/vsce package --no-dependencies   # produces .vsix
+npx @vscode/vsce publish --no-dependencies   # marketplace
+```
 
 ---
 

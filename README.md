@@ -256,7 +256,7 @@ See [`docs/INSTALL.md`](docs/INSTALL.md) for per-OS notes and [`docs/SETUP.md`](
 
 ### See it running
 
-Three surfaces, one runtime.
+Four surfaces, one runtime.
 
 **REPL (Interactive Terminal) Mode**
 
@@ -269,6 +269,14 @@ https://github.com/user-attachments/assets/bc3b3204-fd87-436f-9467-604535edb4e2
 **Web UI Dashboard**
 
 https://github.com/user-attachments/assets/218cd64f-40fe-4836-9c62-c7a08538056b
+
+**VS Code Extension**
+
+The same workflow, embedded in your editor. A live activity-bar sidebar with status, stats, recent tasks, and quick actions; deep-linking from any task into its conversation view; one-click dashboard webview; selection-as-task and file-as-task commands. Stats read straight from `~/.forge/global/index.db` so they stay accurate even when no server is running.
+
+![Forge for VS Code](vscode-extension/vscode.png)
+
+Install: `code --install-extension hoangsonw.forge-agentic-coding-cli` or [open it on the Marketplace](https://marketplace.visualstudio.com/items?itemName=hoangsonw.forge-agentic-coding-cli). See [`vscode-extension/README.md`](vscode-extension/README.md) for the full command reference.
 
 ---
 

@@ -1,6 +1,6 @@
 # CLI reference
 
-Full surface as of v0.1.0. `forge help <command>` for any sub-command.
+Full surface as of v1.0.0. `forge help <command>` for any sub-command.
 
 ## Root
 
