@@ -767,6 +767,23 @@ forge mcp status
 Both `stdio` and HTTP-stream transports supported. OAuth 2.0 + PKCE or
 API key auth. Tokens stored in the OS keychain.
 
+### Forge as an MCP server
+
+Forge can also run *as* an MCP server, not just consume them. Drop this into your Claude Desktop / Cursor / Continue config and the calling agent gets `forge_status`, `forge_plan`, `forge_get_task`, `forge_list_tasks` (read-only by default) plus `forge_run` and `forge_cancel_task` when started with `--allow-execute`:
+
+```json
+{
+  "mcpServers": {
+    "forge": {
+      "command": "forge",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+Full reference, security model, and per-client setup: [`docs/MCP-SERVER.md`](docs/MCP-SERVER.md).
+
 ---
 
 ## Run in a container (Docker or Podman)
