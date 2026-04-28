@@ -1,0 +1,136 @@
+name: 'Forge — Agentic Coding Run'
+description: 'Run a Forge agentic coding task in CI. Supports plan-only previews, full execution with verification, and PR-comment reporting.'
+author: 'Son Nguyen <hoangson091104@gmail.com>'
+branding:
+  icon: 'cpu'
+  color: 'blue'
+
+inputs:
+  task:
+    description: 'The task description that Forge should plan or execute. Multi-line is allowed.'
+    required: true
+  mode:
+    description: 'Execution mode: plan, balanced, risky. Defaults to plan, which is read-only and safe for any branch.'
+    required: false
+    default: 'plan'
+  extra-args:
+    description: 'Additional CLI flags forwarded to `forge run`, e.g. "--max-steps 30 --no-tests".'
+    required: false
+    default: ''
+  forge-version:
+    description: 'Pinned Forge version on npm. Defaults to latest. Use a full version like 1.0.0 for reproducible runs.'
+    required: false
+    default: 'latest'
+  node-version:
+    description: 'Node.js version used to install the Forge runtime.'
+    required: false
+    default: '20'
+  working-directory:
+    description: 'Directory the task runs in. Defaults to the repository root.'
+    required: false
+    default: '.'
+  provider:
+    description: 'Force a specific Forge provider (anthropic | openai | ollama | …). Empty = use the runtime default.'
+    required: false
+    default: ''
+  comment:
+    description: 'When true and the workflow is triggered by a PR event, post the task result as a PR comment.'
+    required: false
+    default: 'false'
+  fail-on-error:
+    description: 'When true, mark the action as failed if Forge exits non-zero. When false, surface the failure in outputs but keep the workflow green.'
+    required: false
+    default: 'true'
+  cache-forge-home:
+    description: 'When true, cache ~/.forge across runs to speed up the SQLite index and skill installs.'
+    required: false
+    default: 'true'
+
+outputs:
+  success:
+    description: 'true if Forge completed successfully, false otherwise.'
+    value: ${{ steps.run.outputs.success }}
+  task-id:
+    description: 'The Forge task ID assigned to this run.'
+    value: ${{ steps.run.outputs.task-id }}
+  summary:
+    description: 'Forge''s summary of what changed (one line).'
+    value: ${{ steps.run.outputs.summary }}
+  files-changed:
+    description: 'Space-separated list of files Forge modified.'
+    value: ${{ steps.run.outputs.files-changed }}
+  duration-ms:
+    description: 'How long the run took, in milliseconds.'
+    value: ${{ steps.run.outputs.duration-ms }}
+  cost-usd:
+    description: 'Estimated USD cost of the run (zero for local providers).'
+    value: ${{ steps.run.outputs.cost-usd }}
+  log-path:
+    description: 'Absolute path to the captured Forge log file on the runner.'
+    value: ${{ steps.run.outputs.log-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Cache ~/.forge
+      if: inputs.cache-forge-home == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.forge
+        key: forge-home-${{ runner.os }}-${{ inputs.forge-version }}-${{ github.repository }}
+        restore-keys: |
+          forge-home-${{ runner.os }}-${{ inputs.forge-version }}-
+          forge-home-${{ runner.os }}-
+
+    - name: Install Forge
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.forge-version }}" = "latest" ]; then
+          npm install -g @hoangsonw/forge
+        else
+          npm install -g @hoangsonw/forge@${{ inputs.forge-version }}
+        fi
+        forge --version
+
+    - name: Configure provider
+      if: inputs.provider != ''
+      shell: bash
+      run: forge config set provider ${{ inputs.provider }}
+
+    - name: Run Forge
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        FORGE_TASK: ${{ inputs.task }}
+        FORGE_MODE: ${{ inputs.mode }}
+        FORGE_EXTRA_ARGS: ${{ inputs.extra-args }}
+        FORGE_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: |
+        bash "${{ github.action_path }}/scripts/run.sh"
+
+    - name: Post PR comment
+      if: inputs.comment == 'true' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = process.env.FORGE_COMMENT_PATH;
+          if (!path || !fs.existsSync(path)) {
+            core.warning(`No comment payload at ${path}; skipping.`);
+            return;
+          }
+          const body = fs.readFileSync(path, 'utf8');
+          await github.rest.issues.createComment({
+            ...context.repo,
+            issue_number: context.issue.number,
+            body,
+          });
+      env:
+        FORGE_COMMENT_PATH: ${{ steps.run.outputs.comment-path }}

@@ -834,8 +834,23 @@ flowchart LR
   TYPE --> BUILD["🏗️ build"]:::pass
   BUILD --> DOCKER["🐳 docker-build"]:::pass
   PR --> AUDIT["🔐 audit"]:::pass
-  FMT & LINT & TYPE & TEST & BUILD & DOCKER & AUDIT & COV --> STATUS["📊 pipeline status<br/>GH step summary · fails if any required job failed"]:::gate
+  PR --> ACT["🎬 action tests"]:::pass
+  FMT & LINT & TYPE & TEST & BUILD & DOCKER & AUDIT & COV & ACT --> STATUS["📊 pipeline status<br/>GH step summary · fails if any required job failed"]:::gate
 ```
+
+### GitHub Action
+
+The repo also ships its own GitHub Action under [`actions/forge-run/`](actions/forge-run). Drop it into any workflow to run a Forge task in CI — plan-only previews on every PR, full execution + verification on demand, results posted as a PR comment:
+
+```yaml
+- uses: hoangsonww/Forge-Agentic-Coding-CLI/actions/forge-run@v1
+  with:
+    task: "Audit this PR for missing tests."
+    mode: plan
+    comment: true
+```
+
+See [`actions/forge-run/README.md`](actions/forge-run/README.md) for the full input/output reference and example workflows.
 
 ### Release (on `v*` tag)
 
