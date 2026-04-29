@@ -38,6 +38,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         # npm/cli#4828 self-heal (see ci.yml for rationale).
+        # `shell: bash` so the Windows runner uses Git Bash instead of
+        # PowerShell — `2>/dev/null`, `||`-grouped fallbacks, and `rm -rf`
+        # are bash-only and PowerShell mis-parses `/dev/null` as a path.
+        shell: bash
         run: |
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
@@ -87,6 +91,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         # npm/cli#4828 self-heal (see ci.yml for rationale).
+        # `shell: bash` so the Windows runner uses Git Bash instead of
+        # PowerShell — `2>/dev/null`, `||`-grouped fallbacks, and `rm -rf`
+        # are bash-only and PowerShell mis-parses `/dev/null` as a path.
+        shell: bash
         run: |
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
@@ -220,6 +228,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         # npm/cli#4828 self-heal (see ci.yml for rationale).
+        # `shell: bash` so the Windows runner uses Git Bash instead of
+        # PowerShell — `2>/dev/null`, `||`-grouped fallbacks, and `rm -rf`
+        # are bash-only and PowerShell mis-parses `/dev/null` as a path.
+        shell: bash
         run: |
           npm ci --ignore-scripts || {
             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
