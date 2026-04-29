@@ -443,10 +443,10 @@ FROM ghcr.io/hoangsonw/forge-agentic-coding-cli:0.2.0
 
 ```bash
 # npm — downgrade explicitly.
-npm install -g @hoangsonw/forge@1.0.0
+npm install -g @hoangsonw/forge@1.0.1
 
 # Docker — swap the tag.
-docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:1.0.0
+docker pull ghcr.io/hoangsonw/forge-agentic-coding-cli:1.0.1
 
 # Tell the built-in updater to stop nagging about a broken version.
 forge update ignore 0.2.0
@@ -643,6 +643,20 @@ Stable within a MAJOR. Migrations under [`src/migrations/runner.ts`](src/migrati
 
 <!-- Newest at the top. Keep the template from
      "Release-notes template" above. -->
+
+### v1.0.1 — 2026-04-29
+
+#### Highlights
+- **Forge as an MCP server** (`forge mcp serve`) — Claude Desktop, Cursor, Continue, and any MCP client can now plan and run Forge tasks from their own chat. Read-only by default; opt in to execution with `--allow-execute`.
+- **Release workflow fix** — Windows artifacts job no longer crashes on `2>/dev/null` because the install steps now run under Git Bash.
+
+#### Added
+- `forge mcp serve` subcommand with `--allow-execute` and `--cwd` flags.
+- New tools: `forge_status`, `forge_plan`, `forge_get_task`, `forge_list_tasks`, `forge_run`, `forge_cancel_task`.
+- `docs/MCP-SERVER.md` with per-client (Claude Desktop, Cursor, plain MCP) setup.
+
+#### Fixed
+- `.github/workflows/release.yml` install steps now force `shell: bash` so the Windows runner stops parsing `/dev/null` as a path.
 
 ### v1.0.0 — 2026-04-27
 

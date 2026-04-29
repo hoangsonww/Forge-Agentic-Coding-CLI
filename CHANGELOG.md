@@ -2,6 +2,16 @@
 
 All notable changes to Forge are tracked here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] - 2026-04-29
+
+Patch release: ships the MCP server surface (`forge mcp serve`) that landed after 1.0.0, plus a CI fix that unblocks the Windows artifacts job in the release workflow.
+
+### Added
+- **Forge as an MCP server** (`forge mcp serve`). Exposes the runtime as MCP tools so Claude Desktop, Cursor, Continue, and any other MCP client can plan and run Forge tasks from their own chat. Two trust tiers: read-only (default) exposes `forge_status`, `forge_plan`, `forge_get_task`, `forge_list_tasks`; `--allow-execute` (or `FORGE_MCP_ALLOW_EXECUTE=true`) adds `forge_run` and `forge_cancel_task`. Wraps the same `orchestrateRun()` entry point as the CLI/REPL/dashboard, so MCP-driven plans are byte-identical paths. See `docs/MCP-SERVER.md` for per-client setup.
+
+### Fixed
+- **Release workflow Windows artifacts**: the three install steps in `release.yml` used bash-only constructs (`2>/dev/null`, `||`-grouped fallbacks, `rm -rf`) which PowerShell parses as filesystem paths. Force `shell: bash` so the Windows runner uses Git Bash. The artifacts (win32-x64) job no longer crashes with `Could not find a part of the path 'D:\dev\null'`.
+
 ## [1.0.0] - 2026-04-27
 
 First stable release. The runtime, agentic loop, persistence model, permission system, sandbox, and provider abstractions are now considered stable surface area. Breaking changes from here on bump MAJOR.
