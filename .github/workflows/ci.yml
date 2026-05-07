@@ -336,13 +336,24 @@ jobs:
         run: npm audit --audit-level=high || true
 
   # ---------------------------------------------------------------------
+  # 🎬  forge-run action — smoke-tests the GitHub Action's runner script
+  # ---------------------------------------------------------------------
+  action-tests:
+    name: 🎬 action tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run forge-run smoke tests
+        run: bash actions/forge-run/test/run.test.sh
+
+  # ---------------------------------------------------------------------
   # 📊  Pipeline status — runs last, always; writes job-by-job summary
   # ---------------------------------------------------------------------
   pipeline-status:
     name: 📊 pipeline status
     runs-on: ubuntu-latest
     if: always()
-    needs: [format, lint, typecheck, test, coverage, build, docker, audit]
+    needs: [format, lint, typecheck, test, coverage, build, docker, audit, action-tests]
     steps:
       - name: Write GitHub summary
         env:
@@ -354,6 +365,7 @@ jobs:
           BUILD_R:    ${{ needs.build.result }}
           DOCKER_R:   ${{ needs.docker.result }}
           AUDIT_R:    ${{ needs.audit.result }}
+          ACTION_R:   ${{ needs.action-tests.result }}
         run: |
           set -eu
           icon() {
@@ -378,6 +390,7 @@ jobs:
             printf "| 🏗️ build         | %s  \`%s\` |\n" "$(icon "$BUILD_R")"  "$BUILD_R"
             printf "| 🐳 docker-build  | %s  \`%s\` |\n" "$(icon "$DOCKER_R")" "$DOCKER_R"
             printf "| 🔐 audit         | %s  \`%s\` |\n" "$(icon "$AUDIT_R")"  "$AUDIT_R"
+            printf "| 🎬 action tests  | %s  \`%s\` |\n" "$(icon "$ACTION_R")" "$ACTION_R"
             echo ""
             echo "> Commit: \`${GITHUB_SHA:0:7}\` · Ref: \`${GITHUB_REF_NAME}\` · Run: [#${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -390,10 +403,11 @@ jobs:
           TEST_R:   ${{ needs.test.result }}
           BUILD_R:  ${{ needs.build.result }}
           DOCKER_R: ${{ needs.docker.result }}
+          ACTION_R: ${{ needs.action-tests.result }}
         run: |
           set -eu
           bad=0
-          for v in "$FORMAT_R" "$LINT_R" "$TYPE_R" "$TEST_R" "$BUILD_R" "$DOCKER_R"; do
+          for v in "$FORMAT_R" "$LINT_R" "$TYPE_R" "$TEST_R" "$BUILD_R" "$DOCKER_R" "$ACTION_R"; do
             if [ "$v" != "success" ] && [ "$v" != "skipped" ]; then
               bad=1
             fi
