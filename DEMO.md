@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Forge demo</h1>
+  <h1>Forge - Demonstration of the Three Surfaces</h1>
   <img src="images/logo.jpeg" alt="Forge logo" width="30%" />
   <br>
   <em>Local-first, multi-agent, programmable software-engineering runtime.</em>
