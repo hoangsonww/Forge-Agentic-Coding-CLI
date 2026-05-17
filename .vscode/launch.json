@@ -1,6 +1,4 @@
 {
-  // Debug configurations for Forge. Each one uses an isolated FORGE_HOME
-  // so debugging never touches the developer's real ~/.forge state.
   "version": "0.2.0",
   "configurations": [
     {

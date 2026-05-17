@@ -15,7 +15,25 @@ import { McpHttpClient } from '../../mcp/http-transport';
 import { authorize, ensureAccessToken, OAuthConfig, loadTokens } from '../../mcp/oauth';
 import { setSecret, getSecret } from '../../keychain';
 
-export const mcpCommand = new Command('mcp').description('MCP connection management.');
+export const mcpCommand = new Command('mcp').description(
+  'MCP connection management. Also `forge mcp serve` to expose Forge itself as an MCP server.',
+);
+
+mcpCommand
+  .command('serve')
+  .description(
+    'Run Forge as an MCP server on stdio. Other agents (Claude Desktop, Cursor, Continue, …) can register this and call forge_plan / forge_run / forge_get_task / forge_list_tasks / forge_status. Read-only by default; pass --allow-execute or set FORGE_MCP_ALLOW_EXECUTE=true to enable forge_run and forge_cancel_task.',
+  )
+  .option('--allow-execute', 'enable execution tools (forge_run, forge_cancel_task)', false)
+  .option('--cwd <path>', 'default working directory for tool calls')
+  .action(async (opts: { allowExecute?: boolean; cwd?: string }) => {
+    bootstrap();
+    const { runForgeMcpServerOnStdio } = await import('../../mcp-server/server');
+    await runForgeMcpServerOnStdio({
+      allowExecute: opts.allowExecute,
+      defaultCwd: opts.cwd,
+    });
+  });
 
 mcpCommand
   .command('list')

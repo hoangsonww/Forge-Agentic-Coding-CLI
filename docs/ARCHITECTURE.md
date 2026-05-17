@@ -18,6 +18,8 @@
 - [7. Permission + sandbox model](#7-permission--sandbox-model)
 - [8. Conversation & persistence](#8-conversation--persistence)
 - [9. UI topology](#9-ui-topology)
+  - [9.1 VS Code extension](#91-vs-code-extension)
+  - [9.2 MCP server (`forge mcp serve`)](#92-mcp-server-forge-mcp-serve)
 - [10. CI/CD pipeline](#10-cicd-pipeline)
 - [11. Deployment topologies](#11-deployment-topologies)
 - [12. Runtime metrics at a glance](#12-runtime-metrics-at-a-glance)
@@ -42,6 +44,8 @@ flowchart TB
     CLI["CLI (commander)"]:::surface
     REPL["REPL (raw-mode editor)"]:::surface
     UI["Dashboard (HTTP + WS)"]:::surface
+    VSCX["VS Code extension<br/>(vscode-extension/)"]:::surface
+    MCPS["MCP server<br/>(forge mcp serve)"]:::surface
   end
 
   ORCH["Orchestrator<br/>src/core/orchestrator.ts"]:::core
@@ -105,6 +109,8 @@ Code it maps to:
 | CLI surface | `src/cli/` (24 commands) |
 | REPL | `src/cli/repl.ts` + `src/cli/repl-input.ts` |
 | UI | `src/ui/server.ts` + `src/ui/public/` |
+| VS Code extension | `vscode-extension/` (separate npm package, ships to the VS Code Marketplace) |
+| MCP server | `src/mcp-server/server.ts` + `forge mcp serve` (exposes Forge as an MCP server consumed by Claude Desktop, Cursor, …) |
 | Orchestrator | `src/core/orchestrator.ts` |
 | Agentic loop | `src/core/loop.ts` |
 | Agents | `src/agents/{planner,architect,executor,reviewer,debugger,memory}.ts` |
@@ -493,6 +499,96 @@ flowchart LR
 - Conversation ids validated against `^(?:repl|chat|conv)-[a-z0-9_-]+$`
   for path-traversal safety.
 - Healthcheck endpoint `/api/status` used by the Docker HEALTHCHECK.
+
+### 9.1 VS Code extension
+
+The extension at `vscode-extension/` is a sibling surface — its own npm package, its own version, its own publish pipeline. It does not import any runtime code from `src/`; instead it talks to a Forge install the user already has on `PATH` and reads from the same persisted state.
+
+```mermaid
+flowchart LR
+  classDef b fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef s fill:#082f49,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef d fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  EDITOR[VS Code editor]:::b
+  EXT["forge-agentic-coding-cli<br/>extension host"]:::s
+  TERM[integrated terminals]:::s
+  WV["webview (iframe)"]:::s
+  SIDEBAR["activity-bar webview<br/>(stats / tasks / actions)"]:::s
+  FORGE[forge binary on $PATH]:::s
+  UISERVER[forge ui server]:::s
+  DB[(~/.forge/global/index.db)]:::d
+
+  EDITOR --> EXT
+  EXT -->|spawn forge / forge run / forge ui start| TERM
+  EXT -->|sqlite3 read-only| DB
+  EXT --> SIDEBAR
+  EXT --> WV
+  WV -->|iframe src + ?task=id| UISERVER
+  TERM --> FORGE
+  UISERVER --> DB
+```
+
+What the extension owns:
+
+- **Activity-bar webview** with status pill, workspace meta, live stats grid, action buttons, recent tasks, and providers. Polls every 4 s when visible.
+- **Status-bar item** that flips between *live* and *idle* based on `/api/status` reachability.
+- **Commands** for REPL, run-task / run-selection / run-file, dashboard lifecycle, doctor, settings, copy URL, change cwd, kill all.
+- **Deep linking** — clicking a recent task opens the dashboard webview with `?task=<id>`, which the SPA picks up at boot and routes straight to the conversation view.
+
+Data sources, in order of preference:
+
+1. The dashboard REST API (`/api/status`, `/api/tasks`, `/api/models`) when `forge ui` is running.
+2. The local SQLite index (`$FORGE_HOME/global/index.db`) read in read-only mode via the system `sqlite3` CLI. This is what makes lifetime stats (tokens, calls, task counts) work even with no Forge process running.
+
+The runtime exposes one piece of code specifically for this surface: `src/ui/server.ts → /api/tasks/:id` resolves the task's project automatically (index → projects → cwd fallback chain) so cross-project task detail lookups from the extension don't 404.
+
+Build and publish:
+
+```bash
+cd vscode-extension && npm install && npm run build
+npx @vscode/vsce package --no-dependencies   # produces .vsix
+npx @vscode/vsce publish --no-dependencies   # marketplace
+```
+
+### 9.2 MCP server (`forge mcp serve`)
+
+Forge can also run *as* an MCP server, not just a consumer. Other agents (Claude Desktop, Cursor, Continue, your own MCP client) register Forge once and can plan or run tasks through their own chat surfaces.
+
+```mermaid
+flowchart LR
+  classDef ag   fill:#0f172a,stroke:#38bdf8,color:#f1f5f9,rx:4,ry:4
+  classDef srv  fill:#082f49,stroke:#38bdf8,color:#e0f2fe,rx:4,ry:4
+  classDef core fill:#0c4a6e,stroke:#22d3ee,color:#cffafe,rx:4,ry:4
+  classDef d    fill:#18181b,stroke:#f59e0b,color:#fef3c7,rx:4,ry:4
+
+  CD["Claude Desktop / Cursor / Continue"]:::ag
+  MCP["forge mcp serve<br/>(stdio JSON-RPC)"]:::srv
+  ORCH["src/core/orchestrator.ts"]:::core
+  IDX[("~/.forge/global/index.db")]:::d
+  TASKS[("project/.forge/tasks/*.json")]:::d
+
+  CD <-- "tools/list · tools/call" --> MCP
+  MCP -- "forge_plan · forge_run" --> ORCH
+  MCP -- "forge_get_task · forge_list_tasks" --> IDX
+  MCP -- "forge_get_task" --> TASKS
+  ORCH -- "writes" --> TASKS
+  ORCH -- "writes" --> IDX
+```
+
+Two trust tiers:
+
+- **Read-only** (default): `forge_status`, `forge_plan`, `forge_get_task`, `forge_list_tasks`. Never writes a file. Safe to expose to any agent.
+- **Execute** (opt-in via `--allow-execute` or `FORGE_MCP_ALLOW_EXECUTE=true`): adds `forge_run` and `forge_cancel_task`. The calling agent can edit files and run shell commands inside the working directory.
+
+Implementation lives in `src/mcp-server/server.ts`. The server uses the same `orchestrateRun()` entry point as the CLI / REPL / dashboard, and the same `~/.forge/global/index.db` index that powers task lookups everywhere else — so tools called through the MCP surface are byte-identical paths to tools called through `forge run`.
+
+Permission model when called from an MCP client:
+
+- Read-only tools never trigger the permission manager.
+- `forge_run` sets `skipRoutine: true`, `allowFiles: true`, `allowShell: true`, `nonInteractive: true`. Critical-risk shell commands (classified by `src/sandbox/shell.ts`) are still hard-blocked.
+
+Full reference: [`docs/MCP-SERVER.md`](MCP-SERVER.md). Includes example configurations for Claude Desktop, Cursor, and any plain MCP client.
 
 ---
 

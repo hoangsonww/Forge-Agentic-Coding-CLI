@@ -1,7 +1,4 @@
 {
-  // -------------------------------------------------------------------------
-  // Editor — match the prettier + eslint contract enforced in CI.
-  // -------------------------------------------------------------------------
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
@@ -18,11 +15,6 @@
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.eol": "\n",
-
-  // -------------------------------------------------------------------------
-  // TypeScript — use the workspace's own tsc, not the one bundled with VS Code.
-  // Keeps error messages aligned with `npm run typecheck` in CI.
-  // -------------------------------------------------------------------------
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.preferences.importModuleSpecifier": "relative",
@@ -30,16 +22,8 @@
   "typescript.inlayHints.parameterNames.enabled": "literals",
   "typescript.inlayHints.functionLikeReturnTypes.enabled": false,
   "javascript.preferences.importModuleSpecifier": "relative",
-
-  // -------------------------------------------------------------------------
-  // ESLint — run on .ts files; flat config is not used here.
-  // -------------------------------------------------------------------------
   "eslint.validate": ["typescript", "typescriptreact", "javascript"],
   "eslint.workingDirectories": [{ "mode": "auto" }],
-
-  // -------------------------------------------------------------------------
-  // Per-language overrides
-  // -------------------------------------------------------------------------
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -66,10 +50,6 @@
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-
-  // -------------------------------------------------------------------------
-  // Search + explorer — hide build and native-module churn from the tree.
-  // -------------------------------------------------------------------------
   "files.exclude": {
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
@@ -97,24 +77,12 @@
     ".gitignore": ".gitattributes, .editorconfig, .prettierrc*, .eslintrc*, .prettierignore, .eslintignore",
     "vitest.config.ts": "vitest.config.*.ts"
   },
-
-  // -------------------------------------------------------------------------
-  // Testing — Vitest extension integration (auto-detects vitest.config.ts).
-  // -------------------------------------------------------------------------
   "vitest.commandLine": "npx vitest",
   "vitest.enable": true,
-
-  // -------------------------------------------------------------------------
-  // Terminal + Git
-  // -------------------------------------------------------------------------
   "terminal.integrated.scrollback": 10000,
   "git.autofetch": true,
   "git.confirmSync": false,
   "git.openRepositoryInParentFolders": "never",
-
-  // -------------------------------------------------------------------------
-  // Telemetry + UI noise
-  // -------------------------------------------------------------------------
   "npm.packageManager": "npm",
   "npm.enableRunFromFolder": true,
   "editor.minimap.enabled": false
