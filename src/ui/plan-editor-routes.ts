@@ -1,17 +1,16 @@
 /**
  * REST endpoint stubs for the Interactive Plan Editor — Issue #8.
  *
- * These handlers are designed to be mounted on the existing Express app in
- * src/ui/server.ts with a single line:
+ * Mount on the existing Express app in src/ui/server.ts:
  *
- *   import { registerPlanEditorRoutes } from './plan-editor-routes';
+ *   import { registerPlanEditorRoutes } from './plan-editor-routes.js';
  *   registerPlanEditorRoutes(app);
  *
  * Endpoints
  * ---------
- *   GET  /api/approval-queue          — list all pending plan entries
- *   GET  /api/approval-queue/:id      — get a single entry
- *   PATCH /api/approval-queue/:id     — apply a sparse plan step edit
+ *   GET   /api/approval-queue              — list all pending plan entries
+ *   GET   /api/approval-queue/:id          — get a single entry
+ *   PATCH /api/approval-queue/:id          — apply a sparse plan step edit
  *   POST  /api/approval-queue/:id/decision — approve / reject / request revision
  *
  * All responses follow { ok: boolean, data?: unknown, error?: string }.
@@ -25,70 +24,97 @@ import {
   getEntry,
   applyPlanEdit,
   recordDecision,
+} from '../core/plan-approval.js';
+import type {
   PlanEditRequest,
   ApprovalDecision,
-} from '../core/plan-approval';
+  PlanApprovalAction,
+} from '../core/plan-approval.js';
 
-const ok = (res: Response, data: unknown) =>
+const sendOk = (res: Response, data: unknown): void => {
   res.json({ ok: true, data });
+};
 
-const err = (res: Response, status: number, message: string) =>
+const sendErr = (res: Response, status: number, message: string): void => {
   res.status(status).json({ ok: false, error: message });
+};
+
+const ALLOWED_ACTIONS: PlanApprovalAction[] = [
+  'approve',
+  'reject',
+  'request_revision',
+];
 
 /**
  * Mount all plan-editor routes onto the given Express app.
  */
 export const registerPlanEditorRoutes = (app: Express): void => {
-
   /** List all entries in the approval queue */
   app.get('/api/approval-queue', (_req: Request, res: Response) => {
-    ok(res, listQueue());
+    sendOk(res, listQueue());
   });
 
   /** Get a single approval queue entry */
   app.get('/api/approval-queue/:id', (req: Request, res: Response) => {
     const entry = getEntry(req.params.id);
-    if (!entry) return err(res, 404, `No queue entry found for id: ${req.params.id}`);
-    ok(res, entry);
+    if (!entry) {
+      sendErr(res, 404, `No queue entry found for id: ${req.params.id}`);
+      return;
+    }
+    sendOk(res, entry);
   });
 
   /**
    * Apply a sparse patch to plan steps.
-   * Body: PlanEditRequest (stepUpdates array)
+   * Body: { stepUpdates: StepUpdate[] }
    */
   app.patch('/api/approval-queue/:id', (req: Request, res: Response) => {
     const editReq: PlanEditRequest = {
       entryId: req.params.id,
-      stepUpdates: req.body?.stepUpdates ?? [],
+      stepUpdates: (req.body as PlanEditRequest | undefined)?.stepUpdates ?? [],
     };
     const updated = applyPlanEdit(editReq);
     if (!updated) {
-      return err(
+      sendErr(
         res,
         409,
         `Cannot edit entry ${req.params.id}: not found or not in pending state.`,
       );
+      return;
     }
-    ok(res, updated);
+    sendOk(res, updated);
   });
 
   /**
    * Record an approval decision.
-   * Body: ApprovalDecision { action: 'approve' | 'reject' | 'request_revision', feedback? }
+   * Body: { action: 'approve' | 'reject' | 'request_revision', feedback?: string }
    */
-  app.post('/api/approval-queue/:id/decision', (req: Request, res: Response) => {
-    const decision: ApprovalDecision = req.body;
-    if (!decision?.action) {
-      return err(res, 400, 'Missing required field: action');
-    }
-    const allowed: ApprovalDecision['action'][] = ['approve', 'reject', 'request_revision'];
-    if (!allowed.includes(decision.action)) {
-      return err(res, 400, `Invalid action. Must be one of: ${allowed.join(', ')}`);
-    }
-    const updated = recordDecision(req.params.id, decision);
-    if (!updated) {
-      return err(res, 404, `No queue entry found for id: ${req.params.id}`);
-    }
-    ok(res, updated);
-  });
+  app.post(
+    '/api/approval-queue/:id/decision',
+    (req: Request, res: Response) => {
+      const decision = req.body as ApprovalDecision | undefined;
+      if (!decision?.action) {
+        sendErr(res, 400, 'Missing required field: action');
+        return;
+      }
+      if (!ALLOWED_ACTIONS.includes(decision.action)) {
+        sendErr(
+          res,
+          400,
+          `Invalid action. Must be one of: ${ALLOWED_ACTIONS.join(', ')}`,
+        );
+        return;
+      }
+      const updated = recordDecision(req.params.id, decision);
+      if (!updated) {
+        sendErr(
+          res,
+          404,
+          `No queue entry found for id: ${req.params.id}`,
+        );
+        return;
+      }
+      sendOk(res, updated);
+    },
+  );
 };

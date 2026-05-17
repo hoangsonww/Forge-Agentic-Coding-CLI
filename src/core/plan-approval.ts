@@ -2,25 +2,29 @@
  * Approval Queue Manager — MVP foundation for Issue #8.
  *
  * Manages pending plan approval entries in-memory. Each entry represents
- * a generated plan that is waiting for a dashboard user to approve, reject,
- * or request a revision before the agentic loop is allowed to execute.
+ * a generated plan waiting for a dashboard user to approve, reject, or
+ * request a revision before the agentic loop is allowed to execute.
  *
  * Design notes:
- *  - Intentionally in-memory for the MVP (no persistence dependency).
- *  - Uses the existing Plan/PlanStep types — no schema changes needed.
- *  - Safe to call from the UI server and the core loop concurrently because
- *    all mutations are synchronous (Node.js single-threaded event loop).
+ * - Intentionally in-memory for the MVP (no persistence dependency).
+ * - Uses the existing Plan/PlanStep types verbatim — no schema changes needed.
+ * - Safe to call from the UI server and the core loop concurrently because
+ *   all mutations are synchronous (Node.js single-threaded event loop).
  *
  * @author Akshat Raj <AkshatRaj00>
  */
 
-import { Plan } from '../types';
+import { Plan } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'revision_requested';
+export type ApprovalStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
 
 export interface ApprovalQueueEntry {
   /** Unique entry id — same as the associated task id */
@@ -33,20 +37,22 @@ export interface ApprovalQueueEntry {
   enqueuedAt: string;
   /** ISO timestamp of the last status update, if any */
   updatedAt?: string;
-  /** Optional free-text feedback from the reviewer (used for revision_requested / rejected) */
+  /** Optional free-text feedback from the reviewer */
   reviewerFeedback?: string;
+}
+
+export interface StepUpdate {
+  stepId: string;
+  description?: string;
+  /** New 0-based position in the step array */
+  newIndex?: number;
 }
 
 export interface PlanEditRequest {
   /** Target entry id */
   entryId: string;
   /** Sparse patch — only the fields the user changed */
-  stepUpdates?: Array<{
-    stepId: string;
-    description?: string;
-    /** New 0-based position in the step array */
-    newIndex?: number;
-  }>;
+  stepUpdates?: StepUpdate[];
 }
 
 export type PlanApprovalAction = 'approve' | 'reject' | 'request_revision';
@@ -106,15 +112,16 @@ export const applyPlanEdit = (
     const idx = steps.findIndex((s) => s.id === update.stepId);
     if (idx === -1) continue;
 
-    // Apply description patch
     if (update.description !== undefined) {
       steps[idx] = { ...steps[idx], description: update.description };
     }
 
-    // Apply reorder
     if (update.newIndex !== undefined && update.newIndex !== idx) {
       const [moved] = steps.splice(idx, 1);
-      const clampedTarget = Math.max(0, Math.min(update.newIndex, steps.length));
+      const clampedTarget = Math.max(
+        0,
+        Math.min(update.newIndex, steps.length),
+      );
       steps.splice(clampedTarget, 0, moved);
     }
   }

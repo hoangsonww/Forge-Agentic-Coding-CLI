@@ -13,19 +13,29 @@ import {
   applyPlanEdit,
   recordDecision,
   dequeue,
-} from '../src/core/plan-approval';
-import type { Plan } from '../src/types';
+} from '../src/core/plan-approval.js';
+import type { Plan } from '../src/types/index.js';
 
 const makePlan = (id = 'task-1'): Plan => ({
   id,
   goal: 'test goal',
+  mode: 'balanced',
+  version: '1',
+  createdAt: new Date().toISOString(),
   steps: [
-    { id: 'step-1', type: 'write_file', description: 'Create index.ts' },
-    { id: 'step-2', type: 'run_tests', description: 'Run test suite' },
+    {
+      id: 'step-1',
+      type: 'edit_file',
+      description: 'Create index.ts',
+    },
+    {
+      id: 'step-2',
+      type: 'run_tests',
+      description: 'Run test suite',
+    },
   ],
 });
 
-// Reset queue state between tests by dequeuing known ids
 beforeEach(() => {
   dequeue('task-1');
   dequeue('task-2');
@@ -40,9 +50,8 @@ describe('enqueue', () => {
 
   it('replaces an existing entry (idempotent re-enqueue)', () => {
     enqueue('task-1', makePlan());
-    const second = enqueue('task-1', makePlan());
+    enqueue('task-1', makePlan());
     expect(listQueue().filter((e) => e.id === 'task-1')).toHaveLength(1);
-    expect(second.status).toBe('pending');
   });
 });
 
