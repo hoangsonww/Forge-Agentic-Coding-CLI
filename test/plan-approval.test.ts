@@ -60,36 +60,48 @@ describe('getEntry', () => {
 describe('applyPlanEdit', () => {
   it('patches a step description', () => {
     enqueue('task-1', makePlan());
-    const updated = applyPlanEdit({
+    const result = applyPlanEdit({
       entryId: 'task-1',
       stepUpdates: [{ stepId: 'step-1', description: 'Updated description' }],
     });
-    expect(updated).not.toBeNull();
-    expect(updated!.plan.steps[0].description).toBe('Updated description');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entry.plan.steps[0].description).toBe('Updated description');
+    }
   });
 
   it('reorders steps correctly', () => {
     enqueue('task-1', makePlan());
-    const updated = applyPlanEdit({
+    const result = applyPlanEdit({
       entryId: 'task-1',
       stepUpdates: [{ stepId: 'step-2', newIndex: 0 }],
     });
-    expect(updated!.plan.steps[0].id).toBe('step-2');
-    expect(updated!.plan.steps[1].id).toBe('step-1');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entry.plan.steps[0].id).toBe('step-2');
+      expect(result.entry.plan.steps[1].id).toBe('step-1');
+    }
   });
 
-  it('returns null for non-pending entry', () => {
+  it('returns not_pending reason for non-pending entry', () => {
     enqueue('task-1', makePlan());
     recordDecision('task-1', { action: 'approve' });
     const result = applyPlanEdit({
       entryId: 'task-1',
       stepUpdates: [{ stepId: 'step-1', description: 'Should not apply' }],
     });
-    expect(result).toBeNull();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('not_pending');
+    }
   });
 
-  it('returns null for unknown entry', () => {
-    expect(applyPlanEdit({ entryId: 'ghost', stepUpdates: [] })).toBeNull();
+  it('returns not_found reason for unknown entry', () => {
+    const result = applyPlanEdit({ entryId: 'ghost', stepUpdates: [] });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('not_found');
+    }
   });
 });
 
@@ -97,7 +109,10 @@ describe('recordDecision', () => {
   it('marks entry as approved', () => {
     enqueue('task-1', makePlan());
     const result = recordDecision('task-1', { action: 'approve' });
-    expect(result!.status).toBe('approved');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entry.status).toBe('approved');
+    }
   });
 
   it('marks entry as rejected with feedback', () => {
@@ -106,8 +121,11 @@ describe('recordDecision', () => {
       action: 'reject',
       feedback: 'Step order is wrong',
     });
-    expect(result!.status).toBe('rejected');
-    expect(result!.reviewerFeedback).toBe('Step order is wrong');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entry.status).toBe('rejected');
+      expect(result.entry.reviewerFeedback).toBe('Step order is wrong');
+    }
   });
 
   it('marks entry as revision_requested', () => {
@@ -116,11 +134,18 @@ describe('recordDecision', () => {
       action: 'request_revision',
       feedback: 'Please add a lint step',
     });
-    expect(result!.status).toBe('revision_requested');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.entry.status).toBe('revision_requested');
+    }
   });
 
-  it('returns null for unknown id', () => {
-    expect(recordDecision('ghost', { action: 'approve' })).toBeNull();
+  it('returns not_found reason for unknown id', () => {
+    const result = recordDecision('ghost', { action: 'approve' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('not_found');
+    }
   });
 });
 

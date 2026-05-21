@@ -25,7 +25,6 @@
  */
 
 import * as http from 'http';
-import { URL } from 'url';
 import {
   listQueue,
   getEntry,
@@ -36,7 +35,7 @@ import {
 } from '../core/plan-approval';
 
 // ---------------------------------------------------------------------------
-// Helpers (mirror the pattern in server.ts)
+// Helpers
 // ---------------------------------------------------------------------------
 
 const sendJson = (res: http.ServerResponse, status: number, body: unknown): void => {
@@ -54,7 +53,7 @@ const sendJson = (res: http.ServerResponse, status: number, body: unknown): void
 const ok = (res: http.ServerResponse, data: unknown): void =>
   sendJson(res, 200, { ok: true, data });
 
-const err = (res: http.ServerResponse, status: number, message: string): void =>
+const fail = (res: http.ServerResponse, status: number, message: string): void =>
   sendJson(res, status, { ok: false, error: message });
 
 const parseBody = <T>(req: http.IncomingMessage, limit = 256 * 1024): Promise<T> =>
@@ -97,23 +96,22 @@ const QUEUE_DECISION_RE = /^\/api\/approval-queue\/([^/]+)\/decision$/;
 export const handlePlanEditorRoute = async (
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  u: URL,
+  pathname: string,
 ): Promise<boolean> => {
-  const p = u.pathname;
   const method = req.method ?? 'GET';
 
   // GET /api/approval-queue
-  if (QUEUE_LIST_RE.test(p) && method === 'GET') {
+  if (QUEUE_LIST_RE.test(pathname) && method === 'GET') {
     ok(res, listQueue());
     return true;
   }
 
   // GET /api/approval-queue/:id
-  const entryMatch = QUEUE_ENTRY_RE.exec(p);
+  const entryMatch = QUEUE_ENTRY_RE.exec(pathname);
   if (entryMatch && method === 'GET') {
     const entry = getEntry(entryMatch[1]);
     if (!entry) {
-      err(res, 404, `No queue entry found for id: ${entryMatch[1]}`);
+      fail(res, 404, `No queue entry found for id: ${entryMatch[1]}`);
     } else {
       ok(res, entry);
     }
@@ -135,28 +133,28 @@ export const handlePlanEditorRoute = async (
           result.reason === 'not_found'
             ? `No queue entry found for id: ${entryMatch[1]}`
             : `Cannot edit entry ${entryMatch[1]}: entry is not in pending state.`;
-        err(res, status, msg);
+        fail(res, status, msg);
       } else {
         ok(res, result.entry);
       }
     } catch (e) {
-      err(res, 400, String(e));
+      fail(res, 400, String(e));
     }
     return true;
   }
 
   // POST /api/approval-queue/:id/decision
-  const decisionMatch = QUEUE_DECISION_RE.exec(p);
+  const decisionMatch = QUEUE_DECISION_RE.exec(pathname);
   if (decisionMatch && method === 'POST') {
     try {
       const decision = await parseBody<ApprovalDecision>(req);
       if (!decision?.action) {
-        err(res, 400, 'Missing required field: action');
+        fail(res, 400, 'Missing required field: action');
         return true;
       }
       const allowed: ApprovalDecision['action'][] = ['approve', 'reject', 'request_revision'];
       if (!allowed.includes(decision.action)) {
-        err(res, 400, `Invalid action. Must be one of: ${allowed.join(', ')}`);
+        fail(res, 400, `Invalid action. Must be one of: ${allowed.join(', ')}`);
         return true;
       }
       const result = recordDecision(decisionMatch[1], decision);
@@ -166,12 +164,12 @@ export const handlePlanEditorRoute = async (
           result.reason === 'not_found'
             ? `No queue entry found for id: ${decisionMatch[1]}`
             : `Entry ${decisionMatch[1]} is already in a terminal state.`;
-        err(res, status, msg);
+        fail(res, status, msg);
       } else {
         ok(res, result.entry);
       }
     } catch (e) {
-      err(res, 400, String(e));
+      fail(res, 400, String(e));
     }
     return true;
   }
