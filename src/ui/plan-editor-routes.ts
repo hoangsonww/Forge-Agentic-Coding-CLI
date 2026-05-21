@@ -20,17 +20,8 @@
  */
 
 import * as http from 'http';
-import {
-  listQueue,
-  getEntry,
-  applyPlanEdit,
-  recordDecision,
-} from '../core/plan-approval';
-import type {
-  PlanEditRequest,
-  ApprovalDecision,
-  PlanApprovalAction,
-} from '../core/plan-approval';
+import { listQueue, getEntry, applyPlanEdit, recordDecision } from '../core/plan-approval';
+import type { PlanEditRequest, ApprovalDecision, PlanApprovalAction } from '../core/plan-approval';
 
 const ALLOWED_ACTIONS: ReadonlySet<PlanApprovalAction> = new Set([
   'approve',
