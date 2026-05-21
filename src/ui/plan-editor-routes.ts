@@ -1,10 +1,11 @@
 /**
- * REST endpoint stubs for the Interactive Plan Editor — Issue #8.
+ * REST handlers for the Interactive Plan Editor — Issue #8.
  *
- * Mount on the existing Express app in src/ui/server.ts:
+ * Plugs into the existing raw-http router in src/ui/server.ts via
+ * handlePlanEditorRoute(). Call it from the router function before the
+ * static-file fallback:
  *
- *   import { registerPlanEditorRoutes } from './plan-editor-routes';
- *   registerPlanEditorRoutes(app);
+ *   if (handlePlanEditorRoute(req, res, p)) return;
  *
  * Endpoints
  * ---------
@@ -18,7 +19,7 @@
  * @author Akshat Raj <AkshatRaj00>
  */
 
-import type { Request, Response, Express } from 'express';
+import * as http from 'http';
 import {
   listQueue,
   getEntry,
@@ -37,57 +38,105 @@ const ALLOWED_ACTIONS: ReadonlySet<PlanApprovalAction> = new Set([
   'request_revision',
 ]);
 
-const sendOk = (res: Response, data: unknown): void => {
-  res.json({ ok: true, data });
+const sendJson = (res: http.ServerResponse, status: number, body: unknown): void => {
+  const payload = JSON.stringify(body);
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(payload),
+  });
+  res.end(payload);
 };
 
-const sendErr = (res: Response, status: number, message: string): void => {
-  res.status(status).json({ ok: false, error: message });
-};
-
-export const registerPlanEditorRoutes = (app: Express): void => {
-  app.get('/api/approval-queue', (_req: Request, res: Response) => {
-    sendOk(res, listQueue());
+const readBody = (req: http.IncomingMessage): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
   });
 
-  app.get('/api/approval-queue/:id', (req: Request, res: Response) => {
-    const entry = getEntry(req.params.id);
+const parseBody = async <T>(req: http.IncomingMessage): Promise<T> => {
+  const raw = await readBody(req);
+  if (!raw.trim()) return {} as T;
+  return JSON.parse(raw) as T;
+};
+
+/**
+ * Handle plan-editor API routes. Returns true if the request was handled.
+ * Drop this into the server.ts router before the static-file fallback.
+ */
+export const handlePlanEditorRoute = (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  pathname: string,
+): boolean => {
+  // GET /api/approval-queue
+  if (pathname === '/api/approval-queue' && req.method === 'GET') {
+    sendJson(res, 200, { ok: true, data: listQueue() });
+    return true;
+  }
+
+  // GET /api/approval-queue/:id
+  const idMatch = /^\/api\/approval-queue\/([^/]+)$/.exec(pathname);
+  if (idMatch && req.method === 'GET') {
+    const entry = getEntry(idMatch[1]);
     if (!entry) {
-      sendErr(res, 404, `No queue entry found for id: ${req.params.id}`);
-      return;
+      sendJson(res, 404, { ok: false, error: `No queue entry found for id: ${idMatch[1]}` });
+    } else {
+      sendJson(res, 200, { ok: true, data: entry });
     }
-    sendOk(res, entry);
-  });
+    return true;
+  }
 
-  app.patch('/api/approval-queue/:id', (req: Request, res: Response) => {
-    const body = req.body as Partial<PlanEditRequest> | undefined;
-    const editReq: PlanEditRequest = {
-      entryId: req.params.id,
-      stepUpdates: body?.stepUpdates ?? [],
-    };
-    const updated = applyPlanEdit(editReq);
-    if (!updated) {
-      sendErr(res, 409, `Cannot edit entry ${req.params.id}: not found or not in pending state.`);
-      return;
-    }
-    sendOk(res, updated);
-  });
+  // PATCH /api/approval-queue/:id
+  if (idMatch && req.method === 'PATCH') {
+    void (async () => {
+      const body = await parseBody<Partial<PlanEditRequest>>(req);
+      const editReq: PlanEditRequest = {
+        entryId: idMatch[1],
+        stepUpdates: body.stepUpdates ?? [],
+      };
+      const updated = applyPlanEdit(editReq);
+      if (!updated) {
+        sendJson(res, 409, {
+          ok: false,
+          error: `Cannot edit entry ${idMatch[1]}: not found or not in pending state.`,
+        });
+      } else {
+        sendJson(res, 200, { ok: true, data: updated });
+      }
+    })();
+    return true;
+  }
 
-  app.post('/api/approval-queue/:id/decision', (req: Request, res: Response) => {
-    const decision = req.body as Partial<ApprovalDecision> | undefined;
-    if (!decision?.action) {
-      sendErr(res, 400, 'Missing required field: action');
-      return;
-    }
-    if (!ALLOWED_ACTIONS.has(decision.action)) {
-      sendErr(res, 400, `Invalid action. Must be one of: ${[...ALLOWED_ACTIONS].join(', ')}`);
-      return;
-    }
-    const updated = recordDecision(req.params.id, decision as ApprovalDecision);
-    if (!updated) {
-      sendErr(res, 404, `No queue entry found for id: ${req.params.id}`);
-      return;
-    }
-    sendOk(res, updated);
-  });
+  // POST /api/approval-queue/:id/decision
+  const decisionMatch = /^\/api\/approval-queue\/([^/]+)\/decision$/.exec(pathname);
+  if (decisionMatch && req.method === 'POST') {
+    void (async () => {
+      const body = await parseBody<Partial<ApprovalDecision>>(req);
+      if (!body.action) {
+        sendJson(res, 400, { ok: false, error: 'Missing required field: action' });
+        return;
+      }
+      if (!ALLOWED_ACTIONS.has(body.action)) {
+        sendJson(res, 400, {
+          ok: false,
+          error: `Invalid action. Must be one of: ${[...ALLOWED_ACTIONS].join(', ')}`,
+        });
+        return;
+      }
+      const updated = recordDecision(decisionMatch[1], body as ApprovalDecision);
+      if (!updated) {
+        sendJson(res, 404, {
+          ok: false,
+          error: `No queue entry found for id: ${decisionMatch[1]}`,
+        });
+      } else {
+        sendJson(res, 200, { ok: true, data: updated });
+      }
+    })();
+    return true;
+  }
+
+  return false;
 };

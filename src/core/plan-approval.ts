@@ -14,44 +14,31 @@
  * @author Akshat Raj <AkshatRaj00>
  */
 
-import { Plan } from '../types';
+import { Plan, PlanStep } from '../types';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type ApprovalStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'revision_requested';
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'revision_requested';
 
 export interface ApprovalQueueEntry {
-  /** Unique entry id — same as the associated task id */
   id: string;
-  /** The plan snapshot at the time it was enqueued */
   plan: Plan;
-  /** Current decision status */
   status: ApprovalStatus;
-  /** ISO timestamp when the entry was enqueued */
   enqueuedAt: string;
-  /** ISO timestamp of the last status update, if any */
   updatedAt?: string;
-  /** Optional free-text feedback from the reviewer */
   reviewerFeedback?: string;
 }
 
 export interface StepUpdate {
   stepId: string;
   description?: string;
-  /** New 0-based position in the step array */
   newIndex?: number;
 }
 
 export interface PlanEditRequest {
-  /** Target entry id */
   entryId: string;
-  /** Sparse patch — only the fields the user changed */
   stepUpdates?: StepUpdate[];
 }
 
@@ -59,7 +46,6 @@ export type PlanApprovalAction = 'approve' | 'reject' | 'request_revision';
 
 export interface ApprovalDecision {
   action: PlanApprovalAction;
-  /** Required when action is 'reject' or 'request_revision' */
   feedback?: string;
 }
 
@@ -94,7 +80,7 @@ export const applyPlanEdit = (req: PlanEditRequest): ApprovalQueueEntry | null =
   const entry = _queue.get(req.entryId);
   if (!entry || entry.status !== 'pending') return null;
 
-  let steps = [...entry.plan.steps];
+  const steps: PlanStep[] = entry.plan.steps.map((s) => ({ ...s }));
 
   for (const update of req.stepUpdates ?? []) {
     const idx = steps.findIndex((s) => s.id === update.stepId);
