@@ -58,10 +58,31 @@ export interface ApprovalDecision {
 }
 
 // ---------------------------------------------------------------------------
+// Discriminated result types (avoids ambiguous null returns)
+// ---------------------------------------------------------------------------
+
+/** Returned by applyPlanEdit to distinguish 404 vs 409. */
+export type PlanEditResult =
+  | { ok: true; entry: ApprovalQueueEntry }
+  | { ok: false; reason: 'not_found' | 'not_pending' };
+
+/** Returned by recordDecision to distinguish 404 vs 409 (terminal state). */
+export type DecisionResult =
+  | { ok: true; entry: ApprovalQueueEntry }
+  | { ok: false; reason: 'not_found' | 'terminal_state' };
+
+// ---------------------------------------------------------------------------
 // Queue manager
 // ---------------------------------------------------------------------------
 
 const _queue = new Map<string, ApprovalQueueEntry>();
+
+/** Valid source states for each action (prevents terminal-state overwrite). */
+const ALLOWED_SOURCE_STATES: Record<PlanApprovalAction, ApprovalStatus[]> = {
+  approve: ['pending', 'revision_requested'],
+  reject: ['pending', 'revision_requested'],
+  request_revision: ['pending'],
+};
 
 /**
  * Add a plan to the approval queue.
@@ -78,46 +99,46 @@ export const enqueue = (id: string, plan: Plan): ApprovalQueueEntry => {
   return entry;
 };
 
-/**
- * Return a snapshot of all entries currently in the queue.
- */
-export const listQueue = (): ApprovalQueueEntry[] =>
-  Array.from(_queue.values());
+/** Return a snapshot of all entries currently in the queue. */
+export const listQueue = (): ApprovalQueueEntry[] => Array.from(_queue.values());
 
-/**
- * Return a single entry by id, or undefined if not found.
- */
-export const getEntry = (id: string): ApprovalQueueEntry | undefined =>
-  _queue.get(id);
+/** Return a single entry by id, or undefined if not found. */
+export const getEntry = (id: string): ApprovalQueueEntry | undefined => _queue.get(id);
 
 /**
  * Apply a sparse patch to the plan steps of a pending entry.
- * Returns the updated entry, or null if the entry is not found or not pending.
+ *
+ * Returns a discriminated result:
+ *  - { ok: true, entry }                   — patch applied (or no-op)
+ *  - { ok: false, reason: 'not_found' }    — no entry with that id
+ *  - { ok: false, reason: 'not_pending' }  — entry exists but is not pending
  */
-export const applyPlanEdit = (
-  req: PlanEditRequest,
-): ApprovalQueueEntry | null => {
+export const applyPlanEdit = (req: PlanEditRequest): PlanEditResult => {
   const entry = _queue.get(req.entryId);
-  if (!entry || entry.status !== 'pending') return null;
+  if (!entry) return { ok: false, reason: 'not_found' };
+  if (entry.status !== 'pending') return { ok: false, reason: 'not_pending' };
 
   let steps = [...entry.plan.steps];
+  let changed = false;
 
   for (const update of req.stepUpdates ?? []) {
     const idx = steps.findIndex((s) => s.id === update.stepId);
     if (idx === -1) continue;
 
-    // Apply description patch
-    if (update.description !== undefined) {
+    if (update.description !== undefined && update.description !== steps[idx].description) {
       steps[idx] = { ...steps[idx], description: update.description };
+      changed = true;
     }
 
-    // Apply reorder
     if (update.newIndex !== undefined && update.newIndex !== idx) {
       const [moved] = steps.splice(idx, 1);
       const clampedTarget = Math.max(0, Math.min(update.newIndex, steps.length));
       steps.splice(clampedTarget, 0, moved);
+      changed = true;
     }
   }
+
+  if (!changed) return { ok: true, entry };
 
   const updated: ApprovalQueueEntry = {
     ...entry,
@@ -125,19 +146,25 @@ export const applyPlanEdit = (
     updatedAt: new Date().toISOString(),
   };
   _queue.set(req.entryId, updated);
-  return updated;
+  return { ok: true, entry: updated };
 };
 
 /**
  * Record a reviewer decision (approve / reject / request_revision).
- * Returns the updated entry, or null if the entry is not found.
+ *
+ * Returns a discriminated result:
+ *  - { ok: true, entry }                     — decision applied
+ *  - { ok: false, reason: 'not_found' }      — no entry with that id
+ *  - { ok: false, reason: 'terminal_state' } — entry already in a terminal state
  */
-export const recordDecision = (
-  id: string,
-  decision: ApprovalDecision,
-): ApprovalQueueEntry | null => {
+export const recordDecision = (id: string, decision: ApprovalDecision): DecisionResult => {
   const entry = _queue.get(id);
-  if (!entry) return null;
+  if (!entry) return { ok: false, reason: 'not_found' };
+
+  const allowed = ALLOWED_SOURCE_STATES[decision.action];
+  if (!allowed.includes(entry.status)) {
+    return { ok: false, reason: 'terminal_state' };
+  }
 
   const statusMap: Record<PlanApprovalAction, ApprovalStatus> = {
     approve: 'approved',
@@ -152,10 +179,8 @@ export const recordDecision = (
     updatedAt: new Date().toISOString(),
   };
   _queue.set(id, updated);
-  return updated;
+  return { ok: true, entry: updated };
 };
 
-/**
- * Remove an entry from the queue (e.g. after the loop has consumed it).
- */
+/** Remove an entry from the queue (e.g. after the loop has consumed it). */
 export const dequeue = (id: string): boolean => _queue.delete(id);

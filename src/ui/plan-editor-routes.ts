@@ -1,25 +1,31 @@
 /**
- * REST endpoint stubs for the Interactive Plan Editor — Issue #8.
+ * REST handlers for the Interactive Plan Editor — Issue #8.
  *
- * These handlers are designed to be mounted on the existing Express app in
- * src/ui/server.ts with a single line:
+ * These handlers follow the same pattern as the existing routes in
+ * src/ui/server.ts: they receive a native Node.js IncomingMessage +
+ * ServerResponse pair and use the shared sendJson / parseJson helpers.
  *
- *   import { registerPlanEditorRoutes } from './plan-editor-routes';
- *   registerPlanEditorRoutes(app);
+ * To mount them, call handlePlanEditorRoute(req, res, u) inside the
+ * router() function in server.ts before the static-file fallback:
+ *
+ *   import { handlePlanEditorRoute } from './plan-editor-routes';
+ *   // ... inside router():
+ *   if (await handlePlanEditorRoute(req, res, u)) return;
  *
  * Endpoints
  * ---------
- *   GET  /api/approval-queue          — list all pending plan entries
- *   GET  /api/approval-queue/:id      — get a single entry
- *   PATCH /api/approval-queue/:id     — apply a sparse plan step edit
- *   POST  /api/approval-queue/:id/decision — approve / reject / request revision
+ *   GET    /api/approval-queue              — list all pending plan entries
+ *   GET    /api/approval-queue/:id          — get a single entry
+ *   PATCH  /api/approval-queue/:id          — apply a sparse plan step edit
+ *   POST   /api/approval-queue/:id/decision — approve / reject / request revision
  *
  * All responses follow { ok: boolean, data?: unknown, error?: string }.
  *
  * @author Akshat Raj <AkshatRaj00>
  */
 
-import type { Request, Response, Express } from 'express';
+import * as http from 'http';
+import { URL } from 'url';
 import {
   listQueue,
   getEntry,
@@ -29,66 +35,146 @@ import {
   ApprovalDecision,
 } from '../core/plan-approval';
 
-const ok = (res: Response, data: unknown) =>
-  res.json({ ok: true, data });
+// ---------------------------------------------------------------------------
+// Helpers (mirror the pattern in server.ts)
+// ---------------------------------------------------------------------------
 
-const err = (res: Response, status: number, message: string) =>
-  res.status(status).json({ ok: false, error: message });
+const sendJson = (res: http.ServerResponse, status: number, body: unknown): void => {
+  const payload = JSON.stringify(body);
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(payload),
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'content-type',
+    'access-control-allow-methods': 'GET, PATCH, POST, OPTIONS',
+  });
+  res.end(payload);
+};
+
+const ok = (res: http.ServerResponse, data: unknown): void =>
+  sendJson(res, 200, { ok: true, data });
+
+const err = (res: http.ServerResponse, status: number, message: string): void =>
+  sendJson(res, status, { ok: false, error: message });
+
+const parseBody = <T>(req: http.IncomingMessage, limit = 256 * 1024): Promise<T> =>
+  new Promise((resolve, reject) => {
+    let total = 0;
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > limit) {
+        reject(new Error('body too large'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8');
+      try {
+        resolve(raw.trim() ? (JSON.parse(raw) as T) : ({} as T));
+      } catch {
+        reject(new Error('invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+
+// ---------------------------------------------------------------------------
+// Route patterns
+// ---------------------------------------------------------------------------
+
+const QUEUE_LIST_RE = /^\/api\/approval-queue$/;
+const QUEUE_ENTRY_RE = /^\/api\/approval-queue\/([^/]+)$/;
+const QUEUE_DECISION_RE = /^\/api\/approval-queue\/([^/]+)\/decision$/;
 
 /**
- * Mount all plan-editor routes onto the given Express app.
+ * Handle a plan-editor route.
+ *
+ * Returns true if the request was handled (so the caller can return early),
+ * false if no route matched.
  */
-export const registerPlanEditorRoutes = (app: Express): void => {
+export const handlePlanEditorRoute = async (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  u: URL,
+): Promise<boolean> => {
+  const p = u.pathname;
+  const method = req.method ?? 'GET';
 
-  /** List all entries in the approval queue */
-  app.get('/api/approval-queue', (_req: Request, res: Response) => {
+  // GET /api/approval-queue
+  if (QUEUE_LIST_RE.test(p) && method === 'GET') {
     ok(res, listQueue());
-  });
+    return true;
+  }
 
-  /** Get a single approval queue entry */
-  app.get('/api/approval-queue/:id', (req: Request, res: Response) => {
-    const entry = getEntry(req.params.id);
-    if (!entry) return err(res, 404, `No queue entry found for id: ${req.params.id}`);
-    ok(res, entry);
-  });
+  // GET /api/approval-queue/:id
+  const entryMatch = QUEUE_ENTRY_RE.exec(p);
+  if (entryMatch && method === 'GET') {
+    const entry = getEntry(entryMatch[1]);
+    if (!entry) {
+      err(res, 404, `No queue entry found for id: ${entryMatch[1]}`);
+    } else {
+      ok(res, entry);
+    }
+    return true;
+  }
 
-  /**
-   * Apply a sparse patch to plan steps.
-   * Body: PlanEditRequest (stepUpdates array)
-   */
-  app.patch('/api/approval-queue/:id', (req: Request, res: Response) => {
-    const editReq: PlanEditRequest = {
-      entryId: req.params.id,
-      stepUpdates: req.body?.stepUpdates ?? [],
-    };
-    const updated = applyPlanEdit(editReq);
-    if (!updated) {
-      return err(
-        res,
-        409,
-        `Cannot edit entry ${req.params.id}: not found or not in pending state.`,
-      );
+  // PATCH /api/approval-queue/:id
+  if (entryMatch && method === 'PATCH') {
+    try {
+      const body = await parseBody<{ stepUpdates?: PlanEditRequest['stepUpdates'] }>(req);
+      const editReq: PlanEditRequest = {
+        entryId: entryMatch[1],
+        stepUpdates: body.stepUpdates ?? [],
+      };
+      const result = applyPlanEdit(editReq);
+      if (!result.ok) {
+        const status = result.reason === 'not_found' ? 404 : 409;
+        const msg =
+          result.reason === 'not_found'
+            ? `No queue entry found for id: ${entryMatch[1]}`
+            : `Cannot edit entry ${entryMatch[1]}: entry is not in pending state.`;
+        err(res, status, msg);
+      } else {
+        ok(res, result.entry);
+      }
+    } catch (e) {
+      err(res, 400, String(e));
     }
-    ok(res, updated);
-  });
+    return true;
+  }
 
-  /**
-   * Record an approval decision.
-   * Body: ApprovalDecision { action: 'approve' | 'reject' | 'request_revision', feedback? }
-   */
-  app.post('/api/approval-queue/:id/decision', (req: Request, res: Response) => {
-    const decision: ApprovalDecision = req.body;
-    if (!decision?.action) {
-      return err(res, 400, 'Missing required field: action');
+  // POST /api/approval-queue/:id/decision
+  const decisionMatch = QUEUE_DECISION_RE.exec(p);
+  if (decisionMatch && method === 'POST') {
+    try {
+      const decision = await parseBody<ApprovalDecision>(req);
+      if (!decision?.action) {
+        err(res, 400, 'Missing required field: action');
+        return true;
+      }
+      const allowed: ApprovalDecision['action'][] = ['approve', 'reject', 'request_revision'];
+      if (!allowed.includes(decision.action)) {
+        err(res, 400, `Invalid action. Must be one of: ${allowed.join(', ')}`);
+        return true;
+      }
+      const result = recordDecision(decisionMatch[1], decision);
+      if (!result.ok) {
+        const status = result.reason === 'not_found' ? 404 : 409;
+        const msg =
+          result.reason === 'not_found'
+            ? `No queue entry found for id: ${decisionMatch[1]}`
+            : `Entry ${decisionMatch[1]} is already in a terminal state.`;
+        err(res, status, msg);
+      } else {
+        ok(res, result.entry);
+      }
+    } catch (e) {
+      err(res, 400, String(e));
     }
-    const allowed: ApprovalDecision['action'][] = ['approve', 'reject', 'request_revision'];
-    if (!allowed.includes(decision.action)) {
-      return err(res, 400, `Invalid action. Must be one of: ${allowed.join(', ')}`);
-    }
-    const updated = recordDecision(req.params.id, decision);
-    if (!updated) {
-      return err(res, 404, `No queue entry found for id: ${req.params.id}`);
-    }
-    ok(res, updated);
-  });
+    return true;
+  }
+
+  return false;
 };
