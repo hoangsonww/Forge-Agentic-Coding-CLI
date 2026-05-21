@@ -39,11 +39,13 @@ const sendErr = (res: Response, status: number, message: string): void => {
   res.status(status).json({ ok: false, error: message });
 };
 
-const ALLOWED_ACTIONS: PlanApprovalAction[] = [
+// Hoisted outside registerPlanEditorRoutes to avoid re-allocation on every
+// request (Gemini suggestion).
+const ALLOWED_ACTIONS: ReadonlySet<PlanApprovalAction> = new Set([
   'approve',
   'reject',
   'request_revision',
-];
+]);
 
 /**
  * Mount all plan-editor routes onto the given Express app.
@@ -89,32 +91,25 @@ export const registerPlanEditorRoutes = (app: Express): void => {
    * Record an approval decision.
    * Body: { action: 'approve' | 'reject' | 'request_revision', feedback?: string }
    */
-  app.post(
-    '/api/approval-queue/:id/decision',
-    (req: Request, res: Response) => {
-      const decision = req.body as ApprovalDecision | undefined;
-      if (!decision?.action) {
-        sendErr(res, 400, 'Missing required field: action');
-        return;
-      }
-      if (!ALLOWED_ACTIONS.includes(decision.action)) {
-        sendErr(
-          res,
-          400,
-          `Invalid action. Must be one of: ${ALLOWED_ACTIONS.join(', ')}`,
-        );
-        return;
-      }
-      const updated = recordDecision(req.params.id, decision);
-      if (!updated) {
-        sendErr(
-          res,
-          404,
-          `No queue entry found for id: ${req.params.id}`,
-        );
-        return;
-      }
-      sendOk(res, updated);
-    },
-  );
+  app.post('/api/approval-queue/:id/decision', (req: Request, res: Response) => {
+    const decision = req.body as ApprovalDecision | undefined;
+    if (!decision?.action) {
+      sendErr(res, 400, 'Missing required field: action');
+      return;
+    }
+    if (!ALLOWED_ACTIONS.has(decision.action)) {
+      sendErr(
+        res,
+        400,
+        `Invalid action. Must be one of: ${[...ALLOWED_ACTIONS].join(', ')}`,
+      );
+      return;
+    }
+    const updated = recordDecision(req.params.id, decision);
+    if (!updated) {
+      sendErr(res, 404, `No queue entry found for id: ${req.params.id}`);
+      return;
+    }
+    sendOk(res, updated);
+  });
 };

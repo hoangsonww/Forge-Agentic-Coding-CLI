@@ -131,6 +131,12 @@ describe('recordDecision', () => {
   it('returns null for unknown id', () => {
     expect(recordDecision('ghost', { action: 'approve' })).toBeNull();
   });
+
+  it('returns null for non-pending entry', () => {
+    enqueue('task-1', makePlan());
+    recordDecision('task-1', { action: 'approve' });
+    expect(recordDecision('task-1', { action: 'reject' })).toBeNull();
+  });
 });
 
 describe('dequeue', () => {
