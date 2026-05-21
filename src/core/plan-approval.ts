@@ -69,18 +69,12 @@ export interface ApprovalDecision {
 
 const _queue = new Map<string, ApprovalQueueEntry>();
 
-// Static map hoisted outside function scope to avoid redundant allocations
-// on every recordDecision call (Gemini suggestion).
 const STATUS_MAP: Record<PlanApprovalAction, ApprovalStatus> = {
   approve: 'approved',
   reject: 'rejected',
   request_revision: 'revision_requested',
 };
 
-/**
- * Add a plan to the approval queue.
- * Replaces any existing entry for the same id (idempotent re-enqueue).
- */
 export const enqueue = (id: string, plan: Plan): ApprovalQueueEntry => {
   const entry: ApprovalQueueEntry = {
     id,
@@ -92,20 +86,10 @@ export const enqueue = (id: string, plan: Plan): ApprovalQueueEntry => {
   return entry;
 };
 
-/**
- * Return a snapshot of all entries currently in the queue.
- */
 export const listQueue = (): ApprovalQueueEntry[] => Array.from(_queue.values());
 
-/**
- * Return a single entry by id, or undefined if not found.
- */
 export const getEntry = (id: string): ApprovalQueueEntry | undefined => _queue.get(id);
 
-/**
- * Apply a sparse patch to the plan steps of a pending entry.
- * Returns the updated entry, or null if the entry is not found or not pending.
- */
 export const applyPlanEdit = (req: PlanEditRequest): ApprovalQueueEntry | null => {
   const entry = _queue.get(req.entryId);
   if (!entry || entry.status !== 'pending') return null;
@@ -122,8 +106,8 @@ export const applyPlanEdit = (req: PlanEditRequest): ApprovalQueueEntry | null =
 
     if (update.newIndex !== undefined && update.newIndex !== idx) {
       const [moved] = steps.splice(idx, 1);
-      const clampedTarget = Math.max(0, Math.min(update.newIndex, steps.length));
-      steps.splice(clampedTarget, 0, moved);
+      const target = Math.max(0, Math.min(update.newIndex, steps.length));
+      steps.splice(target, 0, moved);
     }
   }
 
@@ -136,11 +120,6 @@ export const applyPlanEdit = (req: PlanEditRequest): ApprovalQueueEntry | null =
   return updated;
 };
 
-/**
- * Record a reviewer decision (approve / reject / request_revision).
- * Only accepts entries currently in 'pending' state.
- * Returns the updated entry, or null if the entry is not found or not pending.
- */
 export const recordDecision = (
   id: string,
   decision: ApprovalDecision,
@@ -158,7 +137,4 @@ export const recordDecision = (
   return updated;
 };
 
-/**
- * Remove an entry from the queue (e.g. after the loop has consumed it).
- */
 export const dequeue = (id: string): boolean => _queue.delete(id);

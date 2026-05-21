@@ -3,7 +3,7 @@
  *
  * Mount on the existing Express app in src/ui/server.ts:
  *
- *   import { registerPlanEditorRoutes } from './plan-editor-routes.js';
+ *   import { registerPlanEditorRoutes } from './plan-editor-routes';
  *   registerPlanEditorRoutes(app);
  *
  * Endpoints
@@ -24,12 +24,18 @@ import {
   getEntry,
   applyPlanEdit,
   recordDecision,
-} from '../core/plan-approval.js';
+} from '../core/plan-approval';
 import type {
   PlanEditRequest,
   ApprovalDecision,
   PlanApprovalAction,
-} from '../core/plan-approval.js';
+} from '../core/plan-approval';
+
+const ALLOWED_ACTIONS: ReadonlySet<PlanApprovalAction> = new Set([
+  'approve',
+  'reject',
+  'request_revision',
+]);
 
 const sendOk = (res: Response, data: unknown): void => {
   res.json({ ok: true, data });
@@ -39,24 +45,11 @@ const sendErr = (res: Response, status: number, message: string): void => {
   res.status(status).json({ ok: false, error: message });
 };
 
-// Hoisted outside registerPlanEditorRoutes to avoid re-allocation on every
-// request (Gemini suggestion).
-const ALLOWED_ACTIONS: ReadonlySet<PlanApprovalAction> = new Set([
-  'approve',
-  'reject',
-  'request_revision',
-]);
-
-/**
- * Mount all plan-editor routes onto the given Express app.
- */
 export const registerPlanEditorRoutes = (app: Express): void => {
-  /** List all entries in the approval queue */
   app.get('/api/approval-queue', (_req: Request, res: Response) => {
     sendOk(res, listQueue());
   });
 
-  /** Get a single approval queue entry */
   app.get('/api/approval-queue/:id', (req: Request, res: Response) => {
     const entry = getEntry(req.params.id);
     if (!entry) {
@@ -66,46 +59,31 @@ export const registerPlanEditorRoutes = (app: Express): void => {
     sendOk(res, entry);
   });
 
-  /**
-   * Apply a sparse patch to plan steps.
-   * Body: { stepUpdates: StepUpdate[] }
-   */
   app.patch('/api/approval-queue/:id', (req: Request, res: Response) => {
+    const body = req.body as Partial<PlanEditRequest> | undefined;
     const editReq: PlanEditRequest = {
       entryId: req.params.id,
-      stepUpdates: (req.body as PlanEditRequest | undefined)?.stepUpdates ?? [],
+      stepUpdates: body?.stepUpdates ?? [],
     };
     const updated = applyPlanEdit(editReq);
     if (!updated) {
-      sendErr(
-        res,
-        409,
-        `Cannot edit entry ${req.params.id}: not found or not in pending state.`,
-      );
+      sendErr(res, 409, `Cannot edit entry ${req.params.id}: not found or not in pending state.`);
       return;
     }
     sendOk(res, updated);
   });
 
-  /**
-   * Record an approval decision.
-   * Body: { action: 'approve' | 'reject' | 'request_revision', feedback?: string }
-   */
   app.post('/api/approval-queue/:id/decision', (req: Request, res: Response) => {
-    const decision = req.body as ApprovalDecision | undefined;
+    const decision = req.body as Partial<ApprovalDecision> | undefined;
     if (!decision?.action) {
       sendErr(res, 400, 'Missing required field: action');
       return;
     }
     if (!ALLOWED_ACTIONS.has(decision.action)) {
-      sendErr(
-        res,
-        400,
-        `Invalid action. Must be one of: ${[...ALLOWED_ACTIONS].join(', ')}`,
-      );
+      sendErr(res, 400, `Invalid action. Must be one of: ${[...ALLOWED_ACTIONS].join(', ')}`);
       return;
     }
-    const updated = recordDecision(req.params.id, decision);
+    const updated = recordDecision(req.params.id, decision as ApprovalDecision);
     if (!updated) {
       sendErr(res, 404, `No queue entry found for id: ${req.params.id}`);
       return;

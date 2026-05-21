@@ -1,8 +1,6 @@
 /**
  * Unit tests for the plan approval queue manager.
  * Covers: enqueue, list, edit, decision recording, dequeue.
- *
- * Run with: npm test
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -13,8 +11,8 @@ import {
   applyPlanEdit,
   recordDecision,
   dequeue,
-} from '../src/core/plan-approval.js';
-import type { Plan } from '../src/types/index.js';
+} from '../src/core/plan-approval';
+import type { Plan } from '../src/types';
 
 const makePlan = (id = 'task-1'): Plan => ({
   id,
@@ -23,16 +21,8 @@ const makePlan = (id = 'task-1'): Plan => ({
   version: '1',
   createdAt: new Date().toISOString(),
   steps: [
-    {
-      id: 'step-1',
-      type: 'edit_file',
-      description: 'Create index.ts',
-    },
-    {
-      id: 'step-2',
-      type: 'run_tests',
-      description: 'Run test suite',
-    },
+    { id: 'step-1', type: 'edit_file', description: 'Create index.ts' },
+    { id: 'step-2', type: 'run_tests', description: 'Run test suite' },
   ],
 });
 
