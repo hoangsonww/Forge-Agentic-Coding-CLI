@@ -1,55 +1,57 @@
-name: nightly
+# name: nightly
+# uncomment this file to enable nightly npm update runs on the repo
+# also remember to add/relace NPM_TOKEN variable in GitHub Actions Secrets with your NPMJS token
 
-on:
-  schedule:
-    - cron: '0 5 * * *' # daily at 05:00 UTC
-  workflow_dispatch:
+# on:
+#   schedule:
+#     - cron: '0 5 * * *' # daily at 05:00 UTC
+#   workflow_dispatch:
 
-concurrency:
-  group: nightly
-  cancel-in-progress: true
+# concurrency:
+#   group: nightly
+#   cancel-in-progress: true
 
-permissions:
-  contents: read
-  id-token: write
+# permissions:
+#   contents: read
+#   id-token: write
 
-jobs:
-  nightly-build:
-    name: 🌙 nightly build + publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: https://registry.npmjs.org
-          cache: npm
-      - name: Install dependencies
-        # npm/cli#4828 self-heal (see ci.yml for rationale).
-        run: |
-          npm ci --ignore-scripts || {
-            echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
-            rm -rf node_modules package-lock.json
-            npm install --ignore-scripts --no-audit --no-fund
-          }
-          node -e "require('rollup/dist/native.js')" 2>/dev/null || {
-            echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
-            rm -rf node_modules package-lock.json
-            npm install --ignore-scripts --no-audit --no-fund
-          }
-      - run: npm rebuild better-sqlite3
-      - run: npm run build
-      - run: npx vitest run
-      - name: Publish nightly to npm
-        if: success() && env.NODE_AUTH_TOKEN != ''
-        run: |
-          version=$(node -p "require('./package.json').version")
-          npm version "$version-nightly.$(date -u +%Y%m%d)" --no-git-tag-version
-          npm publish --tag nightly --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Summary
-        if: always()
-        run: |
-          echo "## 🌙 Nightly — $(date -u +%Y-%m-%d)" >> "$GITHUB_STEP_SUMMARY"
-          echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+# jobs:
+#   nightly-build:
+#     name: 🌙 nightly build + publish
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           registry-url: https://registry.npmjs.org
+#           cache: npm
+#       - name: Install dependencies
+#         # npm/cli#4828 self-heal (see ci.yml for rationale).
+#         run: |
+#           npm ci --ignore-scripts || {
+#             echo "::warning::npm ci failed — falling back to npm install (npm/cli#4828)"
+#             rm -rf node_modules package-lock.json
+#             npm install --ignore-scripts --no-audit --no-fund
+#           }
+#           node -e "require('rollup/dist/native.js')" 2>/dev/null || {
+#             echo "::warning::rollup native binding missing — reinstalling (npm/cli#4828)"
+#             rm -rf node_modules package-lock.json
+#             npm install --ignore-scripts --no-audit --no-fund
+#           }
+#       - run: npm rebuild better-sqlite3
+#       - run: npm run build
+#       - run: npx vitest run
+#       - name: Publish nightly to npm
+#         if: success() && env.NODE_AUTH_TOKEN != ''
+#         run: |
+#           version=$(node -p "require('./package.json').version")
+#           npm version "$version-nightly.$(date -u +%Y%m%d)" --no-git-tag-version
+#           npm publish --tag nightly --access public --provenance
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#       - name: Summary
+#         if: always()
+#         run: |
+#           echo "## 🌙 Nightly — $(date -u +%Y-%m-%d)" >> "$GITHUB_STEP_SUMMARY"
+#           echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
